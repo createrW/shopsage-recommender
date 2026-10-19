@@ -1,0 +1,28 @@
+# Data pipeline configuration for MovieLens-20M.
+# Consumed by: `shopsage prepare --config configs/data/movielens_20m.yaml`
+# Every knob here is recorded into data/processed/splits/meta.json for reproducibility.
+
+dataset: movielens-20m
+raw_dir: data/raw/ml-20m          # output of scripts/download_data.sh
+processed_dir: data/processed     # parquet artifacts (git-ignored)
+
+# Implicit-feedback construction. The positive threshold and the items-then-users single pass
+# follow Liang et al. 2018 ("Variational Autoencoders for Collaborative Filtering"); the item
+# threshold of 5 is this project's choice (D-002): Liang applies no item filter, and the single
+# pass is not an iterated k-core (1 item ends below 5 on ML-20M).
+#   - a rating >= min_rating counts as a positive interaction
+#   - items with fewer than min_item_interactions positives are dropped (single pass)
+#   - then users with fewer than min_user_interactions positives are dropped
+# Leave-one-out needs >= 3 positives per user (test, val, >=1 train); 5 leaves headroom.
+min_rating: 4.0
+min_item_interactions: 5
+min_user_interactions: 5
+
+# Leave-one-out split per user, ordered by timestamp:
+#   test = most recent positive, val = second most recent, train = everything else.
+# Ties (MovieLens users often rate many movies within the same second) are broken by a
+# seeded deterministic hash of (userId, movieId) so the split is reproducible and
+# not biased toward high movieIds.
+split:
+  strategy: leave_one_out
+  seed: 42

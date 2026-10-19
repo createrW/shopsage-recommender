@@ -1,0 +1,43 @@
+# Streamlit demo configuration (Day 9). Target: Streamlit Community Cloud (690 MB guaranteed RAM,
+# 2.7 GB max, 2 CPU cores, no GPU). The app imports numpy, scipy (BM25 matrix), pyarrow / polars
+# (parquet maps), lightgbm, streamlit and anthropic, plus faiss-cpu for IndexFlatIP or the ANN study;
+# never torch. Dependencies: src/shopsage_rec/serving/requirements.txt (uv export, from the Day-2
+# hello-world deploy) + packages.txt.
+
+artifacts_dir: artifacts/demo              # git-ignored; fetched at app start from a sha256-pinned GitHub Release asset
+bundle:
+  release_tag: null                        # GitHub Release tag of the demo bundle (set on Day 9)
+  sha256: null                             # sha256 of the asset; the app refuses a mismatch
+artifacts:
+  item_embeddings: item_embeddings.npy     # (n_items, 128) float32, L2-normalised
+  user_tower_weights: user_tower.npz        # MLP weights for the numpy re-implementation (D-004); no 70 MB user table
+  faiss_index: null                        # D-008: exact top-k over item_embeddings (numpy / IndexFlatIP);
+                                           # an IVF/HNSW index is an optional ANN study, not the default
+  ranker: lgbm_ranker.txt                  # LightGBM model file
+  item_map: item_map.parquet
+  bm25_matrix: bm25_matrix.npz             # scipy.sparse, rows = item_idx (D-010); its vocabulary comes from
+                                           # MovieLens titles and tags, so whether it may ship is part of D-003
+  llm_cache: llm_cache/                    # precomputed expansions for the example queries (D-010 cache layout)
+  movies: null                             # D-003: titles/genres are rebuilt at start-up from the GroupLens
+                                           # download (no MovieLens rows in the bundle) until permission is granted
+  user_history: null                       # OPTIONAL (D-003): per-user rows only with GroupLens permission; the
+                                           # default demo builds visitor profiles ('pick 5 movies') and needs no
+                                           # user table (D-004)
+
+retrieval:
+  method: exact                            # exact | faiss (ANN study)
+  top_k_candidates: 500
+  top_k_shown: 10
+  mask_seen: true                          # seen items -> -inf BEFORE top-k (D-008)
+
+llm_expansion:
+  enabled: true
+  provider: anthropic
+  model: claude-haiku-5-5                  # current Haiku; rejects non-default sampling params, so cache responses
+  api_key_env: ANTHROPIC_API_KEY           # from .streamlit/secrets.toml on Community Cloud
+  prompt_version: v1                       # part of the cache key with the model id and params (D-010)
+  cache_dir: artifacts/llm_cache           # sha256(model_id + prompt + params) -> response
+  timeout_s: 20
+  max_calls_per_session: 20                # live calls per visitor session; cached queries are free
+  grounding: bm25                          # expansion text -> BM25 over titles+tags -> item embeddings
+  max_expanded_items: 20

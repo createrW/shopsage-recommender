@@ -1,0 +1,81 @@
+# Two-Tower retriever, round 2 ("hard-negative mining" in the brief; implemented as mixed negative
+# sampling, D-005 revised 2026-10-18): in-batch negatives + M uniformly sampled negatives (Yang et al.
+# 2020) with logQ over the mixed proposal, optionally plus true hard negatives mined from ranks 101-500
+# of the round-1 model. Ablation (a) arm A2 (A3 with `mined.enabled: true`).
+# Identical to two_tower_base.yaml except `loss.negatives` and `loss.init_from` (keep null for
+# ablation (a)), so the ablation isolates the change. Consumed by `shopsage train` (Day 5). DRAFT values.
+
+run_name: two_tower_hardneg
+seed: 42
+data:
+  processed_dir: data/processed
+  movies_parquet: data/processed/movies.parquet
+
+val_partition:                           # shared with two_tower_base.yaml and lgbm_ranker.yaml (D-006)
+  seed: 42
+  frac_va: 0.5
+
+model:
+  embedding_dim: 128
+  user_tower:
+    history_pooling: mean
+    max_history: 50
+    id_embedding: true
+    id_embedding_dim: 128
+    id_dropout: 0.3
+    features: [log_activity, mean_rating, genre_affinity, recency_days]
+    feature_dropout: 0.3
+    hidden: [256, 128]
+  item_tower:
+    id_embedding_dim: 128
+    genre_multi_hot: true
+    year_bucket_width: 5
+    genome_pca_dim: 64
+    text_embedding: null
+    hidden: [256, 128]
+
+loss:
+  type: in_batch_softmax
+  temperature: 0.05
+  logq_correction: true                  # log(B * p_batch(j) + M * q(j)) over the MIXED proposal
+  mask_accidental_hits: true             # every off-diagonal column that is a train positive of the row's user -> -inf
+  negatives:
+    sampled:
+      enabled: true
+      n_per_batch: 2048                  # M extra columns appended to every batch, shared by all rows
+      sampling: popularity_power         # q(j) ∝ count_train(j)^alpha, counts from the TRAIN split only
+      alpha: 0.0                         # 0.0 = uniform, q(j) = 1/13,681: MNS as Yang et al. 2020 define it. On the
+                                         # Day-1 split the bottom popularity tercile is 11.5% of the sampled
+                                         # columns under uniform vs 1.0% under alpha 0.75 (the smoothed unigram of
+                                         # Mikolov et al. 2013, kept only as an alternative knob)
+    mined:                               # optional true hard negatives (EBR, Huang et al. 2020)
+      enabled: false
+      from_run: null                     # run_id of the selected round-1 run (artifacts/checkpoints/<run_id>/best.pt)
+      rank_range: [101, 500]             # ranks 1-100 are likelier to hold unlabelled positives; EBR mines 101-500
+      n_per_user: 8
+  init_from: null                        # or a round-1 run_id (artifacts/checkpoints/<run_id>/best.pt); null for
+                                         # ablation (a): same 30-epoch budget per arm, no warm start
+
+optim:
+  batch_size: 4096
+  epochs: 30                             # fixed 30-epoch budget per arm; no early stopping
+  lr: 0.002
+  weight_decay: 1.0e-6
+  fused_adamw: true
+  amp: auto                              # CUDA: bf16 only on compute capability >= 8.0, else fp16 + GradScaler;
+                                         # MPS: bf16 autocast; CPU: off
+  device: auto
+  checkpoint_metric: va_hr@50            # best V_A HR@50 epoch is kept (D-006)
+
+eval:
+  k_values: [10, 50, 100, 500]
+  protocols: [LOO-full, LOO-asof]
+  users: V_A
+  bootstrap_samples: 2000
+  candidate_corpus: all_items
+  eval_chunk_users: 8192
+
+logging:
+  wandb_project: shopsage-recommender
+  wandb_mode: online
+  log_every_n_steps: 50

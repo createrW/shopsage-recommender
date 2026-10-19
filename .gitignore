@@ -1,0 +1,56 @@
+# ---- data (never commit MovieLens: GroupLens licence forbids redistribution) ----
+data/raw/
+data/processed/
+data/samples/*
+!data/samples/README.md
+
+# ---- model artifacts / experiment outputs ----
+# artifacts/demo/.gitkeep is kept so `docker build` (COPY artifacts/demo/) works on a fresh clone;
+# real demo bundles are fetched at app start from a GitHub Release asset (see docs/design.md).
+artifacts/**
+!artifacts/demo/
+artifacts/demo/*
+!artifacts/demo/.gitkeep
+wandb/
+mlruns/
+*.ckpt
+*.pt
+*.pth
+*.faiss
+*.lgb
+*.npy
+*.npz
+
+# ---- python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.python-version
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+.coverage
+coverage.xml
+htmlcov/
+
+# ---- notebooks ----
+.ipynb_checkpoints/
+notebooks/scratch_*
+
+# ---- secrets / env ----
+.env
+.env.*
+.streamlit/secrets.toml
+
+# ---- os / editors ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log

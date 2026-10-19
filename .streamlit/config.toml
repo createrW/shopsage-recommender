@@ -1,0 +1,24 @@
+# Streamlit settings for the ShopSage demo. Read from the working directory: the repo root
+# for `make demo` and Streamlit Community Cloud, /app in the Docker image.
+# Secrets belong in .streamlit/secrets.toml (git-ignored); see secrets.toml.example.
+
+[server]
+headless = true
+maxUploadSize = 5            # MB; the demo has no upload flow
+maxMessageSize = 50          # MB; Community Cloud guarantees 690 MB of RAM (2.7 GB max)
+enableXsrfProtection = true
+
+[browser]
+gatherUsageStats = false
+
+[client]
+# Visitors see exception types, not tracebacks (those go to the server log).
+# `make demo` passes --client.showErrorDetails=full for local development.
+showErrorDetails = "type"
+
+[theme]
+base = "light"
+primaryColor = "#C2410C"              # 5.2:1 contrast against white (WCAG AA for button text)
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F4F5"
+textColor = "#18181B"

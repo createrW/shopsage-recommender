@@ -1,0 +1,74 @@
+# Two-Tower retriever, round 1: in-batch sampled softmax only (ablation (a) arm A1, the reference).
+# Consumed by `shopsage train --config configs/train/two_tower_base.yaml` (lands on Day 3).
+# DRAFT — hyperparameters are starting points, not tuned values. Every run snapshots this file to
+# wandb and to artifacts/checkpoints/<run_id>/ (resolved config, api_spec.md §7).
+
+run_name: two_tower_base
+seed: 42                                 # training seed; every arm runs >= 3 seeds (experiment_log Rule 5)
+data:
+  processed_dir: data/processed          # output of `shopsage prepare`
+  movies_parquet: data/processed/movies.parquet
+
+val_partition:                           # D-006: validation users -> V_A (retriever selection) / V_B
+  seed: 42                               # (ranker labels). Fixed across training seeds, shared by
+  frac_va: 0.5                           # every train config, so V_A and V_B are the same users everywhere.
+
+model:
+  embedding_dim: 128                     # final tower output, L2-normalised
+  user_tower:                            # D-004 (open, due Day 3): inductive by default, ID embedding optional
+    history_pooling: mean                # mean-pooled item-tower embeddings of the last <= max_history as-of positives
+    max_history: 50
+    id_embedding: true                   # keep the brief's user_id embedding as an input ...
+    id_embedding_dim: 128
+    id_dropout: 0.3                      # ... but drop it 30% of the time so the tower also works without an id
+    features: [log_activity, mean_rating, genre_affinity, recency_days]   # ML-20M has no demographics; as-of only
+    feature_dropout: 0.3                 # drop the behavioural block 30% of the time: visitor profiles and the
+                                         # 61 / 51 users with no raw rating before the cutoff hit the
+                                         # missing-feature path (design.md §7)
+    hidden: [256, 128]
+  item_tower:
+    id_embedding_dim: 128
+    genre_multi_hot: true                # 19 genres + "no genres listed"
+    year_bucket_width: 5                 # 5-year buckets (1891-2015 -> 25) plus an "unknown" bucket for null years
+    genome_pca_dim: 64                   # tag-genome relevance scores -> PCA (74% of items; missing-genome flag)
+    text_embedding: null                 # optional: artifacts/text/item_text_embeddings.npy (BGE-M3, 1024-d)
+    hidden: [256, 128]
+
+loss:
+  type: in_batch_softmax
+  temperature: 0.05                      # logits = cos_sim / temperature
+  logq_correction: true                  # subtract log(B * p_batch(j)) (Yi et al. 2019); this file is A1, the
+                                         # reference; ablation arm A0 sets false
+  mask_accidental_hits: true             # -inf for every OFF-DIAGONAL column that is a train positive of the row's
+                                         # user (D-005): ~660 per row at B=4096 on the Day-1 train split (median
+                                         # 571, p90 1,298); ~4 of them duplicate the row's own positive
+  negatives:                             # D-005: round 1 = in-batch only
+    sampled: { enabled: false }
+    mined: { enabled: false }
+
+optim:
+  batch_size: 4096                       # ~1.4 GB VRAM; 8192 ~2.5 GB; 16384 + 4096 sampled negatives ~6.1 GB
+                                         # worst case (roofline estimates, docs/design.md §13)
+  epochs: 30                             # fixed 30-epoch budget per arm (design.md §4.4 / §13); no early stopping
+  lr: 0.002
+  weight_decay: 1.0e-6                   # applied to MLP weights only, never to the embedding tables
+  fused_adamw: true
+  amp: auto                              # CUDA: bf16 iff torch.cuda.is_bf16_supported(including_emulation=False)
+                                         # (compute capability >= 8.0), else fp16 + GradScaler (T4 = sm_75);
+                                         # MPS: bf16 autocast (E002); CPU: off
+  device: auto                           # cuda > mps > cpu
+  checkpoint_metric: va_hr@50            # keep the epoch with the best V_A HR@50 (exact search); V_A users only
+                                         # (D-006); HR@K = Recall@K under leave-one-out (D-007)
+
+eval:
+  k_values: [10, 50, 100, 500]           # HR@500 caps the ranker and gives the D-006 drop rate
+  protocols: [LOO-full, LOO-asof]        # experiment_log Rule 6 labels; D-001 open: Liang-SG-strict added if adopted
+  users: V_A                             # model selection on V_A only; test users once per final config (Rule 7)
+  bootstrap_samples: 2000                # paired bootstrap over users (D-007)
+  candidate_corpus: all_items            # full-corpus ranking, seen items set to -inf before top-k (D-008)
+  eval_chunk_users: 8192                 # a one-shot 136,674 x 13,681 fp32 score matrix would be 7.5 GB
+
+logging:
+  wandb_project: shopsage-recommender
+  wandb_mode: online                     # set to "offline" on an air-gapped GPU box
+  log_every_n_steps: 50

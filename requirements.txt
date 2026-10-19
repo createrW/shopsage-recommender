@@ -1,0 +1,33 @@
+# Demo-only dependencies, installed by the Dockerfile: CPU-only, no torch, no project install.
+#
+# Not the development environment: development, EDA and training use the pyproject.toml extras
+# via uv (`make setup`, `make setup-train`, scripts/bootstrap_cloud.sh). Keep these floors in
+# step with the core dependencies and the [demo] extra in pyproject.toml.
+#
+# Streamlit Community Cloud does not use this file. It installs from the first dependency file
+# it finds, searching the entrypoint's directory before the repo root, in the order
+# uv.lock > Pipfile > environment.yml > requirements.txt > pyproject.toml, so the committed root
+# uv.lock would otherwise win. The file next to the app takes precedence there:
+# src/shopsage_rec/serving/requirements.txt, generated from Day 2 (hello-world deploy) with
+#   uv export --frozen --no-hashes --no-emit-project --extra demo -o <that path>
+# plus a two-line sys.path shim in app.py, since the project is not installed there either.
+#
+# - No local "." line: the Dockerfile sets PYTHONPATH=/app/src instead of installing the
+#   project, so core dependencies the demo does not use (typer for the CLI, duckdb for EDA)
+#   stay out of the image. The app must not import torch, typer or duckdb; CI's demo-deps job
+#   installs this file alone and checks the imports.
+# - LightGBM needs the OpenMP runtime: libgomp1 (Dockerfile; root packages.txt on Community Cloud).
+# - streamlit>=1.41: the first release that accepts the string client.showErrorDetails values
+#   used in .streamlit/config.toml and `make demo`.
+
+streamlit>=1.41
+numpy>=2.0
+polars>=2.0,<3
+pyarrow>=15
+faiss-cpu>=1.15,<1.16
+lightgbm>=4.3
+scipy>=1.12                 # BM25 matrix is scipy.sparse (D-010); explicit, not via lightgbm
+rank-bm25>=0.2.2
+anthropic>=1.0,<2
+pydantic>=2.7
+pyyaml>=6.0

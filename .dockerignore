@@ -1,0 +1,16 @@
+# Allowlist: exclude everything, then re-include only what the Dockerfile copies.
+# Keeps data/ (MovieLens may not be redistributed), .venv/, notebooks/, training artifacts
+# and .streamlit/secrets.toml out of the build context. Add a line for every new COPY source.
+*
+!requirements.txt
+!pyproject.toml
+!LICENSE
+!src/
+!configs/
+!.streamlit/config.toml
+!artifacts/demo/
+
+# Re-exclude noise inside the allowed trees.
+**/__pycache__
+**/*.py[cod]
+**/.DS_Store

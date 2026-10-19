@@ -1,0 +1,34 @@
+# Install once per clone: `make hooks`. Run on everything: `uv run --extra dev pre-commit run --all-files`.
+#
+# nbstripout is deliberately NOT used: notebooks/01_eda.ipynb is committed with its outputs
+# (the executed EDA is part of the write-up); the 5 MB large-file cap keeps it in check.
+# The ruff hooks see only src/ and tests/, the same paths as CI and `make lint`; pyproject.toml
+# also excludes notebooks, docs and *.md (ruff >= 0.16 formats Python blocks inside Markdown).
+# Keep the ruff rev in step with the ruff version in uv.lock so hooks and CI agree.
+minimum_pre_commit_version: "3.7.0"
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=5120]
+      - id: check-shebang-scripts-are-executable
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.1
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: ^(src|tests)/
+      - id: ruff-format
+        files: ^(src|tests)/

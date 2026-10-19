@@ -1,0 +1,88 @@
+# Lint + fast tests on every push to main and every pull request, plus a check that the demo's
+# requirements.txt installs on its own (as the Dockerfile installs it) without pulling in torch.
+# lint-test installs only core + dev extras: no torch, no GPU, and no MovieLens download
+# (tests marked `slow` need the real data and are deselected).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test:
+    name: ruff + pytest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"] # requires-python = ">=3.11,<3.13"
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      # setup-uv publishes no floating major tag; bump the exact version deliberately.
+      - name: Set up uv and Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # --locked fails the job when uv.lock is out of date with pyproject.toml.
+      - name: Install core + dev extra
+        run: uv sync --locked --extra dev
+
+      # Lint once: ruff's result does not depend on the interpreter. Same paths as `make lint`;
+      # pyproject.toml also excludes notebooks, docs and *.md.
+      - name: ruff check
+        if: matrix.python-version == '3.12'
+        run: uv run --no-sync ruff check --output-format=github src tests
+
+      - name: ruff format --check
+        if: matrix.python-version == '3.12'
+        run: uv run --no-sync ruff format --check src tests
+
+      # Same as `make typecheck`: mypy over the shopsage_rec package (pyproject.toml [tool.mypy]).
+      - name: mypy
+        if: matrix.python-version == '3.12'
+        run: uv run --no-sync mypy
+
+      - name: pytest (not slow)
+        run: uv run --no-sync pytest -m "not slow"
+
+  demo-deps:
+    name: demo requirements.txt (Python 3.12, no project install)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v10.3.0
+
+      # OpenMP runtime the LightGBM wheel links dynamically; the Dockerfile installs the same.
+      - name: Install libgomp1
+        run: sudo apt-get update -q && sudo apt-get install -y --no-install-recommends libgomp1
+
+      # A bare venv, so nothing from pyproject.toml or uv.lock leaks into the check.
+      - name: Install requirements.txt only
+        run: |
+          uv venv --python 3.12 .venv-demo
+          uv pip install --python .venv-demo/bin/python -r requirements.txt
+
+      - name: Demo imports work without torch
+        env:
+          PYTHONPATH: src # as in the Dockerfile: shopsage_rec is importable, not installed
+        run: |
+          .venv-demo/bin/python -c "import faiss, lightgbm, scipy.sparse, streamlit, rank_bm25; import sys; assert 'torch' not in sys.modules"
+          .venv-demo/bin/python -c "import importlib.util as u; assert u.find_spec('torch') is None, 'torch is installed'"
+          .venv-demo/bin/python -c "import anthropic, numpy, polars, pyarrow, pydantic, yaml, shopsage_rec"
