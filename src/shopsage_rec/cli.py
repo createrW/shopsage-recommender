@@ -4,7 +4,8 @@ Today: ``prepare``, ``stats``, ``evaluate`` (MostPop and EASE on the Liang split
 Two-Tower commands ``train``, ``mine`` and ``sweep`` (they need the ``train`` extra; torch is
 imported only inside them), and ``recall`` (BM25, dense and hybrid recall paths, with the Milvus
 Lite parity check), and ``rank`` (the LightGBM re-ranker; needs the ``train`` extra for LightGBM).
-Planned, by step of docs/plan.md: ``expand`` (S5).
+and ``tags`` (ablation (c): BM25 on raw vs Claude-expanded tag queries; needs the ``llm`` extra
+and ``ANTHROPIC_API_KEY``, else every query falls back to the raw text).
 
 Default paths (``--config``, ``--processed-dir``) are resolved against the repository root,
 found by walking up from the working directory to the nearest ``pyproject.toml``, so the
@@ -348,6 +349,48 @@ def rank(
         run_id=run_id,
     )  # fmt: skip
     typer.echo(format_rank_summary(result.summary))
+    typer.echo(f"wrote {result.out_dir}")
+
+
+@app.command()
+def tags(
+    n_events: int = typer.Option(1000, "--n-events", help="Held-out users' tag events to sample."),
+    workers: int = typer.Option(8, "--workers", help="Concurrent LLM calls."),
+    seed: int = typer.Option(0, "--seed", help="Seed of the event sample."),
+    exclude_run: str | None = typer.Option(
+        None, "--exclude-run", help="A run id under --out-dir whose events are left out."
+    ),
+    run_id: str | None = typer.Option(None, "--run-id", help="Default: tags-YYYYMMDD-HHMM."),
+    processed_dir: Path | None = typer.Option(None, "--processed-dir", "-p"),
+    out_dir: Path | None = typer.Option(None, "--out-dir", "-o"),
+) -> None:
+    """Ablation (c): BM25 on the raw tag query (C0) vs on its Claude Haiku expansion (C1)."""
+    from shopsage_rec.llm.benchmark import run_tag_benchmark
+    from shopsage_rec.llm.expand import QueryExpander
+
+    processed, _ = _dirs(processed_dir, None)
+    root = _repo_root()
+    out = out_dir if out_dir is not None else root / "artifacts" / "llm"
+    expander = QueryExpander(cache_dir=root / "artifacts" / "llm" / "cache")
+    if expander.client is None:
+        typer.echo("ANTHROPIC_API_KEY is not set: every query falls back to the raw text", err=True)
+    exclude = None
+    if exclude_run:
+        import polars as pl
+
+        exclude = pl.read_parquet(out / exclude_run / "per_event.parquet").select("userId", "term")
+    result = run_tag_benchmark(
+        processed, out, expander, n_events=n_events, workers=workers, seed=seed, exclude=exclude,
+        run_id=run_id,
+    )  # fmt: skip
+    s = result.summary
+    for arm, m in s["arms"].items():
+        typer.echo(f"{arm}: " + ", ".join(f"{k} {v['mean']:.4f}" for k, v in m.items()))
+    for name, block in s["paired"].items():
+        for k, v in block.items():
+            typer.echo(f"{name} {k}: {v['mean']:+.4f} [{v['ci_low']:+.4f}, {v['ci_high']:+.4f}]")
+    typer.echo(json.dumps(s["subgroups"], indent=1))
+    typer.echo(json.dumps(s["llm"], indent=1))
     typer.echo(f"wrote {result.out_dir}")
 
 

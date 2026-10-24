@@ -3256,6 +3256,7 @@ demo = [
     { name = "streamlit" },
 ]
 dev = [
+    { name = "anthropic" },
     { name = "hypothesis" },
     { name = "ipykernel" },
     { name = "jupyter" },
@@ -3297,6 +3298,7 @@ train = [
 [package.metadata]
 requires-dist = [
     { name = "anthropic", marker = "extra == 'demo'", specifier = ">=1.0,<2" },
+    { name = "anthropic", marker = "extra == 'dev'", specifier = ">=1.0,<2" },
     { name = "anthropic", marker = "extra == 'llm'", specifier = ">=1.0,<2" },
     { name = "duckdb", specifier = ">=1.0" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.100" },

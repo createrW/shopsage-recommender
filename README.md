@@ -2,7 +2,7 @@
 
 Two-stage recommender on MovieLens-20M, built as a production-style offline pipeline. A PyTorch Two-Tower retriever and a BM25 retriever generate candidates, a LightGBM LambdaRank model re-ranks them, Milvus Lite serves both recall paths (dense, sparse and RRF hybrid search) in a CPU-only Streamlit demo, and Claude Haiku optionally expands free-text queries. Everything is measured under the strong-generalisation protocol of [Liang et al. (2018)](https://arxiv.org/abs/1802.05814) against MostPop and EASE, with bootstrap confidence intervals. MovieLens-20M stands in for implicit-feedback e-commerce logs, with a rating ≥ 4.0 as the positive event.
 
-**Status:** S1 done (2026-10-23): the Liang split, the evaluation code and the MostPop and EASE baselines, which reproduce their published numbers. S2–S4 done (2026-10-24): the Two-Tower, trained in one Modal sweep, beats EASE; BM25 and the RRF hybrid are measured; the Milvus Lite serving index returns exactly the offline results; the LightGBM re-ranker lifts the system to Recall@50 0.542 and NDCG@10 0.343 (+0.021 and +0.015 over EASE) at 8.6 ms p95 on a laptop CPU. Next: LLM query expansion (S5) and the demo (S6). Plan and progress: [docs/plan.md](docs/plan.md) ([中文](docs/plan.zh-CN.md)).
+**Status:** S1 done (2026-10-23): the Liang split, the evaluation code and the MostPop and EASE baselines, which reproduce their published numbers. S2–S4 done (2026-10-24): the Two-Tower, trained in one Modal sweep, beats EASE; BM25 and the RRF hybrid are measured; the Milvus Lite serving index returns exactly the offline results; the LightGBM re-ranker lifts the system to Recall@50 0.542 and NDCG@10 0.343 (+0.021 and +0.015 over EASE) at 8.6 ms p95 on a laptop CPU. Claude Haiku query expansion helps BM25 when routed to unknown tags (E010). Next: the demo (S6). Plan and progress: [docs/plan.md](docs/plan.md) ([中文](docs/plan.zh-CN.md)).
 
 [![CI](https://img.shields.io/github/actions/workflow/status/createrW/shopsage-recommender/ci.yml?branch=main&label=CI)](https://github.com/createrW/shopsage-recommender/actions/workflows/ci.yml)
 [![Python 3.11 | 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](pyproject.toml)
@@ -201,11 +201,13 @@ All under `Liang-SG-strict` on the 10,000 test users, with selection on V_A (hal
   - Against it: A3, which adds per-row negatives mined from ranks 101–500 of A1's model, 3 seeds each.
   - Context arms: A0 (no logQ), A2 (2,048 uniform sampled negatives, i.e. mixed negative sampling) and A4 (full softmax over 20,108 items).
 - **(b) Recall paths** (S3, E008). BM25 alone, the dense Two-Tower, and their RRF hybrid, next to MostPop and EASE. BM25 over item text barely beats popularity (0.253 vs 0.235 Recall@50), and fusing it at equal weight costs the dense path 0.072 (paired CI [−0.075, −0.069]). Text describes what a movie is, not who watches it. Milvus Lite returns exactly the offline answers on all three paths, and on the laptop exact numpy / scipy search is 16–40× faster.
-- **(c) LLM query expansion** (S5).
-  - Setup: tag-as-query known-item retrieval over ~1,000 (user, tag) events.
+- **(c) LLM query expansion** (S5, E010).
+  - Setup: tag-as-query known-item retrieval over 1,000 (user, tag) events of held-out users, whose tags never enter the item documents.
   - Arms: BM25 on the raw tag vs BM25 on Claude Haiku's expansion.
   - Measures: grounding rate, latency and cost per 1,000 queries.
   - Why: MovieLens has no queries, and an offline "CTR delta" cannot be measured.
+  - Result: expanding every query hurts, −0.031 [−0.057, −0.004] HR@50. When the tag is already a document term, extra terms dilute it. When the tag is unknown to the documents, expansion lifts HR@50 from 0.05 to about 0.25.
+  - Routing expansion to unknown tags only gives **+0.022 [+0.012, +0.032] HR@50 on 1,000 fresh events**, at $0.14 per 1,000 calls and 1.7 s p50 per call.
 
 ## Demo
 
@@ -252,7 +254,7 @@ The decision log (D-001 to D-014) is in [docs/experiment_log.md](docs/experiment
 - [x] S2: Two-Tower with in-batch, uniform and mined negatives; one Modal training sweep (E007)
 - [x] S3: BM25 path, Milvus Lite serving index, ablations (a) and (b) (E007, E008)
 - [x] S4: LightGBM re-ranker over both recall paths (E009)
-- [ ] S5: Claude Haiku query expansion, ablation (c)
+- [x] S5: Claude Haiku query expansion, ablation (c) (E010)
 - [ ] S6: the Streamlit demo on Community Cloud
 - [ ] S7: write-up and publish
 

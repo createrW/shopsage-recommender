@@ -35,7 +35,7 @@ from shopsage_rec.data.liang import LiangData
 from shopsage_rec.features.items import build_item_features
 from shopsage_rec.models.numpy_tower import user_vectors
 from shopsage_rec.ranking.candidates import union_candidates
-from shopsage_rec.retrieval.bm25 import BM25, build_item_documents, fit_bm25
+from shopsage_rec.retrieval.bm25 import BM25, E008_PARAMS, build_item_documents, fit_bm25
 
 FEATURES: tuple[str, ...] = (
     "dense_score",
@@ -51,7 +51,6 @@ FEATURES: tuple[str, ...] = (
     "year_gap",
     "log_hist_len",
 )
-BM25_PARAMS = (0.9, 0.4, "log")  # chosen on V_A in E008
 
 
 def prune_neighbours(weights: np.ndarray, k: int) -> sp.csc_matrix:
@@ -140,7 +139,7 @@ class RankerContext:
         with np.load(run / "user_tower.npz") as z:
             tower = {key: z[key] for key in z.files}
         docs = build_item_documents(processed_dir, data.meta["config"]["raw_dir"])
-        k1, b, query = BM25_PARAMS
+        k1, b, query = E008_PARAMS
         return cls(
             items=np.load(run / "item_embeddings.npy"),
             tower=tower,

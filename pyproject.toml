@@ -76,6 +76,7 @@ dev = [
   "pymilvus[milvus-lite]>=3.0",  # the deployment probe and the Milvus parity tests
   "milvus-lite>=3.2",
   "lightgbm>=4.3",  # the ranker tests (ranking/train.py)
+  "anthropic>=1.0,<2",  # the LLM tests (fake client; no network)
   "pytest>=8.0",
   "pytest-cov>=5.0",
   "hypothesis>=6.100",

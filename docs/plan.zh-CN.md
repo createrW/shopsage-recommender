@@ -2,7 +2,7 @@
 
 [English](plan.md) | **简体中文**
 
-**更新：** 2026-10-24，S4 完成后 · **进度：** S0–S4 已完成（E007 批量训练，E008 召回路径，E009 排序器）；下一步是 S5 · **代码：** `main` 上的 `a54bdbe`（S3），已 push 到 [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender)；S4 尚未提交 · **配套文档：** [memory.zh-CN.md](memory.zh-CN.md)（事实、规则、决策）
+**更新：** 2026-10-24，S5 完成后 · **进度：** S0–S5 已完成（E007 批量训练，E008 召回路径，E009 排序器，E010 LLM 扩展）；下一步是 S6（demo） · **代码：** `main` 上的 `2b05c58`（S4），已 push 到 [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender)；S5 尚未提交 · **配套文档：** [memory.zh-CN.md](memory.zh-CN.md)（事实、规则、决策）
 
 - **目标：** 在 MovieLens-20M 上做一个两阶段推荐系统（Two-Tower 稠密召回和 BM25 稀疏召回、LightGBM 重排、可选的 LLM 查询扩展、Milvus Lite 检索、Streamlit demo），所有对外报告的数字都来自实测。
 - **架构：** 离线部分，PyTorch 在云 GPU 上训练双塔，numpy 和 scipy 为评估计算精确候选，LightGBM 对两条召回路径的并集重排。在线部分，demo 只用 CPU：numpy 实现的用户塔、Milvus Lite（稠密、稀疏 BM25 和 RRF 混合检索）、LightGBM，以及用于查询扩展的 Claude Haiku。
@@ -23,11 +23,11 @@
 | 模型 | Two-Tower A0–A4 已在 Modal 上训练完（E007）：A1 Recall@50 0.5361、NDCG@10 0.3351，高于 EASE；消融 (a) 完成 | S4 对它的候选重排 |
 | 检索 | BM25 路径、RRF 融合、Milvus Lite 服务索引（真实数据上与离线结果完全一致）；消融 (b)（E008） | S6：在主机上选定在线检索引擎 |
 | 排序 | 在稠密 Top-500 ∪ BM25 Top-100 上做 LightGBM LambdaRank，12 个特征（含稀疏 EASE）；3 个种子（E009） | S6 放进 demo |
-| LLM | 设计 | S5：Claude Haiku 扩展，消融 (c) |
+| LLM | Claude Haiku 扩展，带结构化输出、缓存和回退；消融 (c)：按路由扩展在新事件上 HR@50 +0.022（E010） | S6：demo 的自由文本框 |
 | Demo | 探测已部署到 Community Cloud：峰值 482 MB，混合检索 p95 176 ms（E005） | S6：完整 demo；已规划延迟兜底方案（§8） |
-| 仓库 | 141 个测试通过；lint、类型检查和 lock 都干净；S3 已上 GitHub | 提交并 push S4（由你来做，§7） |
+| 仓库 | 150 个测试通过；lint、类型检查和 lock 都干净；S4 已上 GitHub | 提交并 push S5（由你来做，§7） |
 
-目前的实测结果（`Liang-SG-strict`，10,000 个测试用户）：MostPop Recall@50 0.2352、NDCG@10 0.1275；EASE Recall@50 0.5210、NDCG@10 0.3280（E004）。Two-Tower A1，3 个种子（E007）：Recall@50 0.5361 ± 0.0005、NDCG@10 0.3351 ± 0.0005，Recall@50 比 EASE 高 +0.0151 [+0.0119, +0.0184]。困难负样本：A3 − A1 = −0.0020 [−0.0033, −0.0007]，+0.08 的目标没有达到；logQ 校正带来 +0.225（A1 − A0）。BM25 Recall@50 0.2529；RRF 混合 0.4647，比稠密低 −0.0715 [−0.0748, −0.0685]（E008）。**两阶段系统（LightGBM 排序器，E009）：Recall@50 0.5420 ± 0.0006、NDCG@10 0.3428**，比 EASE 高 +0.0209 / +0.0148；笔记本 CPU 上每个用户 p95 8.6 ms。
+目前的实测结果（`Liang-SG-strict`，10,000 个测试用户）：MostPop Recall@50 0.2352、NDCG@10 0.1275；EASE Recall@50 0.5210、NDCG@10 0.3280（E004）。Two-Tower A1，3 个种子（E007）：Recall@50 0.5361 ± 0.0005、NDCG@10 0.3351 ± 0.0005，Recall@50 比 EASE 高 +0.0151 [+0.0119, +0.0184]。困难负样本：A3 − A1 = −0.0020 [−0.0033, −0.0007]，+0.08 的目标没有达到；logQ 校正带来 +0.225（A1 − A0）。BM25 Recall@50 0.2529；RRF 混合 0.4647，比稠密低 −0.0715 [−0.0748, −0.0685]（E008）。**两阶段系统（LightGBM 排序器，E009）：Recall@50 0.5420 ± 0.0006、NDCG@10 0.3428**，比 EASE 高 +0.0209 / +0.0148；笔记本 CPU 上每个用户 p95 8.6 ms。BM25 标签查询的 LLM 扩展：总是扩展 HR@50 −0.031；只对未知标签扩展，在新事件上 +0.022 [+0.012, +0.032]（E010）。
 
 ## 2. 范围与目标（你 2026-10-23 的需求）
 
@@ -107,17 +107,18 @@
 - [x] `ranking/train.py`、`shopsage rank`：在 V_B 上训练 LambdaRank（4,500 个用户拟合，500 个用于按 NDCG@10 早停），3 个种子，分别带和不带 `ease_score`；重新计算 EASE 和稠密作参照；配对 Δ；特征重要性；逐用户的服务延迟（E009）。
 - **结果：** 系统 Recall@50 0.5420 ± 0.0006、NDCG@10 0.3428 ± 0.0000；比 EASE 高 +0.0209 [+0.0178, +0.0242] 和 +0.0148 [+0.0126, +0.0171]；比稠密排序高 +0.0057 和 +0.0074。去掉 EASE 后排序器只是复现稠密排序。服务路径在笔记本上 p95 8.6 ms。整次运行 134 s。
 
-### S5. LLM 查询扩展，消融 (c)（约 3 小时；笔记本和 Anthropic API）
+### S5. LLM 查询扩展，消融 (c) ✅（2026-10-24，笔记本和 Anthropic API，\$0.18）
 
-- [ ] `llm/expand.py`：`claude-haiku-5-5`，结构化输出（`titles`、`keywords`、`genres`），effort 设为 `low`，不传采样参数，用 sha256(model id + prompt + params) 作为缓存键。缺少 key、被拒绝、超时，或扩展结果对应不到任何物品时，退回原始查询；用假客户端测试。
-- [ ] 约 1,000 个 (user, tag) 查询的基准，相关物品是该用户打过这个标签的电影：C0 用原始标签做 BM25，C1 用扩展结果做 BM25（有时间再加 C2 混合）；成本取自 `usage`。记为 E010。
-- **完成标准：** 表 (c)；成本约 \$1。
+- [x] `llm/expand.py`：`claude-haiku-5-5`，结构化输出（`keywords`、`genres`、`titles`），effort `low`，不带采样参数，按 sha256 做磁盘缓存；缺 key、拒答、`max_tokens`、超时、API 错误或输出不合规时回退到原始查询；用假客户端测试。
+- [x] `llm/benchmark.py`、`shopsage tags`：1,000 个留出用户的标签事件（他们的标签不会进入物品文档）；C0 原始标签 vs C1 扩展（权重 0.5，运行前就定好）；C1r（路由）在第一次运行后加入，并在 1,000 个新事件上确认；按用户做 cluster bootstrap（E010）。C2 砍掉。
+- **结果：** C1 − C0 = −0.031 [−0.057, −0.004] HR@50（预先声明的比较）：文档里已有的标签再扩展会被稀释（−0.07），而对未知标签，扩展把 HR@50 从约 0.05 提到约 0.25。路由（C1r）− C0 在新事件上 = +0.022 [+0.012, +0.032]。每 1,000 次调用 \$0.14，p50 1.7 s，0 次回退。
 
 ### S6. Demo 与部署（约 5 小时；先在笔记本上，再到 Streamlit Community Cloud）
 
 - [ ] 落实 D-003：片名从哪里来，资源包里可以放什么。
 - [ ] 导出资源包（物品向量、`user_tower.npz`、稀疏 EASE、BM25 权重、LightGBM 模型、许可范围内的物品元数据）到 GitHub Release；把它的 tag 和 sha256 固定在 `configs/deploy/streamlit.yaml`。Milvus Lite collection 在启动时由资源包构建。
-- [ ] `serving/app.py`：选 5 部电影 → Top-10，带分数以及召回每个物品的路径；dense / BM25 / hybrid 开关；自由文本查询，带一个显示扩展结果的 LLM 开关；延迟读数和一个基准测试按钮。
+- [ ] 服务引擎按主机实测来定：numpy / scipy 精确检索（笔记本上整条路径 p95 8.6 ms，E009）vs Milvus Lite（笔记本上混合检索 p95 48.7 ms，E008）；无论选哪个，Milvus 都连同一致性检查一起展示。macOS 上先 import LightGBM 再 import pymilvus（memory.zh-CN.md §7）。
+- [ ] `serving/app.py`：选 5 部电影 → Top-10，带分数以及召回每个物品的路径；dense / BM25 / hybrid 开关；自由文本查询，带一个显示扩展结果的 LLM 开关（只扩展不在词表里的查询，E010；没有 key 时用缓存的扩展）；延迟读数和一个基准测试按钮。
 - [ ] 部署到 `yi-shopsage.streamlit.app`；内存在 690 MB 以内；主机上 p95 ≤ 200 ms；录制 GIF。记为 E011。
 - **完成标准：** 在线地址可用；§2 的延迟一行已填上。
 
@@ -244,15 +245,17 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 - [x] 在 Modal 上运行 S2 批量训练（2026-10-24；E007）。注意：入口程序会先在本地写 `artifacts/runs/sweep_summary.json`，`modal volume get` 不肯覆盖它；改为下载到一个空目录。
 - [x] 提交并 push S3（`a54bdbe`，2026-10-24）。
 - [x] `brew install libomp`（2026-10-24）。
-- [ ] 提交并 push S4：
+- [x] 提交并 push S4（`2b05c58`，2026-10-24）。
+- [x] Anthropic API key 已加进 `~/.zshrc`（2026-10-24）；S5 花费 \$0.18。
+- [ ] 提交并 push S5：
 
   ```bash
   git add -A
-  git commit -m "S4: LightGBM LambdaRank re-ranker over dense + BM25 candidates (E009)"
+  git commit -m "S5: Claude Haiku query expansion, routed to unknown tags (E010)"
   git push
   ```
 
-- [ ] S5 需要：一个设置了月度消费上限的 Anthropic API key（console.anthropic.com → Settings → Limits，例如 \$5），以 `export ANTHROPIC_API_KEY=sk-ant-...` 的形式加进 `~/.zshrc`（我的 shell 读取你的 profile；只在你自己终端里 export 的变量传不到我这边；不要提交 key）。预计花费约 \$1。
+- [ ] 如果 GroupLens 还没答复，为 S6 决定 D-003（见下）：demo 需要一个由数据派生的资源包。
 
 - [ ] 就 D-003 给 GroupLens 发邮件（回复可能要等一段时间）。邮件是写给 GroupLens 的，所以保留英文：
 

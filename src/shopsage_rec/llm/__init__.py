@@ -1,1 +1,1 @@
-"""Optional LLM expansion of a text query, grounded through BM25 (Day 8, D-010 / D-012)."""
+"""Claude Haiku query expansion for the BM25 path (S5, D-010): ``expand`` and its benchmark."""

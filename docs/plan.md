@@ -2,7 +2,7 @@
 
 **English** | [简体中文](plan.zh-CN.md)
 
-**Updated:** 2026-10-24, after S4 · **Progress:** S0–S4 done (E007 sweep, E008 recall paths, E009 ranker); S5 is next · **Code:** `a54bdbe` (S3) on `main`, pushed to [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender); S4 is uncommitted · **Companion:** [memory.md](memory.md) (facts, rules, decisions)
+**Updated:** 2026-10-24, after S5 · **Progress:** S0–S5 done (E007 sweep, E008 recall paths, E009 ranker, E010 LLM expansion); S6 (demo) is next · **Code:** `2b05c58` (S4) on `main`, pushed to [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender); S5 is uncommitted · **Companion:** [memory.md](memory.md) (facts, rules, decisions)
 
 - **Goal:** a two-stage recommender on MovieLens-20M (Two-Tower dense recall and BM25 sparse recall, a LightGBM re-ranker, optional LLM query expansion, Milvus Lite retrieval, a Streamlit demo) with every reported number measured.
 - **Architecture:** offline, PyTorch trains the towers on a cloud GPU, numpy and scipy compute exact candidates for evaluation, and LightGBM re-ranks the union of both recall paths. Online, the demo runs on CPU: a numpy user tower, Milvus Lite (dense, sparse BM25 and RRF hybrid search), LightGBM, and Claude Haiku for query expansion.
@@ -23,11 +23,11 @@ Cloud deployment follows the owner's hosting plan, `cloud_hosting_plan_2026-10-1
 | Models | Two-Tower A0–A4 trained on Modal (E007): A1 Recall@50 0.5361, NDCG@10 0.3351, above EASE; ablation (a) done | S4 re-ranks its candidates |
 | Retrieval | BM25 path, RRF fusion, Milvus Lite serving index with exact parity on real data; ablation (b) (E008) | S6: choose the online engine on the host |
 | Ranking | LightGBM LambdaRank over dense top-500 ∪ BM25 top-100, 12 features with sparse EASE; 3 seeds (E009) | S6 ships it in the demo |
-| LLM | design | S5: Claude Haiku expansion, ablation (c) |
+| LLM | Claude Haiku expansion with structured output, cache and fallbacks; ablation (c): routed expansion +0.022 HR@50 on fresh events (E010) | S6: the demo's free-text box |
 | Demo | the probe deployed on Community Cloud: 482 MB peak, hybrid p95 176 ms (E005) | S6: full demo; latency fallback planned (§8) |
-| Repository | 141 tests green; lint, types and lock clean; S3 on GitHub | commit and push S4 (you, §7) |
+| Repository | 150 tests green; lint, types and lock clean; S4 on GitHub | commit and push S5 (you, §7) |
 
-Measured so far, `Liang-SG-strict`, 10,000 test users: MostPop Recall@50 0.2352, NDCG@10 0.1275; EASE Recall@50 0.5210, NDCG@10 0.3280 (E004). Two-Tower A1, 3 seeds (E007): Recall@50 0.5361 ± 0.0005, NDCG@10 0.3351 ± 0.0005, +0.0151 [+0.0119, +0.0184] Recall@50 over EASE. Hard negatives: A3 − A1 = −0.0020 [−0.0033, −0.0007], so the +0.08 target is not met; the logQ correction is worth +0.225 (A1 − A0). BM25 Recall@50 0.2529; RRF hybrid 0.4647, −0.0715 [−0.0748, −0.0685] against dense (E008). **Two-stage system (LightGBM ranker, E009): Recall@50 0.5420 ± 0.0006, NDCG@10 0.3428**, +0.0209 / +0.0148 over EASE; 8.6 ms p95 per user on the laptop CPU.
+Measured so far, `Liang-SG-strict`, 10,000 test users: MostPop Recall@50 0.2352, NDCG@10 0.1275; EASE Recall@50 0.5210, NDCG@10 0.3280 (E004). Two-Tower A1, 3 seeds (E007): Recall@50 0.5361 ± 0.0005, NDCG@10 0.3351 ± 0.0005, +0.0151 [+0.0119, +0.0184] Recall@50 over EASE. Hard negatives: A3 − A1 = −0.0020 [−0.0033, −0.0007], so the +0.08 target is not met; the logQ correction is worth +0.225 (A1 − A0). BM25 Recall@50 0.2529; RRF hybrid 0.4647, −0.0715 [−0.0748, −0.0685] against dense (E008). **Two-stage system (LightGBM ranker, E009): Recall@50 0.5420 ± 0.0006, NDCG@10 0.3428**, +0.0209 / +0.0148 over EASE; 8.6 ms p95 per user on the laptop CPU. LLM expansion for BM25 tag queries: always-on −0.031 HR@50; routed to unknown tags +0.022 [+0.012, +0.032] on fresh events (E010).
 
 ## 2. Scope and targets (owner's spec, 2026-10-23)
 
@@ -107,17 +107,18 @@ Scaffold, Polars pipeline, md5-checked download, leave-one-out split, EDA notebo
 - [x] `ranking/train.py`, `shopsage rank`: LambdaRank on V_B (4,500 users to fit, 500 for early stopping on NDCG@10), 3 seeds, with and without `ease_score`; EASE and dense recomputed as references; paired deltas; feature importance; serving latency per user (E009).
 - **Results:** system Recall@50 0.5420 ± 0.0006, NDCG@10 0.3428 ± 0.0000; +0.0209 [+0.0178, +0.0242] and +0.0148 [+0.0126, +0.0171] over EASE; +0.0057 and +0.0074 over the dense order. Without EASE the ranker only reproduces the dense order. Serving path 8.6 ms p95 on the laptop. 134 s for the whole run.
 
-### S5. LLM query expansion, ablation (c) (~3 h; laptop and the Anthropic API)
+### S5. LLM query expansion, ablation (c) ✅ (2026-10-24, laptop and the Anthropic API, \$0.18)
 
-- [ ] `llm/expand.py`: `claude-haiku-5-5` with structured output (`titles`, `keywords`, `genres`), effort `low`, no sampling parameters, and a cache keyed by sha256(model id + prompt + params). It falls back to the raw query on a missing key, a refusal, a timeout or an expansion that grounds to nothing; tested with a fake client.
-- [ ] A benchmark of ~1,000 (user, tag) queries, where the relevant items are the movies that user tagged with that tag: C0 BM25 on the raw tag vs C1 BM25 on the expansion (C2 hybrid if time allows); cost from `usage`. Log E010.
-- **Exit:** table (c); cost ≈ \$1.
+- [x] `llm/expand.py`: `claude-haiku-5-5`, structured output (`keywords`, `genres`, `titles`), effort `low`, no sampling parameters, a sha256-keyed disk cache, and the raw query as fallback on a missing key, a refusal, `max_tokens`, a timeout, an API error or invalid output; tested with a fake client.
+- [x] `llm/benchmark.py`, `shopsage tags`: 1,000 tag events of held-out users (their tags never enter the documents); C0 raw tag vs C1 expansion (weight 0.5, fixed before the run); C1r (routed) added after the first run and confirmed on 1,000 fresh events; cluster bootstrap over users (E010). C2 cut.
+- **Results:** C1 − C0 = −0.031 [−0.057, −0.004] HR@50 (pre-declared): expanding a tag the documents already know dilutes it (−0.07), while for unknown tags expansion lifts HR@50 from ~0.05 to ~0.25. Routed (C1r) − C0 = +0.022 [+0.012, +0.032] on fresh events. \$0.14 per 1,000 calls, 1.7 s p50, 0 fallbacks.
 
 ### S6. Demo and deployment (~5 h; laptop, then Streamlit Community Cloud)
 
 - [ ] Apply D-003: where the titles come from, and what the bundle may contain.
 - [ ] Export the bundle (item embeddings, `user_tower.npz`, sparse EASE, BM25 weights, the LightGBM model, item metadata as permitted) to a GitHub Release; pin its tag and sha256 in `configs/deploy/streamlit.yaml`. The Milvus Lite collection is built at startup from the bundle.
-- [ ] `serving/app.py`: pick 5 movies → Top-10 with scores and the path that retrieved each item; a dense / BM25 / hybrid toggle; a free-text query with an LLM toggle that shows the expansion; a latency readout and a benchmark button.
+- [ ] `serving/app.py`: pick 5 movies → Top-10 with scores and the path that retrieved each item; a dense / BM25 / hybrid toggle; a free-text query with an LLM toggle that shows the expansion, expanding only queries that are not vocabulary terms (E010) and serving cached expansions without a key; a latency readout and a benchmark button.
+- [ ] Serving engine from host measurements: exact numpy / scipy (8.6 ms p95 for the whole path on the laptop, E009) vs Milvus Lite (hybrid p95 48.7 ms on the laptop, E008); Milvus shown with its parity check either way. Import LightGBM before pymilvus on macOS (memory.md §7).
 - [ ] Deploy at `yi-shopsage.streamlit.app`; memory within 690 MB; p95 ≤ 200 ms on the host; record the GIF. Log E011.
 - **Exit:** live URL; the latency row of §2 filled.
 
@@ -244,15 +245,17 @@ Vendor figures were re-checked on the dates shown; the platform choices are the 
 - [x] Run the S2 sweep on Modal (2026-10-24; E007). Note: `modal volume get` refuses to overwrite `artifacts/runs/sweep_summary.json`, which the entrypoint already writes locally; download into an empty directory instead.
 - [x] Commit and push S3 (`a54bdbe`, 2026-10-24).
 - [x] `brew install libomp` (2026-10-24).
-- [ ] Commit and push S4:
+- [x] Commit and push S4 (`2b05c58`, 2026-10-24).
+- [x] An Anthropic API key in `~/.zshrc` (2026-10-24); S5 spent \$0.18.
+- [ ] Commit and push S5:
 
   ```bash
   git add -A
-  git commit -m "S4: LightGBM LambdaRank re-ranker over dense + BM25 candidates (E009)"
+  git commit -m "S5: Claude Haiku query expansion, routed to unknown tags (E010)"
   git push
   ```
 
-- [ ] For S5: an Anthropic API key with a monthly spend limit (console.anthropic.com → Settings → Limits, e.g. \$5), added to `~/.zshrc` as `export ANTHROPIC_API_KEY=sk-ant-...` (my shell reads your profile; a variable exported only in your own terminal does not reach it; never commit the key). Expected cost ≈ \$1.
+- [ ] Decide D-003 for S6 (below) if GroupLens has not answered: the demo needs a bundle derived from the data.
 
 - [ ] Email GroupLens about D-003 (an answer can take time):
 

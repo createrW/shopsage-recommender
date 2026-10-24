@@ -111,7 +111,7 @@ Revised on 2026-10-23 by the efficiency-first re-plan, which followed the owner'
 | D-007 | Metrics and CIs | DECIDED (Day 1; revised 2026-10-23) | — | Headline truncated Recall@50 and NDCG@10, plus Recall@20, NDCG@100 and HR@50, over the 10,000 test users (all have targets, E004). Percentile bootstrap over users, 2,000 resamples, seed 42, chunks of 100 (`evaluation/bootstrap.py`), paired between arms; the Recall@50 half-width is ~±0.005 at 10,000 users (E004). 3 seeds for each claimed comparison, 1 for context arms, labelled. Revised 2026-10-23: Liang protocol, efficiency first. |
 | D-008 | Retrieval engine | DECIDED (Day 1; revised 2026-10-23) | — | Offline: exact top-k with fold-in items set to −inf before the cut, ties to the lower item index (`evaluation/metrics.py`). Serving: Milvus Lite (FLAT index; dense vectors, sparse BM25 vectors and RRF hybrid search), flushed after loading, parity-tested against the exact path (S3). FAISS as a direct dependency and the ANN study are dropped: Milvus Lite 3.x is FLAT-only and runs faiss-cpu internally. Revised 2026-10-23: Milvus is in the updated scope; the S1 probe measured dense and hybrid p95 of 18 and 34 ms at 20,108 items on the laptop (E004). Note 2026-10-24 (E008): on real data Milvus Lite returns exactly the offline answers on all three paths (1,000 users), but exact numpy / scipy search is 16–40× faster on the laptop (hybrid p95 1.5 vs 48.7 ms); the demo's online path is chosen in S6 from host measurements, Milvus kept at least as the shown, parity-checked engine. |
 | D-009 | Baselines | DECIDED (Day 1; revised 2026-10-23) | — | MostPop (popularity over training users) and EASE (λ chosen on V_A) in every table; ItemKNN cut. EASE at 20,108 items: Gram and weight matrices 1.6 GB each in float32; the λ grid ran at 3.5 GB peak RSS on the laptop (E004). Revised 2026-10-23: the Liang protocol replaces as-of popularity. |
-| D-010 | BM25 and LLM evaluation | DECIDED (Day 1; revised 2026-10-23) | — | BM25 item documents: title, genres, top genome tags and tags from training users only; the user query is the fold-in items' terms; scipy.sparse BM25 offline, the same weights as Milvus sparse vectors online; no Elasticsearch. Hybrid: RRF (k = 60). LLM: `claude-haiku-5-5`, structured output, effort `low`, no sampling parameters, responses cached by sha256(model id + prompt + params). Ablation (c): ~1,000 tag-as-query events, C0 BM25 on the raw tag vs C1 on the expansion (C2 hybrid if time). Cut: vLLM / Qwen, GPT-4o-mini, the convex-mix hybrid. Revised 2026-10-23: efficiency first. |
+| D-010 | BM25 and LLM evaluation | DECIDED (Day 1; revised 2026-10-23) | — | BM25 item documents: title, genres, top genome tags and tags from training users only; the user query is the fold-in items' terms; scipy.sparse BM25 offline, the same weights as Milvus sparse vectors online; no Elasticsearch. Hybrid: RRF (k = 60). LLM: `claude-haiku-5-5`, structured output, effort `low`, no sampling parameters, responses cached by sha256(model id + prompt + params). Ablation (c): ~1,000 tag-as-query events, C0 BM25 on the raw tag vs C1 on the expansion (C2 hybrid if time). Cut: vLLM / Qwen, GPT-4o-mini, the convex-mix hybrid. Revised 2026-10-23: efficiency first. Note 2026-10-24 (E010): always expanding hurts (−0.031 HR@50); expansion is routed to tags that are not vocabulary terms (C1r, +0.022 [+0.012, +0.032] on fresh events), the rule the demo uses; C2 cut. |
 | D-011 | Timestamps | NOT APPLICABLE (2026-10-23) | — | The session-timestamp findings (51.6% of users rated their whole positive history within an hour; 24.2% have a tie at a split boundary) concern the Day-1 leave-one-out split, which is no longer evaluated. The Liang split is a random holdout and ignores time, a stated limitation. |
 | D-012 | Schedule | REPLACED (2026-10-23) | — | Replaced by steps S1–S7 in docs/plan.md §4. |
 | D-013 | Latency target | DECIDED (2026-10-23) | — | ≤ 200 ms p95 for retrieval (dense + BM25) plus LightGBM re-ranking to 10, measured on the demo host; the LLM path is reported separately. |
@@ -160,9 +160,12 @@ Tag-as-query known-item retrieval: ~1,000 (user, tag) events, relevant = the mov
 
 | Arm | Query path | HR@10 | HR@50 | Δ HR@50 vs C0 [95% CI] | Grounding rate | Latency p50 / p95 | Cost per 1K queries |
 |---|---|---|---|---|---|---|---|
-| C0 (ref) | BM25 on the raw tag | pending | pending | — | — | pending | — |
-| C1 | BM25 on the `claude-haiku-5-5` expansion | pending | pending | pending | pending | pending | pending |
-| C2 (if time) | hybrid of C1 and the dense path | pending | pending | pending | pending | pending | pending |
+| C0 (ref) | BM25 on the raw tag | 0.2984 / 0.3552 | 0.5312 / 0.5817 | — | — | — | — |
+| C1 | BM25 on the `claude-haiku-5-5` expansion | 0.2936 / 0.3325 | 0.5000 / 0.5413 | −0.0312 [−0.0568, −0.0040] / −0.0405 [−0.0688, −0.0121] | 97.8% / 99.0% | 1,651 / 2,436 ms | \$0.139 |
+| C1r (added) | C1 only when the tag is not a vocabulary term, else C0 | 0.3256 / 0.3714 | 0.5632 / 0.6036 | +0.0320 [+0.0200, +0.0448] / **+0.0218 [+0.0121, +0.0316]** | — | as C1 for the 13–15% expanded | — |
+| C2 (cut) | hybrid of C1 and the dense path | — | — | — | — | — | — |
+
+Cells: `tags-e010` / `tags-e010b` (fresh events), E010.
 
 ## Entries
 
@@ -636,3 +639,54 @@ Per seed, ranker: Recall@50 0.5413 / 0.5420 / 0.5426, NDCG@10 0.34284 / 0.34281 
 - The ranker's gain comes from adding EASE's item-item signal to the dense order. Without `ease_score`, LightGBM stops within 14–43 rounds and only reproduces the dense ranking (Recall@50 Δ −0.0007), so the content features (BM25, genome, genres, year) add nothing measurable on their own.
 - The candidate set caps the system: 16% of test targets are never retrieved, which bounds what any re-ranker can recover.
 - The sparse EASE (100 neighbours per item, about 2M weights) is small enough for the demo bundle, unlike the dense 20,108² matrix.
+
+### E010 — 2026-10-24 — S5: Claude Haiku query expansion for BM25 (ablation (c))
+
+Status: **recorded.** `uv run shopsage tags --run-id tags-e010` (the pre-declared comparison), then `uv run shopsage tags --seed 1 --exclude-run tags-e010 --run-id tags-e010b`, a confirmation on fresh events.
+
+| Field | Value |
+|---|---|
+| Run id / W&B | `tags-e010`, `tags-e010b` / n/a |
+| Code | working tree on top of `2b05c58` (S5 not yet committed); `shopsage_rec` 0.1.0; anthropic 1.15.0 |
+| Model / request | `claude-haiku-5-5`, `messages.create` with `output_config.format` (JSON schema: `keywords`, `genres` from the 19 MovieLens genres, `titles`), effort `low`, `max_tokens` 2,048, no sampling parameters; system prompt in `llm/expand.py`; responses cached by sha256 of the request (`artifacts/llm/cache/`, 1,266 entries) |
+| Data | split_sha256 `4f93a0e6f611`; BM25 over the E008 documents (training users' tags only) and settings |
+| Events | tag applications by held-out (validation + test) users, ≤ 2 per user, the query = the tag text, relevant = the catalogue movies that user tagged with it; `tags-e010`: 1,000 events, 625 users, 730 distinct queries, 1.41 relevant movies per event; `tags-e010b`: 1,000 other events (seed 1, the first run's (user, tag) pairs excluded), 618 users, 731 queries, 1.36 relevant |
+| Arms | C0: BM25 on the raw query's terms (words, the whole tag, a genre; weight 1); C1: C0 + the expansion's grounded terms at weight 0.5 (fixed before the run); C1r (added after `tags-e010`): C1 when the whole tag is not a vocabulary term, else C0. C2 (hybrid with the dense path) cut (cut order, plan.md §8) |
+| Metrics / CIs | HR@10, HR@50, Recall@50 over the full catalogue; events averaged per user, users bootstrapped (2,000 resamples, seed 42), paired between arms |
+| Cost / latency | all live calls together (a 20-event smoke, `tags-e010`, `tags-e010b`): **\$0.18**. First `tags-e010` run: 710 live calls (20 from the smoke cache), 440,543 input + 109,549 output tokens, \$0.0988, \$0.139 per 1,000 calls, latency p50 / p95 1,651 / 2,436 ms; `tags-e010b`: 536 live calls (195 queries already cached), \$0.0756, 1,700 / 2,733 ms. 0 fallbacks (no refusal, timeout or invalid output). The console output of the first `tags-e010` run is the source of its call statistics: `summary.json` was rewritten by the cached rerun that added C1r, and its C0 / C1 numbers are identical |
+
+**Results** (mean [95% CI over users]).
+
+| Run | Arm | HR@10 | HR@50 | Recall@50 |
+|---|---|---|---|---|
+| `tags-e010` | C0, raw tag | 0.2984 [0.2680, 0.3288] | 0.5312 [0.4960, 0.5648] | 0.5084 |
+| | C1, + expansion | 0.2936 [0.2632, 0.3248] | 0.5000 [0.4664, 0.5344] | 0.4753 |
+| | C1r, routed | 0.3256 [0.2960, 0.3576] | 0.5632 [0.5304, 0.5960] | 0.5389 |
+| `tags-e010b` (fresh events) | C0 | 0.3552 [0.3228, 0.3875] | 0.5817 [0.5469, 0.6157] | 0.5609 |
+| | C1 | 0.3325 [0.3018, 0.3641] | 0.5413 [0.5073, 0.5744] | 0.5135 |
+| | **C1r** | **0.3714** [0.3382, 0.4037] | **0.6036** [0.5696, 0.6367] | 0.5822 |
+
+**Paired Δ:**
+
+| Comparison | Run | Δ HR@10 [95% CI] | Δ HR@50 [95% CI] |
+|---|---|---|---|
+| **C1 − C0 (pre-declared)** | `tags-e010` | −0.0048 [−0.0304, +0.0240] | **−0.0312 [−0.0568, −0.0040]** |
+| C1 − C0 | `tags-e010b` | −0.0227 [−0.0518, +0.0065] | −0.0405 [−0.0688, −0.0121] |
+| C1r − C0 (exploratory, defined after `tags-e010`) | `tags-e010` | +0.0272 [+0.0168, +0.0392] | +0.0320 [+0.0200, +0.0448] |
+| **C1r − C0 (confirmation on fresh events)** | `tags-e010b` | **+0.0162 [+0.0081, +0.0251]** | **+0.0218 [+0.0121, +0.0316]** |
+
+**By whether the tag is already a term of the item documents** (C1 − C0, Δ HR@50 [95% CI]):
+
+| Subgroup | `tags-e010` | `tags-e010b` |
+|---|---|---|
+| tag in the vocabulary (85% / 87% of events; C0 HR@50 0.638 / 0.670) | −0.0757 [−0.1045, −0.0477] | −0.0713 [−0.1009, −0.0426] |
+| tag not in the vocabulary (15% / 13%; C0 HR@50 0.054 / 0.047) | **+0.2171 [+0.1512, +0.2907]** | **+0.1595 [+0.0991, +0.2241]** |
+
+**Grounding:** 97.8% / 99.0% of events had at least one grounded expansion term; per field, 86% of keywords, 100% of genres (the schema restricts them) and 70–71% of titles matched (MovieLens spells some titles differently, e.g. "Raiders of the Lost Ark (Indiana Jones and the…)").
+
+**Observations:**
+- Expanding every query hurts BM25 (−0.031 HR@50, pre-declared). When the tag is already a term that training users attached to the relevant movies, the original term is the best evidence, and extra terms only dilute it.
+- When the tag is unknown to the documents, the raw query has almost nothing to match (HR@50 ≈ 0.05), and the expansion's synonyms, genres and titles lift HR@50 by 0.16–0.22.
+- Routing expansion to unknown tags only (C1r) keeps the gains and avoids the losses. On fresh events it improves HR@50 by +0.022 [+0.012, +0.032] over the raw query and by +0.062 over always expanding. The demo uses this rule (S6).
+- The two event samples are disjoint, but some users appear in both.
+- The model's world knowledge of famous films is part of what is measured: titles are a deliberate expansion field.

@@ -30,6 +30,7 @@ import scipy.sparse as sp
 
 QueryMode = Literal["binary", "count", "log"]
 QUERY_MODES: tuple[str, ...] = ("binary", "count", "log")
+E008_PARAMS = (0.9, 0.4, "log")  # k1, b, query weighting chosen on V_A in E008
 STOPWORDS = frozenset(
     [
         "a",
@@ -89,22 +90,22 @@ STOPWORDS = frozenset(
         "your",
     ]
 )
-_TOKEN = re.compile(r"[a-z0-9]+")
+TOKEN = re.compile(r"[a-z0-9]+")
 _SPACES = re.compile(r"\s+")
 
 
-def _fold(text: str) -> str:
+def fold_text(text: str) -> str:
     return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
 
 
 def title_terms(title: str | None) -> list[str]:
     """``w:`` terms of a title, in order, stopwords dropped."""
-    return [f"w:{tok}" for tok in _TOKEN.findall(_fold(title or "")) if tok not in STOPWORDS]
+    return [f"w:{tok}" for tok in TOKEN.findall(fold_text(title or "")) if tok not in STOPWORDS]
 
 
 def normalize_tag(tag: str) -> str:
     """The ``t:`` term of a free-text or genome tag: lower-cased, whitespace collapsed."""
-    return "t:" + _SPACES.sub(" ", _fold(tag)).strip()
+    return "t:" + _SPACES.sub(" ", fold_text(tag)).strip()
 
 
 @dataclass(frozen=True)
