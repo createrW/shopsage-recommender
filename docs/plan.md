@@ -2,7 +2,7 @@
 
 **English** | [简体中文](plan.zh-CN.md)
 
-**Updated:** 2026-10-24, after the S2 sweep · **Progress:** S0, S1 and S2 done (sweep logged as E007); S3 is next · **Code:** `05f74c4` pushed to [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender); S2 committed locally as `fefcf6c` (not pushed); the summary fix and the E007 docs are uncommitted · **Companion:** [memory.md](memory.md) (facts, rules, decisions)
+**Updated:** 2026-10-24, after S3 · **Progress:** S0–S3 done (E007 sweep, E008 recall paths); S4 is next · **Code:** `c26417e` (S2 with its results) on `main`, pushed to [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender); S3 is uncommitted · **Companion:** [memory.md](memory.md) (facts, rules, decisions)
 
 - **Goal:** a two-stage recommender on MovieLens-20M (Two-Tower dense recall and BM25 sparse recall, a LightGBM re-ranker, optional LLM query expansion, Milvus Lite retrieval, a Streamlit demo) with every reported number measured.
 - **Architecture:** offline, PyTorch trains the towers on a cloud GPU, numpy and scipy compute exact candidates for evaluation, and LightGBM re-ranks the union of both recall paths. Online, the demo runs on CPU: a numpy user tower, Milvus Lite (dense, sparse BM25 and RRF hybrid search), LightGBM, and Claude Haiku for query expansion.
@@ -21,13 +21,13 @@ Cloud deployment follows the owner's hosting plan, `cloud_hosting_plan_2026-10-1
 | Evaluation | masked full-corpus top-k, truncated Recall / NDCG / HR, percentile and paired bootstrap; `shopsage evaluate` | S2: the same code scores the Two-Tower |
 | Baselines | MostPop and EASE, calibrated against their published figures (E004) | — |
 | Models | Two-Tower A0–A4 trained on Modal (E007): A1 Recall@50 0.5361, NDCG@10 0.3351, above EASE; ablation (a) done | S4 re-ranks its candidates |
-| Retrieval | Milvus Lite probe: dense, sparse and hybrid search measured on the laptop (E004) | S3: BM25 path, Milvus serving index, ablations (a) and (b) |
+| Retrieval | BM25 path, RRF fusion, Milvus Lite serving index with exact parity on real data; ablation (b) (E008) | S6: choose the online engine on the host |
 | Ranking | — | S4: LightGBM over both recall paths |
 | LLM | design | S5: Claude Haiku expansion, ablation (c) |
 | Demo | the probe deployed on Community Cloud: 482 MB peak, hybrid p95 176 ms (E005) | S6: full demo; latency fallback planned (§8) |
 | Repository | 122 tests green; lint, types and lock clean; S1 on GitHub, CI green | commit and push S2 (you, §7) |
 
-Measured so far, `Liang-SG-strict`, 10,000 test users: MostPop Recall@50 0.2352, NDCG@10 0.1275; EASE Recall@50 0.5210, NDCG@10 0.3280 (E004). Two-Tower A1, 3 seeds (E007): Recall@50 0.5361 ± 0.0005, NDCG@10 0.3351 ± 0.0005, +0.0151 [+0.0119, +0.0184] Recall@50 over EASE. Hard negatives: A3 − A1 = −0.0020 [−0.0033, −0.0007], so the +0.08 target is not met; the logQ correction is worth +0.225 (A1 − A0).
+Measured so far, `Liang-SG-strict`, 10,000 test users: MostPop Recall@50 0.2352, NDCG@10 0.1275; EASE Recall@50 0.5210, NDCG@10 0.3280 (E004). Two-Tower A1, 3 seeds (E007): Recall@50 0.5361 ± 0.0005, NDCG@10 0.3351 ± 0.0005, +0.0151 [+0.0119, +0.0184] Recall@50 over EASE. Hard negatives: A3 − A1 = −0.0020 [−0.0033, −0.0007], so the +0.08 target is not met; the logQ correction is worth +0.225 (A1 − A0). BM25 Recall@50 0.2529; RRF hybrid 0.4647, −0.0715 [−0.0748, −0.0685] against dense (E008).
 
 ## 2. Scope and targets (owner's spec, 2026-10-23)
 
@@ -92,27 +92,27 @@ Scaffold, Polars pipeline, md5-checked download, leave-one-out split, EDA notebo
 - [x] MPS smoke runs (A1, A2, A4 at 10% of users) and a 3-epoch full-data A1 check (E006).
 - [x] Sweep on Modal (you, 2026-10-24): 13 runs, 2.5 A10-hours ≈ \$2.75; copied back to `artifacts/runs/`; logged as E007 with ablation (a) and paired deltas.
 
-### S3. BM25, Milvus serving index, ablations (a) and (b) (~4 h; laptop; can overlap your sweep)
+### S3. BM25, Milvus serving index, ablation (b) ✅ (2026-10-24, laptop)
 
-- [ ] `retrieval/bm25.py`: item documents (title, genres, top genome tags, and tags from training users only); BM25 weights as a scipy.sparse matrix; the user query is the fold-in items' terms.
-- [ ] `retrieval/milvus_store.py`: one collection with dense and sparse vector fields, flushed after loading; `search_dense`, `search_sparse` and `search_hybrid` (RRF, k = 60); over-fetch by the history size, then drop seen items. Parity tests against the numpy and scipy top-k.
-- [ ] `retrieval/fusion.py`: RRF for offline evaluation.
-- [ ] Table (b): MostPop, EASE, BM25, dense (A1-s42), hybrid. Log E008. (Table (a) is done: E007.)
-- **Exit:** tables (a) and (b) in experiment_log.md; parity tests green.
+- [x] `retrieval/bm25.py`: item documents (title words, genres, genome top-20 tags, training users' tags; terms in one document dropped); BM25 weights in scipy.sparse; the query counts the fold-in items containing each term (`log1p`); k1, b and the query weighting chosen on V_A.
+- [x] `retrieval/milvus_store.py`: one collection (dense FLAT + sparse inverted index), flushed; `search_dense`, `search_sparse`, `search_hybrid` (RRF, k = 60). Seen items are removed by a filter inside the search, so results equal the offline paths exactly (simpler than over-fetching).
+- [x] `retrieval/fusion.py`: RRF for offline evaluation, Milvus's formula (ranks from 1).
+- [x] `retrieval/evaluate.py`, `shopsage recall`: table (b) with paired deltas, candidate coverage for S4, Milvus parity and latency next to exact numpy / scipy (E008).
+- **Results:** BM25 0.2529, dense 0.5361, hybrid 0.4647 Recall@50; Milvus identical to offline on 1,000 users; exact search 16–40× faster than Milvus Lite on the laptop. Dense top-500 covers 89.5% of the targets, + BM25 top-100 89.7%.
 
 ### S4. LightGBM ranker (~4 h; laptop CPU)
 
 - [ ] `brew install libomp` first.
-- [ ] `ranking/candidates.py`: dense Top-500 ∪ BM25 Top-100 for V_B and test users.
+- [ ] `ranking/candidates.py`: dense Top-500 ∪ BM25 Top-100 for V_B and test users (coverage 0.897 of the targets on test, E008: the ceiling for the system's recall).
 - [ ] `ranking/features.py`: dense score and rank, BM25 score and rank, a sparse-EASE score (top-100 neighbours per item), item popularity and mean rating over training users, genre affinity, genome similarity to the history centroid, year gap, log history length. Canary test: changing a user's targets changes no feature.
 - [ ] `ranking/train.py`: LambdaRank on NDCG@10; 10% of V_B for early stopping; 3 seeds; with and without the EASE feature.
-- [ ] Test metrics: NDCG@10, system Recall@50 and HR@50, each paired against EASE and against the dense path; offline CPU latency p50/p95 of the full serving path. Log E007.
+- [ ] Test metrics: NDCG@10, system Recall@50 and HR@50, each paired against EASE and against the dense path; offline CPU latency p50/p95 of the full serving path. Log E009.
 - **Exit:** every row of the targets table in §2 can be filled.
 
 ### S5. LLM query expansion, ablation (c) (~3 h; laptop and the Anthropic API)
 
 - [ ] `llm/expand.py`: `claude-haiku-5-5` with structured output (`titles`, `keywords`, `genres`), effort `low`, no sampling parameters, and a cache keyed by sha256(model id + prompt + params). It falls back to the raw query on a missing key, a refusal, a timeout or an expansion that grounds to nothing; tested with a fake client.
-- [ ] A benchmark of ~1,000 (user, tag) queries, where the relevant items are the movies that user tagged with that tag: C0 BM25 on the raw tag vs C1 BM25 on the expansion (C2 hybrid if time allows); cost from `usage`. Log E008.
+- [ ] A benchmark of ~1,000 (user, tag) queries, where the relevant items are the movies that user tagged with that tag: C0 BM25 on the raw tag vs C1 BM25 on the expansion (C2 hybrid if time allows); cost from `usage`. Log E010.
 - **Exit:** table (c); cost ≈ \$1.
 
 ### S6. Demo and deployment (~5 h; laptop, then Streamlit Community Cloud)
@@ -120,7 +120,7 @@ Scaffold, Polars pipeline, md5-checked download, leave-one-out split, EDA notebo
 - [ ] Apply D-003: where the titles come from, and what the bundle may contain.
 - [ ] Export the bundle (item embeddings, `user_tower.npz`, sparse EASE, BM25 weights, the LightGBM model, item metadata as permitted) to a GitHub Release; pin its tag and sha256 in `configs/deploy/streamlit.yaml`. The Milvus Lite collection is built at startup from the bundle.
 - [ ] `serving/app.py`: pick 5 movies → Top-10 with scores and the path that retrieved each item; a dense / BM25 / hybrid toggle; a free-text query with an LLM toggle that shows the expansion; a latency readout and a benchmark button.
-- [ ] Deploy at `yi-shopsage.streamlit.app`; memory within 690 MB; p95 ≤ 200 ms on the host; record the GIF. Log E009.
+- [ ] Deploy at `yi-shopsage.streamlit.app`; memory within 690 MB; p95 ≤ 200 ms on the host; record the GIF. Log E011.
 - **Exit:** live URL; the latency row of §2 filled.
 
 ### S7. Write-up and publish (~3 h)
@@ -242,16 +242,16 @@ Vendor figures were re-checked on the dates shown; the platform choices are the 
 - [x] Commit and push S1 (`05f74c4`, 2026-10-24; CI green, including the Milvus Lite probe on Linux).
 
 - [x] Deploy the probe on Community Cloud (2026-10-24; E005: 482 MB, hybrid p95 176 ms).
-- [x] Commit S2 (`fefcf6c`, 2026-10-24).
-- [ ] Commit the sweep results and push:
+- [x] Commit and push S2 and its results (`fefcf6c`, `c26417e`, 2026-10-24).
+- [x] Run the S2 sweep on Modal (2026-10-24; E007). Note: `modal volume get` refuses to overwrite `artifacts/runs/sweep_summary.json`, which the entrypoint already writes locally; download into an empty directory instead.
+- [ ] Commit and push S3:
 
   ```bash
   git add -A
-  git commit -m "S2: Modal sweep results (E007), plain-JSON run summaries"
+  git commit -m "S3: BM25, RRF, Milvus Lite serving index, ablation (b) (E008)"
   git push
   ```
 
-- [x] Run the S2 sweep on Modal (2026-10-24; E007). Note: `modal volume get` refuses to overwrite `artifacts/runs/sweep_summary.json`, which the entrypoint already writes locally; download into an empty directory instead.
 - [ ] Email GroupLens about D-003 (an answer can take time):
 
   ```text
@@ -295,7 +295,7 @@ Cut order if late: C2 in ablation (c), then the A0 / A2 / A4 context arms, the r
 | EASE misses its calibration figure | metric and split bugs are fixed before any model number is reported |
 | The targets are not reached | report against the published anchors; never change the protocol or the metric to chase them |
 | The sweep fails or stalls on Modal | finished runs are skipped on a re-run; a 2-epoch trial first; RunPod (Option B) as the fallback |
-| Milvus Lite is slow on Community Cloud: measured hybrid p95 176 ms of the 200 ms budget (E005) | S6 measures numpy exact dense top-k and scipy BM25 on the host (same results; FLAT overlap 1.000); if Milvus plus the ranker misses D-013, the demo serves through numpy / scipy and shows Milvus as the alternative engine with its latency |
+| Milvus Lite is slow on Community Cloud: probe hybrid p95 176 ms on the host (E005); real queries are heavier (laptop: 48.7 ms vs 1.5 ms for exact numpy / scipy, E008) | S6 measures numpy exact dense top-k and scipy BM25 on the host (same results; FLAT overlap 1.000); if Milvus plus the ranker misses D-013, the demo serves through numpy / scipy and shows Milvus as the alternative engine with its latency |
 | The demo exceeds 690 MB | probe peak 482 MB (E005); trim the bundle; Hugging Face Spaces |
 | The licence rules out titles or artifacts | the D-003 email now; fallback paths in S6 |
 

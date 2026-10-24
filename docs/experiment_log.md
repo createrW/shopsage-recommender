@@ -91,7 +91,7 @@ The owner's updated scope (2026-10-23) set four targets, which replace the brief
 |---|---|---|---|---|
 | Recall@50 (truncated) | ≥ 0.55 | EASE 0.521, Mult-VAE 0.537, RecVAE 0.553 (the highest verified) | EASE 0.5210 [0.5156, 0.5264] (E004) | at the published frontier, 0.029 above EASE; the likeliest route is the system's Recall@50 after the ranker |
 | NDCG@10 after the ranker | ≥ 0.32 | EASE 0.329 (`Liang-SG-fit`, Milogradskii et al. 2024) | EASE 0.3280 [0.3231, 0.3331] (E004) | the EASE baseline already meets it, so the ranker counts only if it beats EASE |
-| Latency, retrieval and ranking to 10 | ≤ 200 ms p95 on the demo host | — | S1 probe on the laptop: Milvus Lite hybrid search p95 34 ms (E004) | likely; measured on the host in S6 |
+| Latency, retrieval and ranking to 10 | ≤ 200 ms p95 on the demo host | — | S1 probe: Milvus Lite hybrid p95 34 ms on the laptop (E004), 176 ms on the host (E005); real queries: Milvus hybrid p95 48.7 ms vs exact numpy / scipy 1.5 ms on the laptop (E008) | at risk with Milvus as the online path; comfortable with the exact path; decided on the host in S6 |
 | Hard-negative ablation | Recall@50 +0.08 (A3 − A1) | — | — | ambitious, since A1 already has logQ and accidental-hit masking; **measured −0.0020 [−0.0033, −0.0007]: not met** (E007) |
 
 Sources: [Liang et al. 2018](https://arxiv.org/abs/1802.05814) (Mult-VAE); [Steck 2019](https://arxiv.org/abs/1905.03375), Table 1 (popularity, EASE); Shenbin et al., WSDM 2020 (RecVAE); Milogradskii et al., RecSys 2024 (NDCG@10, fold-in-in-training variant).
@@ -109,7 +109,7 @@ Revised on 2026-10-23 by the efficiency-first re-plan, which followed the owner'
 | D-005 | Hard-negative ablation | DECIDED (Day 1; revised 2026-10-23) | — | Headline: A1 (in-batch + logQ, "without") vs A3 (A1 + per-row negatives mined from ranks 101–500 of A1's seed-42 model, "with"), 3 seeds each, paired bootstrap on Recall@50. Context arms with one seed each: A0 (no logQ), A2 (A1 + 2,048 uniform negatives, MNS), A4 (full softmax over 20,108 items). Accidental hits masked; popularity and masks from training users only. Revised 2026-10-23: the updated scope asks for a hard-negative mining ablation (target +0.08 Recall@50), so mined negatives become the headline and MNS a context arm. |
 | D-006 | Ranker data | DECIDED (Day 1; revised 2026-10-18 and 2026-10-23) | — | V_A / V_B = the 10,000 Liang validation users split 50/50 by seed 42 (V_A: model selection; V_B: ranker labels, 10% for early stopping). Candidates = dense Top-500 ∪ BM25 Top-100; labels = each user's held-out items; ~11 features including a sparse-EASE score (top-100 neighbours per item); LambdaRank on NDCG@10, 3 LightGBM seeds, reported with and without the EASE feature. Missed positives are never injected. Revised 2026-10-23: two recall paths (the updated scope) and the Liang protocol. |
 | D-007 | Metrics and CIs | DECIDED (Day 1; revised 2026-10-23) | — | Headline truncated Recall@50 and NDCG@10, plus Recall@20, NDCG@100 and HR@50, over the 10,000 test users (all have targets, E004). Percentile bootstrap over users, 2,000 resamples, seed 42, chunks of 100 (`evaluation/bootstrap.py`), paired between arms; the Recall@50 half-width is ~±0.005 at 10,000 users (E004). 3 seeds for each claimed comparison, 1 for context arms, labelled. Revised 2026-10-23: Liang protocol, efficiency first. |
-| D-008 | Retrieval engine | DECIDED (Day 1; revised 2026-10-23) | — | Offline: exact top-k with fold-in items set to −inf before the cut, ties to the lower item index (`evaluation/metrics.py`). Serving: Milvus Lite (FLAT index; dense vectors, sparse BM25 vectors and RRF hybrid search), flushed after loading, parity-tested against the exact path (S3). FAISS as a direct dependency and the ANN study are dropped: Milvus Lite 3.x is FLAT-only and runs faiss-cpu internally. Revised 2026-10-23: Milvus is in the updated scope; the S1 probe measured dense and hybrid p95 of 18 and 34 ms at 20,108 items on the laptop (E004). |
+| D-008 | Retrieval engine | DECIDED (Day 1; revised 2026-10-23) | — | Offline: exact top-k with fold-in items set to −inf before the cut, ties to the lower item index (`evaluation/metrics.py`). Serving: Milvus Lite (FLAT index; dense vectors, sparse BM25 vectors and RRF hybrid search), flushed after loading, parity-tested against the exact path (S3). FAISS as a direct dependency and the ANN study are dropped: Milvus Lite 3.x is FLAT-only and runs faiss-cpu internally. Revised 2026-10-23: Milvus is in the updated scope; the S1 probe measured dense and hybrid p95 of 18 and 34 ms at 20,108 items on the laptop (E004). Note 2026-10-24 (E008): on real data Milvus Lite returns exactly the offline answers on all three paths (1,000 users), but exact numpy / scipy search is 16–40× faster on the laptop (hybrid p95 1.5 vs 48.7 ms); the demo's online path is chosen in S6 from host measurements, Milvus kept at least as the shown, parity-checked engine. |
 | D-009 | Baselines | DECIDED (Day 1; revised 2026-10-23) | — | MostPop (popularity over training users) and EASE (λ chosen on V_A) in every table; ItemKNN cut. EASE at 20,108 items: Gram and weight matrices 1.6 GB each in float32; the λ grid ran at 3.5 GB peak RSS on the laptop (E004). Revised 2026-10-23: the Liang protocol replaces as-of popularity. |
 | D-010 | BM25 and LLM evaluation | DECIDED (Day 1; revised 2026-10-23) | — | BM25 item documents: title, genres, top genome tags and tags from training users only; the user query is the fold-in items' terms; scipy.sparse BM25 offline, the same weights as Milvus sparse vectors online; no Elasticsearch. Hybrid: RRF (k = 60). LLM: `claude-haiku-5-5`, structured output, effort `low`, no sampling parameters, responses cached by sha256(model id + prompt + params). Ablation (c): ~1,000 tag-as-query events, C0 BM25 on the raw tag vs C1 on the expansion (C2 hybrid if time). Cut: vLLM / Qwen, GPT-4o-mini, the convex-mix hybrid. Revised 2026-10-23: efficiency first. |
 | D-011 | Timestamps | NOT APPLICABLE (2026-10-23) | — | The session-timestamp findings (51.6% of users rated their whole positive history within an hour; 24.2% have a tie at a split boundary) concern the Day-1 leave-one-out split, which is no longer evaluated. The Liang split is a random holdout and ignores time, a stated limitation. |
@@ -150,9 +150,9 @@ Every result cell reads `pending` until its run is logged. All runs use `Liang-S
 |---|---|---|---|---|
 | MostPop | anchor | 0.2352 | 0.1275 | — |
 | EASE | anchor | 0.5210 | 0.3280 | — |
-| B0 | BM25 over item documents | pending | pending | pending |
-| B1 (ref) | dense, best arm of (a) | pending | pending | — |
-| B2 | hybrid: RRF of B0 and B1 (k = 60) | pending | pending | pending |
+| B0 | BM25 over item documents | 0.2529 | 0.1556 | −0.2833 [−0.2891, −0.2772] (E008) |
+| B1 (ref) | dense, best arm of (a): A1, 3 seeds | 0.5361 ± 0.0005 | 0.3351 ± 0.0005 | — (E008) |
+| B2 | hybrid: RRF of B0 and B1 (k = 60) | 0.4647 ± 0.0002 | 0.2789 ± 0.0007 | −0.0715 [−0.0748, −0.0685] (E008) |
 
 ### Ablation (c): LLM query expansion (S5, D-010)
 
@@ -522,3 +522,65 @@ Per-seed A1 Recall@50: 0.5363 [0.5306, 0.5417], 0.5356 [0.5300, 0.5413], 0.5365 
 **Against the targets.** Recall@50 ≥ 0.55: not met by retrieval alone (A1 0.5361; RecVAE's published 0.553 is the frontier); the ranker (S4) is the remaining route. NDCG@10 ≥ 0.32: already met by the retriever (0.3351), and A1 beats EASE on both metrics. Hard-negative ablation +0.08: **not met**; mined negatives give no gain (−0.0020, CI below zero).
 
 **Observations:** the logQ correction is the decisive negative-sampling choice here (+0.225 Recall@50 over plain in-batch, whose popularity bias leaves it near MostPop). With logQ and accidental-hit masking in place, every extra source of negatives (uniform, mined, all items) lands within 0.003 of A1 or slightly below it: the in-batch softmax at B = 4,096 already sees 4,095 negatives per row, and the correction already removes the sampling bias that extra negatives would otherwise fix. Mined ranks 101–500 also hold unlabelled positives (a held-out user's 20% targets are, by construction, items like those). A3 peaks earlier (epochs 22–26) than A1 (28–30). The A0 curve was still rising at epoch 30, but its gap to A1 (0.23) is far outside any plausible remaining gain.
+
+### E008 — 2026-10-24 — S3: recall paths (ablation (b)) and the Milvus Lite serving index on real data
+
+Status: **recorded.** `uv run shopsage recall --run-id recall-e008` (defaults: dense runs `A1-s42/43/44` from E007, depth 200, RRF k = 60, 1,000 parity users).
+
+| Field | Value |
+|---|---|
+| Run id / W&B | `recall-e008` / n/a |
+| Code | working tree on top of `fefcf6c` (S3 not yet committed); `shopsage_rec` 0.1.0; Milvus Lite 3.2.2, pymilvus 3.0.2 |
+| Data | split_sha256 `4f93a0e6f611`; 20,108 items |
+| Protocol / users | `Liang-SG-strict`; BM25 settings chosen on V_A (5,000 users) by Recall@50; test on all 10,000 test users |
+| Hardware | laptop (Apple M5, 16 GB), CPU only |
+| Artifacts | `artifacts/eval/recall-e008/` (`per_user.parquet`, `summary.json`) |
+| Cost / peak memory | 129 s wall-clock; 4.1 GB peak RSS (offline evaluation, not the demo) |
+
+**BM25 documents.** 17,283 terms after dropping terms found in a single document: 6,115 title words, 19 genres, 11,149 tags (genome top-20 per movie and training users' tags); 404,876 non-zeros; 6 items with an empty document (stored in Milvus with a placeholder term). Grid on V_A (Recall@50), k1 × b × query weighting:
+
+| k1 | b | binary | log |
+|---|---|---|---|
+| 0.9 | 0.4 | 0.2232 | **0.2526** (chosen) |
+| 0.9 | 0.75 | 0.1996 | 0.2211 |
+| 1.5 | 0.4 | 0.2202 | 0.2504 |
+| 1.5 | 0.75 | 0.1923 | 0.2159 |
+
+**Results** (test, 10,000 users; dense and hybrid: mean ± sd over the three A1 seeds, then seed 42's 95% CI).
+
+| Arm | Recall@20 | Recall@50 | NDCG@10 | NDCG@100 | HR@50 |
+|---|---|---|---|---|---|
+| MostPop (E004) | 0.1618 | 0.2352 | 0.1275 | 0.1906 | 0.7425 |
+| EASE (E004) | 0.3893 | 0.5210 | 0.3280 | 0.4201 | 0.9246 |
+| B0, BM25 | 0.1678 | 0.2529 [0.2489, 0.2571] | 0.1556 | 0.2146 | 0.7682 |
+| B1, dense (A1) | 0.3997 ± 0.0017 | **0.5361 ± 0.0005** [0.5306, 0.5417] | **0.3351 ± 0.0005** | 0.4324 | 0.9371 |
+| B2, hybrid (RRF of B0 and B1) | 0.3291 ± 0.0006 | 0.4647 ± 0.0002 [0.4596, 0.4703] | 0.2789 ± 0.0007 | 0.3737 | 0.9182 |
+
+The dense rows reproduce E007 to the fourth decimal (computed again from the exported files), a check that the export and the evaluation agree.
+
+**Paired Δ** (seed-averaged per user; per-seed ranges in brackets after):
+
+| Comparison | Δ Recall@50 [95% CI] | Δ NDCG@10 [95% CI] | Per-seed Δ Recall@50 |
+|---|---|---|---|
+| B2 − B1 (hybrid − dense) | −0.0715 [−0.0748, −0.0685] | −0.0562 [−0.0591, −0.0531] | −0.0709 to −0.0720 |
+| B0 − B1 (BM25 − dense) | −0.2833 [−0.2891, −0.2772] | −0.1796 [−0.1840, −0.1753] | −0.2827 to −0.2836 |
+
+**Candidate coverage for the ranker (S4)** (mean share of a test user's targets in the set; dense = A1-s42): dense top-500 **0.8950**; BM25 top-100 0.3448; their union **0.8971** (+0.0021).
+
+**Milvus Lite serving index** (one collection: A1-s42 item vectors, FLAT IP; BM25 weights, sparse inverted index; built and flushed in 2.56 s). 1,000 random test users, top-50, seen items removed by a filter inside the search, hybrid = RRF of depth-200 lists:
+
+| Path | Same scores rank by rank as offline | Item overlap | Milvus p50 / p95 | Exact numpy / scipy p50 / p95 (one user) |
+|---|---|---|---|---|
+| dense | 1.000 | 1.000 | 6.44 / 6.93 ms | 0.38 / 0.42 ms |
+| sparse (BM25) | 1.000 | 1.000 | 31.15 / 41.75 ms | 0.79 / 1.03 ms |
+| hybrid (RRF) | 1.000 | 1.000 | 38.25 / 48.68 ms | 1.27 / 1.53 ms |
+
+The numpy user tower takes 0.19 / 0.29 ms per user.
+
+**Observations:**
+- BM25 over item text barely beats popularity (+0.018 Recall@50). Titles, genres and tags describe what a movie is, not who watches it, so the dense model, trained on co-consumption, is far ahead.
+- Equal-weight RRF lets the weak path displace about 7 points of the strong one's Recall@50. The second path earns its place as ranker input instead: features plus the candidate union. Even there the union adds only +0.002 coverage, so the S4 ranker will rely on the dense candidates.
+- The chosen BM25 setting sits at the low edge of the k1 and b grid. A wider grid might add a little, but not the 0.28 it trails by.
+- Milvus Lite returns exactly the offline answers on all three paths.
+- On the laptop, exact search in numpy / scipy is 16–40× faster than Milvus Lite for the same results. The real BM25 queries (hundreds of terms) make the sparse path the slow one; the S1 probe's 5-term queries hid that.
+- Projected to the demo host with E005's slowdown of about 4–5×, Milvus hybrid search would take roughly 150–250 ms p95 before re-ranking, against the 200 ms budget (D-013). S6 decides the serving path from host measurements (plan.md §8).

@@ -2,7 +2,7 @@
 
 Two-stage recommender on MovieLens-20M, built as a production-style offline pipeline. A PyTorch Two-Tower retriever and a BM25 retriever generate candidates, a LightGBM LambdaRank model re-ranks them, Milvus Lite serves both recall paths (dense, sparse and RRF hybrid search) in a CPU-only Streamlit demo, and Claude Haiku optionally expands free-text queries. Everything is measured under the strong-generalisation protocol of [Liang et al. (2018)](https://arxiv.org/abs/1802.05814) against MostPop and EASE, with bootstrap confidence intervals. MovieLens-20M stands in for implicit-feedback e-commerce logs, with a rating ≥ 4.0 as the positive event.
 
-**Status:** S1 done (2026-10-23): the Liang split, the evaluation code and the MostPop and EASE baselines, which reproduce their published numbers. S2 code done (2026-10-24): the Two-Tower with five negative-sampling arms, hard-negative mining and a one-command Modal sweep; the sweep's results are pending. Plan and progress: [docs/plan.md](docs/plan.md) ([中文](docs/plan.zh-CN.md)).
+**Status:** S1 done (2026-10-23): the Liang split, the evaluation code and the MostPop and EASE baselines, which reproduce their published numbers. S2 and S3 done (2026-10-24): the Two-Tower, trained in one Modal sweep, beats EASE; BM25 and the RRF hybrid are measured, and the Milvus Lite serving index returns exactly the offline results. Next: the LightGBM ranker (S4). Plan and progress: [docs/plan.md](docs/plan.md) ([中文](docs/plan.zh-CN.md)).
 
 [![CI](https://img.shields.io/github/actions/workflow/status/createrW/shopsage-recommender/ci.yml?branch=main&label=CI)](https://github.com/createrW/shopsage-recommender/actions/workflows/ci.yml)
 [![Python 3.11 | 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](pyproject.toml)
@@ -17,10 +17,10 @@ Protocol `Liang-SG-strict`: 10,000 test users who are never seen in training. Fo
 |---|:-:|:-:|:-:|
 | MostPop | 0.2352 [0.2310, 0.2396] | 0.1275 [0.1241, 0.1311] | E004 |
 | EASE ([Steck 2019](https://arxiv.org/abs/1905.03375)), λ = 1,000 | 0.5210 [0.5156, 0.5264] | 0.3280 [0.3231, 0.3331] | E004 |
-| BM25 over item text | pending | pending | S3 |
+| BM25 over item text | 0.2529 [0.2489, 0.2571] | 0.1556 [0.1520, 0.1594] | E008 |
 | Two-Tower, in-batch + logQ (A1), 3 seeds | 0.5361 ± 0.0005 (seed 42: [0.5306, 0.5417]) | 0.3351 ± 0.0005 (seed 42: [0.3304, 0.3405]) | E007 |
 | Two-Tower + mined hard negatives (A3), 3 seeds | 0.5341 ± 0.0008 | 0.3351 ± 0.0011 | E007 |
-| Hybrid: Two-Tower + BM25, RRF | pending | pending | S3 |
+| Hybrid: Two-Tower + BM25, RRF, 3 seeds | 0.4647 ± 0.0002 | 0.2789 ± 0.0007 | E008 |
 | + LightGBM re-ranker | pending | pending | S4 |
 
 **Calibration.** Both baselines reproduce their published figures under the same protocol (Steck 2019, Table 1): popularity Recall@50 0.235 and EASE 0.521, with Recall@20 and NDCG@100 also within 0.002. The split and the metric code therefore agree with the literature ([experiment log](docs/experiment_log.md), E004).
@@ -200,7 +200,7 @@ All under `Liang-SG-strict` on the 10,000 test users, with selection on V_A (hal
   - The reference is A1 (in-batch softmax + logQ correction).
   - Against it: A3, which adds per-row negatives mined from ranks 101–500 of A1's model, 3 seeds each.
   - Context arms: A0 (no logQ), A2 (2,048 uniform sampled negatives, i.e. mixed negative sampling) and A4 (full softmax over 20,108 items).
-- **(b) Recall paths** (S3). BM25 alone, the dense Two-Tower, and their RRF hybrid, next to MostPop and EASE.
+- **(b) Recall paths** (S3, E008). BM25 alone, the dense Two-Tower, and their RRF hybrid, next to MostPop and EASE. BM25 over item text barely beats popularity (0.253 vs 0.235 Recall@50), and fusing it at equal weight costs the dense path 0.072 (paired CI [−0.075, −0.069]). Text describes what a movie is, not who watches it. Milvus Lite returns exactly the offline answers on all three paths, and on the laptop exact numpy / scipy search is 16–40× faster.
 - **(c) LLM query expansion** (S5).
   - Setup: tag-as-query known-item retrieval over ~1,000 (user, tag) events.
   - Arms: BM25 on the raw tag vs BM25 on Claude Haiku's expansion.
@@ -249,8 +249,8 @@ The decision log (D-001 to D-014) is in [docs/experiment_log.md](docs/experiment
 
 - [x] S0 (Day 1): data pipeline, scaffold, EDA, the Day-1 split
 - [x] S1: Liang split, evaluation code, MostPop and EASE calibrated (E004), Milvus Lite deployment probe
-- [ ] S2: Two-Tower with in-batch, uniform and mined negatives (code done); one Modal training sweep (pending)
-- [ ] S3: BM25 path, Milvus Lite serving index, ablations (a) and (b)
+- [x] S2: Two-Tower with in-batch, uniform and mined negatives; one Modal training sweep (E007)
+- [x] S3: BM25 path, Milvus Lite serving index, ablations (a) and (b) (E007, E008)
 - [ ] S4: LightGBM re-ranker over both recall paths
 - [ ] S5: Claude Haiku query expansion, ablation (c)
 - [ ] S6: the Streamlit demo on Community Cloud

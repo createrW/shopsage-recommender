@@ -2,15 +2,15 @@
 
 **English** | [简体中文](memory.zh-CN.md)
 
-**Updated:** 2026-10-24, after the S2 sweep (E007). Read this first, then [plan.md](plan.md); together they are the source of truth for the next step. This file holds facts, rules and decisions; plan.md holds the steps and their checkboxes.
+**Updated:** 2026-10-24, after S3 (E008). Read this first, then [plan.md](plan.md); together they are the source of truth for the next step. This file holds facts, rules and decisions; plan.md holds the steps and their checkboxes.
 
 ## 1. The project
 
 - **What:** a two-stage recommender on MovieLens-20M: Two-Tower dense recall and BM25 sparse recall plus their RRF hybrid, a LightGBM re-ranker, optional Claude Haiku query expansion, Milvus Lite as the serving retrieval engine, and a CPU-only Streamlit demo. Every reported number comes from a logged run.
 - **Why:** the owner's MLE portfolio flagship; the README is the page reviewers see.
 - **Owner:** Yi Zhao (USC), who also does every GitHub push.
-- **Where:** `/Users/zy/Project/new_sys/projects/shopsage-recommender`, branch `main`. Commits `3e0f08f` (Day 1) and `05f74c4` (S1) are pushed to `https://github.com/createrW/shopsage-recommender` (CI green); S2 is committed locally as `fefcf6c` (not pushed); the summary fix and the E007 docs are uncommitted.
-- **State:** S0, S1 and S2 done; the sweep is logged as E007 with ablation (a). S3 (BM25, Milvus serving index, table (b)) is next. Re-planned efficiency-first on 2026-10-23 (plan.md §3).
+- **Where:** `/Users/zy/Project/new_sys/projects/shopsage-recommender`, branch `main`. Commits `3e0f08f` (Day 1) and `05f74c4` (S1) are pushed to `https://github.com/createrW/shopsage-recommender` (CI green); so are S2 and its results (`fefcf6c`, `c26417e`); S3 is uncommitted.
+- **State:** S0–S3 done: the sweep (E007, ablation (a)) and the recall paths with the Milvus Lite serving index (E008, ablation (b)). S4 (LightGBM ranker) is next; it needs `brew install libomp`. Re-planned efficiency-first on 2026-10-23 (plan.md §3).
 
 ## 2. Inputs that live outside the repo
 
@@ -72,6 +72,7 @@
 - Deployment probe on the laptop (20,108 items, synthetic dense and sparse vectors): hybrid search p95 34–44 ms, dense p95 18–24 ms; Streamlit plus the app peak at about 450 MB.
 - **On Streamlit Community Cloud (E005):** import pymilvus 1.9 s, build 7.9 s; dense p50/p95 76.3/135.2 ms, sparse 63.0/94.6 ms, hybrid 118.0/176.3 ms; overlap 1.000; peak RSS 482 MB. Memory fits 690 MB; the hybrid p95 alone takes 176 of the 200 ms budget, so S6 measures a numpy / scipy serving path and falls back to it if needed.
 - **Two-Tower sweep (E007, Modal A10, 3 seeds for A1 and A3):** A1 Recall@50 0.5361 ± 0.0005, NDCG@10 0.3351 ± 0.0005, Recall@20 0.3997, HR@50 0.9371; A1 − EASE +0.0151 [+0.0119, +0.0184] Recall@50, +0.0071 NDCG@10. A3 − A1 = −0.0020 [−0.0033, −0.0007] (hard-negative target +0.08 **not met**); A0 0.3111 (logQ is worth +0.225); A2 0.5342; A4 0.5333. τ 0.05, lr 3e-3; best epochs 22–30. Peak GPU 0.98 GB (A1) to 3.21 GB (A4); 21.5 s per A1 epoch; 2.5 A10-hours ≈ \$2.75. Run of record for S3–S6: `A1-s42` (`artifacts/runs/A1-s42/`).
+- **Recall paths (E008):** BM25 (k1 0.9, b 0.4, `log` query, chosen on V_A; 17,283 terms) Recall@50 0.2529, NDCG@10 0.1556; RRF hybrid 0.4647 ± 0.0002, −0.0715 [−0.0748, −0.0685] against dense. Candidate coverage on test: dense top-500 0.8950, + BM25 top-100 0.8971. Milvus Lite identical to the offline paths on 1,000 real users; laptop p95 dense 6.9 ms, sparse 41.8 ms, hybrid 48.7 ms vs exact numpy / scipy 0.42, 1.03, 1.53 ms; numpy user tower 0.29 ms.
 - **Two-Tower check (E006, MPS, not a result):** A1 after 3 epochs, test Recall@50 0.5145 [0.5088, 0.5199], NDCG@10 0.3163, still rising; 129–146 s per epoch on the M5; peak memory A1 2.1 GB, A2 2.2 GB, A4 5.0 GB.
 
 ### Day-1 run (raw data, and the leave-one-out split, kept but not used for results)
@@ -85,7 +86,7 @@
 | MPS (M5, B = 4,096, bf16) | 37.25 ms per step → 88 s per epoch in-batch; peak 2.30 GB with 4,096 sampled negatives (1.16 GB in-batch); 30 epochs ≈ 44 min (E002) |
 | Popularity | the top-100 movies hold 23.5% of positives; Gini 0.90 over the 26,744 rated movies |
 | Local disk (2026-10-23) | `data/raw` 1.0 GB, `data/processed` 138 MB, `data/processed/liang` 146 MB, `.venv` 946 MB |
-| Tests | 122 passing (2026-10-24), the slow real-data test included |
+| Tests | 133 passing (2026-10-24), the slow real-data test included |
 
 ## 6. Decisions
 
@@ -100,7 +101,7 @@ Current decisions; experiment_log.md's Decisions table holds the full text and r
 | D-005 | Hard-negative ablation | REVISED 2026-10-23 | headline: A1 (in-batch + logQ, "without") vs A3 (A1 + per-row negatives mined from ranks 101–500 of A1's seed-42 model, "with"), 3 seeds each; A0 (no logQ), A2 (A1 + 2,048 uniform negatives, MNS) and A4 (full softmax) one seed each, as context |
 | D-006 | Ranker data | REVISED 2026-10-23 | V_A / V_B = the 10,000 Liang validation users split 50/50 (seed 42); candidates = dense Top-500 ∪ BM25 Top-100; labels = each user's held-out 20%; ~11 features including a sparse-EASE score; LambdaRank, 3 LightGBM seeds, with and without the EASE feature |
 | D-007 | Metrics and CIs | REVISED 2026-10-23 | headline truncated Recall@50 and NDCG@10, plus Recall@20, NDCG@100 and HR@50, on the 10,000 test users; percentile bootstrap (2,000 resamples, seed 42), paired between arms; 3 seeds for each claimed comparison, 1 for context arms, labelled |
-| D-008 | Retrieval engine | REVISED 2026-10-23 | offline: exact numpy top-k with fold-in items masked before the cut; serving: Milvus Lite (FLAT; dense, sparse BM25 vectors and RRF hybrid search), flushed after loading, parity-tested against the exact path; FAISS is no longer a direct dependency (Milvus Lite 3.x runs on faiss-cpu) and the ANN study is cut |
+| D-008 | Retrieval engine | REVISED 2026-10-23 | offline: exact numpy top-k with fold-in items masked before the cut; serving: Milvus Lite (FLAT; dense, sparse BM25 vectors and RRF hybrid search), flushed after loading, parity-tested against the exact path; FAISS is no longer a direct dependency (Milvus Lite 3.x runs on faiss-cpu) and the ANN study is cut Note 2026-10-24 (E008): identical results on real data, but exact numpy / scipy is 16–40× faster on the laptop; S6 picks the online engine from host measurements. |
 | D-009 | Baselines | REVISED 2026-10-23 | MostPop (popularity over training users) and EASE (dense B, λ on V_A) in every table; ItemKNN cut |
 | D-010 | BM25 and LLM | REVISED 2026-10-23 | BM25 over title, genres, top genome tags and training-user tags, in scipy (no Elasticsearch); the user query is the fold-in items' text; LLM: `claude-haiku-5-5` with structured output, effort `low`, cached; ablation (c) = ~1,000 tag queries, C0 BM25 raw vs C1 BM25 + expansion (C2 hybrid if time); vLLM, Qwen and GPT-4o-mini not used |
 | D-011 | Timestamps | N/A since 2026-10-23 | applied only to the leave-one-out split |
@@ -121,6 +122,7 @@ Current decisions; experiment_log.md's Decisions table holds the full text and r
 - **AMP:** bf16 only when `torch.cuda.is_bf16_supported(including_emulation=False)` (compute capability ≥ 8.0); a T4 uses fp16 with `GradScaler`; MPS ran bf16 autocast.
 - **MPS has no float64:** tensors moved to MPS must be float32 (the item-frequency vector for logQ hit this).
 - **Modal 1.6:** `Image.uv_sync` installs dependencies only (no project), so the source is added with `add_local_dir` and `PYTHONPATH`; GPU names are `"T4"`, `"L4"`, `"A10"`, `"L40S"`, `"A100"`, … (no `"A10G"` in the docs as of 2026-10-24); Volumes need `commit()` after writes and `reload()` before reads.
+- **Milvus Lite search details (3.2.2):** `filter="id not in [...]"` works in `search` and in each `AnnSearchRequest(expr=...)` of `hybrid_search`, so seen items go before the cut; `RRFRanker(k)` scores `1/(k + rank)` with ranks from 1; an empty sparse vector is rejected on insert (a placeholder term is used); sparse search returns matching items only. Real BM25 queries (hundreds of terms) make sparse search ~40× slower than scipy.
 - **Tests that check `sys.modules`** must run in a subprocess: other tests in the session import torch.
 - **MPS timing:** fewer than 30 timed steps is too noisy (a 3-step run looked 30% faster than it is).
 - **Polars `is_in`:** testing a column against a Series of the same dtype is deprecated; use `.is_in(series.implode())`.
@@ -135,7 +137,7 @@ Current decisions; experiment_log.md's Decisions table holds the full text and r
 | Path | Contents |
 |---|---|
 | `README.md` | front page: results with the measured baselines, architecture, quickstart, cloud training and VRAM, dataset, experiments, demo, design rationale, limitations, roadmap |
-| `docs/experiment_log.md` | rules, protocols, TARGETS, decisions D-001 to D-014, run matrix, entries E001–E007 |
+| `docs/experiment_log.md` | rules, protocols, TARGETS, decisions D-001 to D-014, run matrix, entries E001–E008 |
 | `docs/design.md`, `docs/api_spec.md` | the Day-1 design and the artifact / CLI contract (v0.4), partly superseded (§6) |
 | `docs/plan.md`, `docs/memory.md` | the step plan and status; this memory (each with a `.zh-CN.md` twin) |
 | `src/shopsage_rec/cli.py`, `config.py` | the Typer CLI (`prepare`, `stats`, `evaluate`; defaults follow the Liang split); `DataConfig`, `SplitConfig` (`leave_one_out` or `liang`) |
@@ -145,18 +147,19 @@ Current decisions; experiment_log.md's Decisions table holds the full text and r
 | `src/shopsage_rec/serving/` | `app.py` (Streamlit entry point: the probe), `probe.py` (`run_probe`), `requirements.txt` (generated) |
 | `src/shopsage_rec/features/items.py` | item-tower inputs: genres, year bucket, genome PCA-64, cached in `<processed>/item_features.npz` |
 | `src/shopsage_rec/models/` | `baselines.py`; S2: `two_tower.py` (`TwoTower`, `sample_history`), `losses.py` (`sampled_softmax`, `PositiveSet`), `numpy_tower.py` (the torch-free user tower), `trainer.py` (`TrainConfig`, `ARMS`, `train_two_tower`), `mining.py`, `sweep.py` (the job plan, pure Python) |
-| `src/shopsage_rec/{retrieval,ranking,llm}/` | placeholders holding only a docstring (S3–S5) |
+| `src/shopsage_rec/retrieval/` | S3: `bm25.py` (`build_item_documents`, `fit_bm25`, `BM25`), `fusion.py` (`rrf`, `rrf_scores`, `positive_only`), `milvus_store.py` (`MilvusStore`, `sparse_row`), `evaluate.py` (`evaluate_recall_paths`, `shopsage recall`) |
+| `src/shopsage_rec/{ranking,llm}/` | placeholders holding only a docstring (S4–S5) |
 | `configs/data/` | `movielens_20m_liang.yaml` (default, hash `2f24b2c594e1`) and `movielens_20m.yaml` (Day-1, hash `aec7ddd4dc98`) |
 | `configs/train/lgbm_ranker.yaml` | ranker draft (S4); the Two-Tower has no YAML: `TrainConfig` and CLI options, snapshotted in each `metrics.json` |
 | `configs/deploy/streamlit.yaml` | demo config draft: bundle, artifacts, Milvus Lite retrieval, LLM expansion |
 | `scripts/` | `download_data.sh`, `prepare_data.sh` (default: the Liang config), `bootstrap_cloud.sh` (train + llm extras, the Liang split), `bench_two_tower_step.py`, `train.sh` (sequential sweep), `modal_train.py` (the Modal sweep: Volume `shopsage-data`, GPU `A10`) |
-| `tests/` | 122 tests, among them `test_two_tower.py`, `test_trainer.py`, `test_sweep.py`, `test_item_features.py`, `test_liang.py` (with the real-data count test), `test_liang_pipeline.py`, `test_metrics.py`, `test_baselines.py`, `test_probe.py` |
+| `tests/` | 133 tests, among them `test_bm25.py`, `test_fusion.py`, `test_milvus_store.py`, `test_recall_paths.py`, `test_two_tower.py`, `test_trainer.py`, `test_sweep.py`, `test_item_features.py`, `test_liang.py` (with the real-data count test), `test_liang_pipeline.py`, `test_metrics.py`, `test_baselines.py`, `test_probe.py` |
 | `notebooks/01_eda.ipynb` | the EDA on the Day-1 split, executed; figures in `docs/figures/` |
 | `Makefile` | 22 targets (`make help`), including `evaluate` and `demo-requirements` |
 | `.github/workflows/ci.yml` | ruff, ruff format, mypy, pytest; the demo requirements without torch; `serving/requirements.txt` against `uv.lock`; the Milvus Lite probe on Linux |
 | `Dockerfile`, `.dockerignore` | CPU demo image (never built yet); the Hugging Face Spaces fallback |
 | `.streamlit/`, `packages.txt` | Community Cloud settings, secrets template, `libgomp1` |
-| `data/`, `artifacts/` (git-ignored) | `data/raw/ml-20m/`, `data/processed/` (Day-1), `data/processed/liang/`; `artifacts/eval/local-20261023-1306/` (E004); `artifacts/runs/` (E007: 13 sweep runs and `sweep_summary.json`, 0.6 GB; E006 checks: `smoke-A1-mps`, `check-A1-full3-mps`) |
+| `data/`, `artifacts/` (git-ignored) | `data/raw/ml-20m/`, `data/processed/` (Day-1), `data/processed/liang/`; `artifacts/eval/local-20261023-1306/` (E004); `artifacts/eval/recall-e008/` (E008); `artifacts/runs/` (E007: 13 sweep runs and `sweep_summary.json`, 0.6 GB; E006 checks: `smoke-A1-mps`, `check-A1-full3-mps`) |
 
 ## 9. Resuming
 
@@ -187,3 +190,4 @@ uv run shopsage stats | grep split_sha256        # the Liang split: 4f93a0e6f611
 | 2026-10-23 | S1 done: the Liang split reproduces the published counts; `shopsage evaluate`; MostPop and EASE reproduce their published Recall@50 (E004); FAISS out, Milvus Lite in; the Milvus Lite probe measured on the laptop; README and experiment_log synced |
 | 2026-10-24 | Modal trial (`--epochs 2 --tune-epochs 1`): image build and data prep on Modal work; A1 on an A10 21.5 s per epoch, 0.98 GB peak; the run then failed locally unpickling `torch.__version__` (a `TorchVersion`) in the summary; fixed by returning plain JSON |
 | 2026-10-24 | the owner ran the full sweep on Modal (13 runs, 2.5 A10-hours); logged as E007: A1 beats EASE (Recall@50 0.5361 vs 0.5210), mined hard negatives give no gain (A3 − A1 −0.0020), logQ is worth +0.225; S2 done |
+| 2026-10-24 | S3 done: BM25 documents and weights, RRF, the Milvus Lite serving index; ablation (b) logged as E008 (BM25 0.2529, hybrid −0.0715 vs dense; Milvus identical to offline, exact numpy / scipy 16–40× faster on the laptop); 133 tests green |

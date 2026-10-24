@@ -2,7 +2,7 @@
 
 [English](plan.md) | **简体中文**
 
-**更新：** 2026-10-24，S2 批量训练完成后 · **进度：** S0、S1 和 S2 已完成（批量训练记为 E007）；下一步是 S3 · **代码：** `05f74c4` 已 push 到 [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender)；S2 已在本地提交为 `fefcf6c`（未 push）；汇总修复和 E007 文档尚未提交 · **配套文档：** [memory.zh-CN.md](memory.zh-CN.md)（事实、规则、决策）
+**更新：** 2026-10-24，S3 完成后 · **进度：** S0–S3 已完成（E007 批量训练，E008 召回路径）；下一步是 S4 · **代码：** `main` 上的 `c26417e`（S2 及其结果），已 push 到 [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender)；S3 尚未提交 · **配套文档：** [memory.zh-CN.md](memory.zh-CN.md)（事实、规则、决策）
 
 - **目标：** 在 MovieLens-20M 上做一个两阶段推荐系统（Two-Tower 稠密召回和 BM25 稀疏召回、LightGBM 重排、可选的 LLM 查询扩展、Milvus Lite 检索、Streamlit demo），所有对外报告的数字都来自实测。
 - **架构：** 离线部分，PyTorch 在云 GPU 上训练双塔，numpy 和 scipy 为评估计算精确候选，LightGBM 对两条召回路径的并集重排。在线部分，demo 只用 CPU：numpy 实现的用户塔、Milvus Lite（稠密、稀疏 BM25 和 RRF 混合检索）、LightGBM，以及用于查询扩展的 Claude Haiku。
@@ -21,13 +21,13 @@
 | 评估 | 带屏蔽的全量 top-k、截断 Recall / NDCG / HR、百分位 bootstrap 与配对 bootstrap；`shopsage evaluate` | S2：用同一套代码给 Two-Tower 打分 |
 | 基线 | MostPop 和 EASE，已对照已发表数字完成校准（E004） | — |
 | 模型 | Two-Tower A0–A4 已在 Modal 上训练完（E007）：A1 Recall@50 0.5361、NDCG@10 0.3351，高于 EASE；消融 (a) 完成 | S4 对它的候选重排 |
-| 检索 | Milvus Lite 探测：在笔记本上实测了稠密、稀疏和混合检索（E004） | S3：BM25 路径、Milvus 服务索引、消融 (a) 和 (b) |
+| 检索 | BM25 路径、RRF 融合、Milvus Lite 服务索引（真实数据上与离线结果完全一致）；消融 (b)（E008） | S6：在主机上选定在线检索引擎 |
 | 排序 | — | S4：基于两条召回路径的 LightGBM |
 | LLM | 设计 | S5：Claude Haiku 扩展，消融 (c) |
 | Demo | 探测已部署到 Community Cloud：峰值 482 MB，混合检索 p95 176 ms（E005） | S6：完整 demo；已规划延迟兜底方案（§8） |
 | 仓库 | 122 个测试通过；lint、类型检查和 lock 都干净；S1 已上 GitHub，CI 通过 | 提交并 push S2（由你来做，§7） |
 
-目前的实测结果（`Liang-SG-strict`，10,000 个测试用户）：MostPop Recall@50 0.2352、NDCG@10 0.1275；EASE Recall@50 0.5210、NDCG@10 0.3280（E004）。Two-Tower A1，3 个种子（E007）：Recall@50 0.5361 ± 0.0005、NDCG@10 0.3351 ± 0.0005，Recall@50 比 EASE 高 +0.0151 [+0.0119, +0.0184]。困难负样本：A3 − A1 = −0.0020 [−0.0033, −0.0007]，+0.08 的目标没有达到；logQ 校正带来 +0.225（A1 − A0）。
+目前的实测结果（`Liang-SG-strict`，10,000 个测试用户）：MostPop Recall@50 0.2352、NDCG@10 0.1275；EASE Recall@50 0.5210、NDCG@10 0.3280（E004）。Two-Tower A1，3 个种子（E007）：Recall@50 0.5361 ± 0.0005、NDCG@10 0.3351 ± 0.0005，Recall@50 比 EASE 高 +0.0151 [+0.0119, +0.0184]。困难负样本：A3 − A1 = −0.0020 [−0.0033, −0.0007]，+0.08 的目标没有达到；logQ 校正带来 +0.225（A1 − A0）。BM25 Recall@50 0.2529；RRF 混合 0.4647，比稠密低 −0.0715 [−0.0748, −0.0685]（E008）。
 
 ## 2. 范围与目标（你 2026-10-23 的需求）
 
@@ -92,27 +92,27 @@
 - [x] MPS 冒烟运行（A1、A2、A4，10% 用户）和一次全量数据 3 个 epoch 的 A1 检查（E006）。
 - [x] 在 Modal 上批量训练（你，2026-10-24）：13 次运行，2.5 个 A10 小时，约 \$2.75；已拷回 `artifacts/runs/`；记为 E007，含消融 (a) 和配对 Δ。
 
-### S3. BM25、Milvus 服务索引、消融 (a) 和 (b)（约 4 小时；笔记本；可以和你的批量训练同时进行）
+### S3. BM25、Milvus 服务索引、消融 (b) ✅（2026-10-24，笔记本）
 
-- [ ] `retrieval/bm25.py`：物品文档（片名、类型、top genome 标签，以及只来自训练用户的标签）；BM25 权重存为 scipy.sparse 矩阵；用户查询是其 fold-in 物品的词项。
-- [ ] `retrieval/milvus_store.py`：一个同时含稠密和稀疏向量字段的 collection，载入后 flush；`search_dense`、`search_sparse` 和 `search_hybrid`（RRF，k = 60）；按历史长度多取，再去掉看过的物品。与 numpy 和 scipy 的 top-k 做一致性测试。
-- [ ] `retrieval/fusion.py`：离线评估用的 RRF。
-- [ ] 表 (b)：MostPop、EASE、BM25、稠密（A1-s42）、混合。记为 E008。（表 (a) 已完成：E007。）
-- **完成标准：** 表 (a) 和 (b) 写进 experiment_log.md；一致性测试通过。
+- [x] `retrieval/bm25.py`：物品文档（片名词、类型、genome top-20 标签、训练用户的标签；只出现在一个文档里的词项去掉）；BM25 权重存为 scipy.sparse；查询对每个词项统计包含它的 fold-in 物品数（取 `log1p`）；k1、b 和查询加权方式在 V_A 上选。
+- [x] `retrieval/milvus_store.py`：一个集合（稠密 FLAT + 稀疏倒排索引），加载后 flush；`search_dense`、`search_sparse`、`search_hybrid`（RRF，k = 60）。已看过的物品在检索内部用过滤条件去掉，所以结果与离线路径完全一致（比多取再过滤更简单）。
+- [x] `retrieval/fusion.py`：离线评估用的 RRF，公式与 Milvus 相同（名次从 1 开始）。
+- [x] `retrieval/evaluate.py`、`shopsage recall`：表 (b) 及配对 Δ、给 S4 的候选覆盖率、Milvus 一致性和延迟（并列 numpy / scipy 精确检索）（E008）。
+- **结果：** Recall@50：BM25 0.2529，稠密 0.5361，混合 0.4647；1,000 个用户上 Milvus 与离线完全一致；笔记本上精确检索比 Milvus Lite 快 16–40 倍。稠密 Top-500 覆盖 89.5% 的目标，加上 BM25 Top-100 为 89.7%。
 
 ### S4. LightGBM 排序器（约 4 小时；笔记本 CPU）
 
 - [ ] 先执行 `brew install libomp`。
-- [ ] `ranking/candidates.py`：为 V_B 和测试用户生成稠密 Top-500 ∪ BM25 Top-100。
+- [ ] `ranking/candidates.py`：为 V_B 和测试用户生成稠密 Top-500 ∪ BM25 Top-100（测试集上覆盖 0.897 的目标物品，E008：这是系统召回率的上限）。
 - [ ] `ranking/features.py`：稠密分数和名次、BM25 分数和名次、稀疏 EASE 分数（每个物品取 top-100 邻居）、训练用户上的物品流行度和平均评分、类型偏好、与历史中心的 genome 相似度、年份差、log 历史长度。金丝雀测试：改变一个用户的目标集，任何特征都不应改变。
 - [ ] `ranking/train.py`：以 NDCG@10 为目标的 LambdaRank；V_B 的 10% 用于早停；3 个种子；分别带和不带 EASE 特征。
-- [ ] 测试指标：NDCG@10、系统级 Recall@50 和 HR@50，分别与 EASE 和稠密路径做配对比较；离线测完整服务路径的 CPU 延迟 p50/p95。记为 E007。
+- [ ] 测试指标：NDCG@10、系统级 Recall@50 和 HR@50，分别与 EASE 和稠密路径做配对比较；离线测完整服务路径的 CPU 延迟 p50/p95。记为 E009。
 - **完成标准：** §2 目标表的每一行都能填上。
 
 ### S5. LLM 查询扩展，消融 (c)（约 3 小时；笔记本和 Anthropic API）
 
 - [ ] `llm/expand.py`：`claude-haiku-5-5`，结构化输出（`titles`、`keywords`、`genres`），effort 设为 `low`，不传采样参数，用 sha256(model id + prompt + params) 作为缓存键。缺少 key、被拒绝、超时，或扩展结果对应不到任何物品时，退回原始查询；用假客户端测试。
-- [ ] 约 1,000 个 (user, tag) 查询的基准，相关物品是该用户打过这个标签的电影：C0 用原始标签做 BM25，C1 用扩展结果做 BM25（有时间再加 C2 混合）；成本取自 `usage`。记为 E008。
+- [ ] 约 1,000 个 (user, tag) 查询的基准，相关物品是该用户打过这个标签的电影：C0 用原始标签做 BM25，C1 用扩展结果做 BM25（有时间再加 C2 混合）；成本取自 `usage`。记为 E010。
 - **完成标准：** 表 (c)；成本约 \$1。
 
 ### S6. Demo 与部署（约 5 小时；先在笔记本上，再到 Streamlit Community Cloud）
@@ -120,7 +120,7 @@
 - [ ] 落实 D-003：片名从哪里来，资源包里可以放什么。
 - [ ] 导出资源包（物品向量、`user_tower.npz`、稀疏 EASE、BM25 权重、LightGBM 模型、许可范围内的物品元数据）到 GitHub Release；把它的 tag 和 sha256 固定在 `configs/deploy/streamlit.yaml`。Milvus Lite collection 在启动时由资源包构建。
 - [ ] `serving/app.py`：选 5 部电影 → Top-10，带分数以及召回每个物品的路径；dense / BM25 / hybrid 开关；自由文本查询，带一个显示扩展结果的 LLM 开关；延迟读数和一个基准测试按钮。
-- [ ] 部署到 `yi-shopsage.streamlit.app`；内存在 690 MB 以内；主机上 p95 ≤ 200 ms；录制 GIF。记为 E009。
+- [ ] 部署到 `yi-shopsage.streamlit.app`；内存在 690 MB 以内；主机上 p95 ≤ 200 ms；录制 GIF。记为 E011。
 - **完成标准：** 在线地址可用；§2 的延迟一行已填上。
 
 ### S7. 整理与发布（约 3 小时）
@@ -242,16 +242,16 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 - [x] 提交并 push S1（`05f74c4`，2026-10-24；CI 通过，包括 Linux 上的 Milvus Lite 探测）。
 
 - [x] 在 Community Cloud 上部署探测（2026-10-24；E005：482 MB，混合检索 p95 176 ms）。
-- [x] 提交 S2（`fefcf6c`，2026-10-24）。
-- [ ] 提交批量训练结果并 push：
+- [x] 提交并 push S2 及其结果（`fefcf6c`、`c26417e`，2026-10-24）。
+- [x] 在 Modal 上运行 S2 批量训练（2026-10-24；E007）。注意：入口程序会先在本地写 `artifacts/runs/sweep_summary.json`，`modal volume get` 不肯覆盖它；改为下载到一个空目录。
+- [ ] 提交并 push S3：
 
   ```bash
   git add -A
-  git commit -m "S2: Modal sweep results (E007), plain-JSON run summaries"
+  git commit -m "S3: BM25, RRF, Milvus Lite serving index, ablation (b) (E008)"
   git push
   ```
 
-- [x] 在 Modal 上运行 S2 批量训练（2026-10-24；E007）。注意：入口程序会先在本地写 `artifacts/runs/sweep_summary.json`，`modal volume get` 不肯覆盖它；改为下载到一个空目录。
 - [ ] 就 D-003 给 GroupLens 发邮件（回复可能要等一段时间）。邮件是写给 GroupLens 的，所以保留英文：
 
   ```text
@@ -295,7 +295,7 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 | EASE 达不到校准数字 | 在报告任何模型数字之前修好指标和划分的 bug |
 | 目标达不到 | 对照已发表的参考数字汇报；绝不为了凑目标而改协议或指标 |
 | 批量训练在 Modal 上失败或卡住 | 重跑时跳过已完成的运行；先做 2 个 epoch 的试跑；RunPod（方案 B）作为备选 |
-| Milvus Lite 在 Community Cloud 上偏慢：实测混合检索 p95 176 ms，占了 200 ms 预算的大部分（E005） | S6 在主机上实测 numpy 精确稠密 top-k 和 scipy BM25（结果相同；FLAT 重合度 1.000）；如果 Milvus 加排序器达不到 D-013，demo 改走 numpy / scipy，Milvus 作为备选引擎展示并附上其延迟 |
+| Milvus Lite 在 Community Cloud 上偏慢：探测的混合检索在主机上 p95 176 ms（E005）；真实查询更重（笔记本上 48.7 ms，numpy / scipy 精确检索只要 1.5 ms，E008） | S6 在主机上实测 numpy 精确稠密 top-k 和 scipy BM25（结果相同；FLAT 重合度 1.000）；如果 Milvus 加排序器达不到 D-013，demo 改走 numpy / scipy，Milvus 作为备选引擎展示并附上其延迟 |
 | demo 超过 690 MB | 探测峰值 482 MB（E005）；精简资源包；Hugging Face Spaces |
 | 许可不允许附带片名或衍生产物 | 现在就发 D-003 邮件；S6 里准备了后备方案 |
 

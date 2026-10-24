@@ -1,8 +1,9 @@
 """``shopsage`` command-line interface (Typer).
 
-Today: ``prepare``, ``stats``, ``evaluate`` (MostPop and EASE on the Liang split), and the
+Today: ``prepare``, ``stats``, ``evaluate`` (MostPop and EASE on the Liang split), the
 Two-Tower commands ``train``, ``mine`` and ``sweep`` (they need the ``train`` extra; torch is
-imported only inside them). Planned, by step of docs/plan.md: ``rank`` (S4), ``expand`` (S5).
+imported only inside them), and ``recall`` (BM25, dense and hybrid recall paths, with the Milvus
+Lite parity check). Planned, by step of docs/plan.md: ``rank`` (S4), ``expand`` (S5).
 
 Default paths (``--config``, ``--processed-dir``) are resolved against the repository root,
 found by walking up from the working directory to the nearest ``pyproject.toml``, so the
@@ -284,6 +285,38 @@ def sweep(
     (runs / "sweep_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     typer.echo(json.dumps(summary["arms"], indent=2))
     typer.echo(f"wrote {runs / 'sweep_summary.json'}")
+
+
+@app.command()
+def recall(
+    dense_runs: str = typer.Option(
+        "A1-s42,A1-s43,A1-s44", "--dense-runs", help="Comma-separated run ids under --runs-dir."
+    ),
+    depth: int = typer.Option(200, "--depth", help="Per-path list length fused by RRF."),
+    parity_users: int = typer.Option(1000, "--parity-users", help="Test users queried in Milvus."),
+    run_id: str | None = typer.Option(None, "--run-id", help="Default: recall-YYYYMMDD-HHMM."),
+    processed_dir: Path | None = typer.Option(None, "--processed-dir", "-p"),
+    runs_dir: Path | None = typer.Option(None, "--runs-dir"),
+    out_dir: Path | None = typer.Option(None, "--out-dir", "-o"),
+) -> None:
+    """Ablation (b): BM25, dense and RRF hybrid recall, plus the Milvus Lite parity check."""
+    from shopsage_rec.retrieval.evaluate import evaluate_recall_paths, format_recall_summary
+
+    processed, runs = _dirs(processed_dir, runs_dir)
+    names = tuple(n.strip() for n in dense_runs.split(",") if n.strip())
+    missing = [n for n in names if not (runs / n / "item_embeddings.npy").is_file()]
+    if missing or not names:
+        raise typer.BadParameter(
+            f"no exported run for: {', '.join(missing) or '(none)'} under {runs}",
+            param_hint="--dense-runs",
+        )
+    out = out_dir if out_dir is not None else _repo_root() / DEFAULT_EVAL_DIR
+    result = evaluate_recall_paths(
+        processed, runs, out, dense_runs=names, depth=depth, parity_users=parity_users,
+        run_id=run_id,
+    )  # fmt: skip
+    typer.echo(format_recall_summary(result.summary))
+    typer.echo(f"wrote {result.out_dir}")
 
 
 if __name__ == "__main__":  # pragma: no cover

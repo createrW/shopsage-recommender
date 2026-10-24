@@ -119,6 +119,8 @@ def write_synthetic_raw(
         f"{i + 1},{t + 1},{scores[i, t]:.4f}" for i in range(n_items - 20) for t in range(n_tags)
     ]
     (raw / "genome-scores.csv").write_text("\n".join(genome) + "\n")
+    tags = ["tagId,tag"] + [f"{t + 1},tag {t + 1}" for t in range(n_tags)]
+    (raw / "genome-tags.csv").write_text("\n".join(tags) + "\n")
 
 
 @pytest.fixture
