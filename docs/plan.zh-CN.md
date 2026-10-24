@@ -2,7 +2,7 @@
 
 [English](plan.md) | **简体中文**
 
-**更新：** 2026-10-24，S5 完成后 · **进度：** S0–S5 已完成（E007 批量训练，E008 召回路径，E009 排序器，E010 LLM 扩展）；下一步是 S6（demo） · **代码：** `main` 上的 `2b05c58`（S4），已 push 到 [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender)；S5 尚未提交 · **配套文档：** [memory.zh-CN.md](memory.zh-CN.md)（事实、规则、决策）
+**更新：** 2026-10-24，S5 完成、D-003 定为方案 B 之后 · **进度：** S0–S5 已完成（E007 批量训练，E008 召回路径，E009 排序器，E010 LLM 扩展）；下一步是 S6（demo） · **代码：** `main` 上的 `d1d6080`（S5），已 push 到 [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender)；D-003 的文档更新尚未提交 · **配套文档：** [memory.zh-CN.md](memory.zh-CN.md)（事实、规则、决策）
 
 - **目标：** 在 MovieLens-20M 上做一个两阶段推荐系统（Two-Tower 稠密召回和 BM25 稀疏召回、LightGBM 重排、可选的 LLM 查询扩展、Milvus Lite 检索、Streamlit demo），所有对外报告的数字都来自实测。
 - **架构：** 离线部分，PyTorch 在云 GPU 上训练双塔，numpy 和 scipy 为评估计算精确候选，LightGBM 对两条召回路径的并集重排。在线部分，demo 只用 CPU：numpy 实现的用户塔、Milvus Lite（稠密、稀疏 BM25 和 RRF 混合检索）、LightGBM，以及用于查询扩展的 Claude Haiku。
@@ -25,7 +25,7 @@
 | 排序 | 在稠密 Top-500 ∪ BM25 Top-100 上做 LightGBM LambdaRank，12 个特征（含稀疏 EASE）；3 个种子（E009） | S6 放进 demo |
 | LLM | Claude Haiku 扩展，带结构化输出、缓存和回退；消融 (c)：按路由扩展在新事件上 HR@50 +0.022（E010） | S6：demo 的自由文本框 |
 | Demo | 探测已部署到 Community Cloud：峰值 482 MB，混合检索 p95 176 ms（E005） | S6：完整 demo；已规划延迟兜底方案（§8） |
-| 仓库 | 150 个测试通过；lint、类型检查和 lock 都干净；S4 已上 GitHub | 提交并 push S5（由你来做，§7） |
+| 仓库 | 150 个测试通过；lint、类型检查和 lock 都干净；S5 已上 GitHub | 资源包仓库和 token（由你来做，§7） |
 
 目前的实测结果（`Liang-SG-strict`，10,000 个测试用户）：MostPop Recall@50 0.2352、NDCG@10 0.1275；EASE Recall@50 0.5210、NDCG@10 0.3280（E004）。Two-Tower A1，3 个种子（E007）：Recall@50 0.5361 ± 0.0005、NDCG@10 0.3351 ± 0.0005，Recall@50 比 EASE 高 +0.0151 [+0.0119, +0.0184]。困难负样本：A3 − A1 = −0.0020 [−0.0033, −0.0007]，+0.08 的目标没有达到；logQ 校正带来 +0.225（A1 − A0）。BM25 Recall@50 0.2529；RRF 混合 0.4647，比稠密低 −0.0715 [−0.0748, −0.0685]（E008）。**两阶段系统（LightGBM 排序器，E009）：Recall@50 0.5420 ± 0.0006、NDCG@10 0.3428**，比 EASE 高 +0.0209 / +0.0148；笔记本 CPU 上每个用户 p95 8.6 ms。BM25 标签查询的 LLM 扩展：总是扩展 HR@50 −0.031；只对未知标签扩展，在新事件上 +0.022 [+0.012, +0.032]（E010）。
 
@@ -115,12 +115,23 @@
 
 ### S6. Demo 与部署（约 5 小时；先在笔记本上，再到 Streamlit Community Cloud）
 
-- [ ] 落实 D-003：片名从哪里来，资源包里可以放什么。
-- [ ] 导出资源包（物品向量、`user_tower.npz`、稀疏 EASE、BM25 权重、LightGBM 模型、许可范围内的物品元数据）到 GitHub Release；把它的 tag 和 sha256 固定在 `configs/deploy/streamlit.yaml`。Milvus Lite collection 在启动时由资源包构建。
+- [x] D-003 已决定（2026-10-24，方案 B）：资源包私有（experiment_log.md，D-003）。内容是派生产物加物品元数据，不含评分行或标签行。它作为私有仓库 `createrW/shopsage-demo-bundle` 的 Release 资源存放，应用用 Streamlit secrets 里的只读 token 读取。
+- [ ] `serving/bundle.py`：
+  - `export_bundle` 写出一个 `tar.gz`：
+    - `item_embeddings.npy` 和 `user_tower.npz`（A1-s42）；
+    - `ease_top100.npz`（λ 1,000，100 个邻居）；
+    - BM25 权重和词表（E008 的设置）；
+    - `ranker-s42.txt`（E009）；
+    - `items.parquet`（片名、年份、类型）以及排序器特征需要的物品统计量；
+    - Haiku 缓存（E010）；
+    - `manifest.json`（来源运行、划分 sha256、每个文件的 sha256）。
+  - `fetch_bundle`：调用 GitHub API，`Authorization` 设为*不随跳转转发*的请求头（302 跳到存储服务器时不能带着它），校验 sha256，解压到 `artifacts/demo/`；重跑时复用。
+- [ ] 用 `gh release create bundle-<日期> <tar.gz> --repo createrW/shopsage-demo-bundle` 上传；把仓库、tag 和 sha256 固定在 `configs/deploy/streamlit.yaml` 里（公开：这些都不是秘密）。
+- [ ] `serving/recommender.py`：基于资源包、不依赖 torch 的引擎（numpy 用户塔、精确的稠密 + BM25 候选、排序器特征、LightGBM Top-10 及召回每个物品的路径）；文本框用按路由的 LLM 扩展；Milvus Lite 作为可切换的引擎，附带一致性检查。
 - [ ] 服务引擎按主机实测来定：numpy / scipy 精确检索（笔记本上整条路径 p95 8.6 ms，E009）vs Milvus Lite（笔记本上混合检索 p95 48.7 ms，E008）；无论选哪个，Milvus 都连同一致性检查一起展示。macOS 上先 import LightGBM 再 import pymilvus（memory.zh-CN.md §7）。
-- [ ] `serving/app.py`：选 5 部电影 → Top-10，带分数以及召回每个物品的路径；dense / BM25 / hybrid 开关；自由文本查询，带一个显示扩展结果的 LLM 开关（只扩展不在词表里的查询，E010；没有 key 时用缓存的扩展）；延迟读数和一个基准测试按钮。
-- [ ] 部署到 `yi-shopsage.streamlit.app`；内存在 690 MB 以内；主机上 p95 ≤ 200 ms；录制 GIF。记为 E011。
-- **完成标准：** 在线地址可用；§2 的延迟一行已填上。
+- [ ] `serving/app.py`：选 5 部电影 → Top-10，带分数以及召回每个物品的路径；dense / BM25 / hybrid 开关；自由文本查询，带一个显示扩展结果的 LLM 开关（只扩展不在词表里的查询，E010；没有 key 时用缓存的扩展）；延迟读数和一个基准测试按钮。S1 探测保留为第二个页面。
+- [ ] 部署到 `yi-shopsage.streamlit.app`，应用的 secrets 里放 `BUNDLE_TOKEN`（可选再放 `ANTHROPIC_API_KEY`）；内存在 690 MB 以内；主机上 p95 ≤ 200 ms；录制 GIF。记为 E011。
+- **完成标准：** 线上 URL；§2 的延迟一行填好。
 
 ### S7. 整理与发布（约 3 小时）
 
@@ -205,7 +216,7 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 5. S6：把 demo 资源包上传到 GitHub Release，把它的 tag 和 sha256 写进 `configs/deploy/streamlit.yaml`，然后 push。
 6. 检查项：不导入 torch；Milvus Lite 能启动并返回结果；内存在 690 MB 的保证额度之内（上限 2.7 GB）；一次 Top-10 请求的 p50/p95 延迟；应用休眠（闲置 12 小时）之后的冷启动。
 
-**备选：** Hugging Face Spaces（Docker 或 Streamlit SDK；CPU basic，2 vCPU、16 GB，免费），比如 Milvus Lite 或资源包放不下的时候。D-003 在那里同样适用。
+**备选：** Hugging Face Spaces（Docker 或 Streamlit SDK；CPU basic，2 vCPU、16 GB，免费），比如 Milvus Lite 或资源包放不下的时候。D-003 在那里同样适用：Space 会用同一个只读 token 读取同一个私有资源包。
 
 ### 6.5 成本护栏（托管方案的规则在本项目中的落实）
 
@@ -213,8 +224,9 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 - **RunPod：** 只用预充值额度，不开自动充值；产物拷出之后就终止 pod。
 - **云上没有长期运行的资源：** 训练机器用完即弃，唯一常驻的服务是免费的 Streamlit 应用（相当于托管方案里的"做完立刻 `terraform destroy`"）。
 - **Anthropic：** 在 Console 里设置较低的月度消费上限；响应有缓存，重跑不花钱。
+- **资源包 token 只读、只限一个仓库**（Contents: read，仅 `shopsage-demo-bundle`，90 天过期），泄露也只会暴露资源包；在 GitHub 和应用的 Secrets 里轮换即可。
 - **密钥不进 git：** `.streamlit/secrets.toml` 已被 git 忽略，也不在 Docker 构建上下文里；密钥来自环境变量或 Streamlit secrets。
-- **demo 的 Docker 镜像只留在本地，** 在 D-003 决定之前不推到公共镜像仓库。
+- **demo 的 Docker 镜像只留在本地，** 不推到公共镜像仓库。它和应用一样在运行时下载私有资源包，所以任何镜像里都没有由数据派生的文件（D-003）。
 
 ### 6.6 本仓库对托管方案的细化
 
@@ -247,15 +259,22 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 - [x] `brew install libomp`（2026-10-24）。
 - [x] 提交并 push S4（`2b05c58`，2026-10-24）。
 - [x] Anthropic API key 已加进 `~/.zshrc`（2026-10-24）；S5 花费 \$0.18。
-- [ ] 提交并 push S5：
+- [x] 提交并 push S5（`d1d6080`，2026-10-24）。
+
+- [x] D-003：方案 B，私有资源包（2026-10-24）。
+- [ ] 现在就创建私有的资源包仓库（必须先有仓库，token 才能限定到它）：
 
   ```bash
-  git add -A
-  git commit -m "S5: Claude Haiku query expansion, routed to unknown tags (E010)"
-  git push
+  gh repo create createrW/shopsage-demo-bundle --private --description "Private model bundle for the ShopSage demo (derived from MovieLens-20M; not for redistribution)"
   ```
 
-- [ ] 如果 GroupLens 还没答复，为 S6 决定 D-003（见下）：demo 需要一个由数据派生的资源包。
+- [ ] 为它创建只读 token：github.com → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → Generate new token。设置如下：
+  - Name：`shopsage-demo-read`；Expiration：90 天；Resource owner：`createrW`。
+  - Repository access：**Only select repositories** → `shopsage-demo-bundle`。
+  - Permissions → Repository permissions → **Contents: Read-only**（发布资源接口只需要这一项权限；2026-10-24 已查 GitHub 文档核实）。
+
+  token（`github_pat_…`）留到部署那一步用：它放进 Streamlit 应用的 Settings → Secrets，写成 `BUNDLE_TOKEN = "github_pat_…"`。不要提交它，也不要发给我：本地上传和测试我用你现有的 `gh` 登录。
+- [ ] 可选，用于 demo 里的实时 LLM 扩展：另建一个设了小额月度上限（例如 \$5）的 Anthropic key，加到同一个 Secrets 里，写成 `ANTHROPIC_API_KEY`。没有它，demo 只用缓存的扩展。
 
 - [ ] 就 D-003 给 GroupLens 发邮件（回复可能要等一段时间）。邮件是写给 GroupLens 的，所以保留英文：
 
@@ -287,7 +306,7 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 
 **之后**
 
-- [ ] S6 之前：GroupLens 关于 D-003 的答复（见上）。
+- [ ] 如果 GroupLens 给了许可（D-003）：把 `shopsage-demo-bundle` 设为公开，或公开发布资源包。
 
 ## 8. 风险与砍需求顺序
 
@@ -302,7 +321,7 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 | 批量训练在 Modal 上失败或卡住 | 重跑时跳过已完成的运行；先做 2 个 epoch 的试跑；RunPod（方案 B）作为备选 |
 | Milvus Lite 在 Community Cloud 上偏慢：探测的混合检索在主机上 p95 176 ms（E005）；真实查询更重（笔记本上 48.7 ms，numpy / scipy 精确检索只要 1.5 ms，E008） | S6 在主机上实测 numpy 精确稠密 top-k 和 scipy BM25（结果相同；FLAT 重合度 1.000）；如果 Milvus 加排序器达不到 D-013，demo 改走 numpy / scipy，Milvus 作为备选引擎展示并附上其延迟 |
 | demo 超过 690 MB | 探测峰值 482 MB（E005）；精简资源包；Hugging Face Spaces |
-| 许可不允许附带片名或衍生产物 | 现在就发 D-003 邮件；S6 里准备了后备方案 |
+| 许可不允许附带片名或衍生产物 | D-003 方案 B：任何由数据派生的东西都不公开（私有资源包、只读 token）；GroupLens 的邮件仍然值得发 |
 
 ## 9. 完成标准
 

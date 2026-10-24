@@ -2,15 +2,15 @@
 
 [English](memory.md) | **简体中文**
 
-**更新：** 2026-10-24，S5 完成后（E010）。先读这份，再读 [plan.zh-CN.md](plan.zh-CN.md)；两份合起来就是下一步的依据。这份文档记录事实、规则和决策；plan 里是步骤和勾选项。
+**更新：** 2026-10-24，S5 完成（E010）、D-003 决定之后。先读这份，再读 [plan.zh-CN.md](plan.zh-CN.md)；两份合起来就是下一步的依据。这份文档记录事实、规则和决策；plan 里是步骤和勾选项。
 
 ## 1. 项目概况
 
 - **是什么：** 基于 MovieLens-20M 的两阶段推荐系统：Two-Tower 稠密召回和 BM25 稀疏召回，外加二者的 RRF 混合；LightGBM 重排器；可选的 Claude Haiku 查询扩展；Milvus Lite 作为服务端检索引擎；只用 CPU 的 Streamlit demo。所有对外报告的数字都来自有记录的运行。
 - **为什么做：** 这是你 MLE 作品集的旗舰项目；README 是评审者看到的页面。
 - **负责人：** Yi Zhao（USC），所有 GitHub push 也由本人完成。
-- **位置：** `/Users/zy/Project/new_sys/projects/shopsage-recommender`，`main` 分支。提交 `3e0f08f`（Day 1）和 `05f74c4`（S1）已 push 到 `https://github.com/createrW/shopsage-recommender`（CI 通过）；S2 及其结果（`fefcf6c`、`c26417e`）S3（`a54bdbe`）和 S4（`2b05c58`）也已 push；S5 尚未提交。
-- **状态：** S0–S4 已完成：批量训练（E007，消融 (a)）、召回路径及 Milvus Lite 服务索引（E008，消融 (b)）和 LightGBM 排序器（E009）。S5 也已完成（E010，Claude Haiku 扩展，消融 (c)）。下一步是 S6（demo 和部署）；发布由数据派生的资源包取决于 D-003。2026-10-23 按效率优先重新规划（plan.zh-CN.md §3）。
+- **位置：** `/Users/zy/Project/new_sys/projects/shopsage-recommender`，`main` 分支。提交 `3e0f08f`（Day 1）和 `05f74c4`（S1）已 push 到 `https://github.com/createrW/shopsage-recommender`（CI 通过）；S2 及其结果（`fefcf6c`、`c26417e`）S3（`a54bdbe`）、S4（`2b05c58`）和 S5（`d1d6080`）也已 push；D-003 的文档更新尚未提交。
+- **状态：** S0–S4 已完成：批量训练（E007，消融 (a)）、召回路径及 Milvus Lite 服务索引（E008，消融 (b)）和 LightGBM 排序器（E009）。S5 也已完成（E010，Claude Haiku 扩展，消融 (c)）。下一步是 S6（demo 和部署）。D-003 已决定（方案 B，私有资源包）；负责人先创建资源包仓库和它的只读 token（plan.zh-CN.md §7）。2026-10-23 按效率优先重新规划（plan.zh-CN.md §3）。
 
 ## 2. 仓库之外的输入
 
@@ -98,7 +98,7 @@
 |---|---|---|---|
 | D-001 | 评估协议 | 2026-10-23 已定（负责人没有否决，直接开始了 S1） | `Liang-SG-strict` 是唯一的主表协议：精确复现 Liang 等人的划分（种子 98765，10,000 个验证用户和 10,000 个测试用户，fold-in 与目标按 80/20 划分）。校准已通过（E004）。leave-one-out 划分和 `Liang-SG-fit` 砍掉。 |
 | D-002 | 物品过滤 | 2026-10-23 修订 | 不过滤物品（`min_item_interactions: 1`），即 Liang 的预处理。正样本 ≥ 5 的过滤只适用于不再使用的 Day 1 划分。 |
-| D-003 | Demo 数据许可 | 待定，S6 之前 | 默认：访客"选 5 部电影"画像，启动时从 GroupLens 获取片名，不附带逐用户数据；由负责人给 GroupLens 发邮件（plan.zh-CN.md §7） |
+| D-003 | Demo 数据许可 | 2026-10-24 已决定（负责人选了方案 B） | 任何由数据派生的东西都不公开。资源包（派生产物 + 物品元数据，不含评分行或标签行）作为私有仓库 `createrW/shopsage-demo-bundle` 的 Release 资源存放；应用启动时用 Streamlit secrets 里的细粒度 token（`BUNDLE_TOKEN`，只限该仓库，Contents: read-only）下载并校验 sha256；访客自己"选 5 部电影"建画像。GroupLens 若答复再重新考虑 |
 | D-004 | 用户塔 | 2026-10-23 已定，随 D-001 | 归纳式：≤ 50 个 fold-in 物品的历史物品 embedding 均值加 log 历史长度 → MLP → 128 维；没有用户 ID 表 |
 | D-005 | 难负样本消融 | 2026-10-23 修订 | 主对比：A1（in-batch + logQ，"无"）对 A3（A1 + 每行的挖掘负样本，取自 A1 种子 42 模型的第 101–500 名，"有"），各 3 个种子；A0（无 logQ）、A2（A1 + 2,048 个均匀负样本，即 MNS）和 A4（全量 softmax）各 1 个种子，作为背景 |
 | D-006 | 排序器数据 | 2026-10-23 修订 | V_A / V_B = 10,000 个 Liang 验证用户按 50/50 划分（种子 42）；候选 = 稠密 Top-500 ∪ BM25 Top-100；标签 = 每个用户留出的 20%；约 11 个特征，含一个稀疏 EASE 分数；LambdaRank，3 个 LightGBM 种子，分别带和不带 EASE 特征 |
@@ -126,6 +126,7 @@
 - **Modal 1.6：** `Image.uv_sync` 只装依赖、不装项目本身，所以源码用 `add_local_dir` 加 `PYTHONPATH` 放进去；GPU 名称是 `"T4"`、`"L4"`、`"A10"`、`"L40S"`、`"A100"` 等（截至 2026-10-24 文档里没有 `"A10G"`）；Volume 写入后要 `commit()`，读之前要 `reload()`。
 - **Milvus Lite 检索细节（3.2.2）：** `filter="id not in [...]"` 在 `search` 和 `hybrid_search` 的每个 `AnnSearchRequest(expr=...)` 里都有效，所以已看过的物品在截断前就被去掉；`RRFRanker(k)` 的得分是 `1/(k + rank)`，名次从 1 开始；插入空的稀疏向量会被拒绝（因此用占位词项）；稀疏检索只返回有匹配的物品。真实的 BM25 查询（几百个词项）让稀疏检索比 scipy 慢约 40 倍。
 - **macOS 的 OpenMP 冲突：** faiss（Milvus Lite 底层）、torch 和 LightGBM（Homebrew 的 libomp）各自带一份 libomp；后加载的那份在线程池运行时会段错误：LightGBM 在 faiss 之后、torch 在 LightGBM 之后都会崩。分开的进程没问题（`shopsage rank` 只加载 LightGBM 的那份）；在共享的 pytest 进程里，排序器测试让 LightGBM 的训练和 `predict` 都用 `num_threads=1`。Linux 用的是 GNU libgomp。
+- **GitHub 私有 Release 资源：** 对细粒度 token，`GET /repos/{owner}/{repo}/releases/tags/{tag}` 和 `GET .../releases/assets/{id}` 只需要 Contents: read（GitHub 文档，2026-10-24 核实）。用 `Accept: application/octet-stream` 下载；API 返回 302 跳到带签名的存储 URL，所以用 urllib 时要通过 `Request.add_unredirected_header("Authorization", ...)` 发送 token：被转发的 `Authorization` 头会让签名请求失败。本地测试用 `gh auth token` 拿 token；负责人的只读 PAT 只放进 Streamlit secrets。
 - **agent shell 里的 API key：** 负责人的 `~/.zshrc` 导出了 `ANTHROPIC_API_KEY`，但 agent 的 shell 快照早于这次修改；调用 API 的命令用 `ANTHROPIC_API_KEY="$(zsh -ic 'printf %s "$ANTHROPIC_API_KEY"')"` 读取，从不打印。`uv sync` 必须带上 `--extra llm`（连同 `dev` 和 `train`），否则 anthropic SDK 会被删掉。
 - **Milvus Lite 服务器** 会一直运行到进程退出；`MilvusStore.close()` 负责释放（`milvus_lite.server_manager.server_manager_instance.release_server`）。
 - **检查 `sys.modules` 的测试** 要放在子进程里跑：同一会话里的其他测试会 import torch。
@@ -199,3 +200,4 @@ uv run shopsage stats | grep split_sha256        # Liang 划分：4f93a0e6f611..
 | 2026-10-24 | S3 完成：BM25 文档和权重、RRF、Milvus Lite 服务索引；消融 (b) 记为 E008（BM25 0.2529，混合比稠密低 −0.0715；Milvus 与离线完全一致，笔记本上 numpy / scipy 精确检索快 16–40 倍）；133 个测试通过 |
 | 2026-10-24 | 负责人 push 了 S3（`a54bdbe`）并装好 libomp；S4 完成：LightGBM LambdaRank 排序器记为 E009（系统 Recall@50 0.5420、NDCG@10 0.3428；比 EASE 高 +0.021 / +0.015；p95 8.6 ms）；发现并控制住 macOS 上的 libomp 冲突；141 个测试通过 |
 | 2026-10-24 | 负责人 push 了 S4（`2b05c58`）并加好 API key；S5 完成：Claude Haiku 扩展记为 E010（总是扩展 HR@50 −0.031；只扩展未知标签在新事件上 +0.022；\$0.18）；150 个测试通过 |
+| 2026-10-24 | 负责人 push 了 S5（`d1d6080`），D-003 选了方案 B：私有资源包仓库，只读 token 放在 Streamlit secrets；S6 已在 plan 里细化 |

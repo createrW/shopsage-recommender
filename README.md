@@ -216,8 +216,8 @@ The S1 deployment probe is live in `src/shopsage_rec/serving/app.py`. It builds 
 - **What it does.** A visitor picks 5 movies and gets a Top-10, showing the scores and the path that retrieved each item. A toggle switches between dense, BM25 and hybrid retrieval, and a free-text query box shows the LLM expansion.
 - **Host.** Streamlit Community Cloud: 690 MB of RAM guaranteed (up to 2.7 GB), at most 2 CPU cores, Python 3.12, Debian 11, asleep after 12 h idle. Hugging Face Spaces and the CPU `Dockerfile` are fallbacks.
 - **Dependencies.** Community Cloud reads `src/shopsage_rec/serving/requirements.txt` (from `uv export --extra demo`). It searches the entrypoint's directory before the repo root, where `uv.lock` would otherwise win. The root `packages.txt` installs `libgomp1` for LightGBM.
-- **Artifacts.** The app never imports torch. Its bundle (item embeddings, user-tower weights, sparse EASE, BM25 weights, the LightGBM model) is fetched at startup from a sha256-pinned GitHub Release asset. The Milvus Lite collection is built and flushed at startup.
-- **Licence (D-003, open).** MovieLens may not be redistributed. Until GroupLens grants permission, the public demo ships no per-user rating rows (hence visitor-built profiles) and obtains movie titles from GroupLens at startup.
+- **Artifacts.** The app never imports torch. Its bundle (item embeddings, user-tower weights, sparse EASE, BM25 weights, the LightGBM model) is fetched at startup from a sha256-pinned Release asset of a private repository, with a read-only token kept in the app's secrets. The Milvus Lite collection is built and flushed at startup.
+- **Licence (D-003).** MovieLens may not be redistributed, so nothing derived from it is public. The demo's bundle (model artifacts and movie metadata, no rating or tag rows) stays in a private repository that only the app can read, and visitors build their own profile by picking movies. The repository opens only if GroupLens grants permission.
 
 <!-- ![Demo](docs/figures/demo.gif) -->
 

@@ -2,15 +2,15 @@
 
 **English** | [简体中文](memory.zh-CN.md)
 
-**Updated:** 2026-10-24, after S5 (E010). Read this first, then [plan.md](plan.md); together they are the source of truth for the next step. This file holds facts, rules and decisions; plan.md holds the steps and their checkboxes.
+**Updated:** 2026-10-24, after S5 (E010) and the D-003 decision. Read this first, then [plan.md](plan.md); together they are the source of truth for the next step. This file holds facts, rules and decisions; plan.md holds the steps and their checkboxes.
 
 ## 1. The project
 
 - **What:** a two-stage recommender on MovieLens-20M: Two-Tower dense recall and BM25 sparse recall plus their RRF hybrid, a LightGBM re-ranker, optional Claude Haiku query expansion, Milvus Lite as the serving retrieval engine, and a CPU-only Streamlit demo. Every reported number comes from a logged run.
 - **Why:** the owner's MLE portfolio flagship; the README is the page reviewers see.
 - **Owner:** Yi Zhao (USC), who also does every GitHub push.
-- **Where:** `/Users/zy/Project/new_sys/projects/shopsage-recommender`, branch `main`. Commits `3e0f08f` (Day 1) and `05f74c4` (S1) are pushed to `https://github.com/createrW/shopsage-recommender` (CI green); so are S2 and its results (`fefcf6c`, `c26417e`) S3 (`a54bdbe`) and S4 (`2b05c58`); S5 is uncommitted.
-- **State:** S0–S4 done: the sweep (E007, ablation (a)), the recall paths with the Milvus Lite serving index (E008, ablation (b)) and the LightGBM ranker (E009). S5 done too (E010, Claude Haiku expansion, ablation (c)). S6 (demo and deployment) is next; publishing a data-derived bundle depends on D-003. Re-planned efficiency-first on 2026-10-23 (plan.md §3).
+- **Where:** `/Users/zy/Project/new_sys/projects/shopsage-recommender`, branch `main`. Commits `3e0f08f` (Day 1) and `05f74c4` (S1) are pushed to `https://github.com/createrW/shopsage-recommender` (CI green); so are S2 and its results (`fefcf6c`, `c26417e`) S3 (`a54bdbe`), S4 (`2b05c58`) and S5 (`d1d6080`); the D-003 doc updates are uncommitted.
+- **State:** S0–S4 done: the sweep (E007, ablation (a)), the recall paths with the Milvus Lite serving index (E008, ablation (b)) and the LightGBM ranker (E009). S5 done too (E010, Claude Haiku expansion, ablation (c)). S6 (demo and deployment) is next. D-003 is decided (option B, a private bundle); the owner creates the bundle repository and its read-only token first (plan.md §7). Re-planned efficiency-first on 2026-10-23 (plan.md §3).
 
 ## 2. Inputs that live outside the repo
 
@@ -98,7 +98,7 @@ Current decisions; experiment_log.md's Decisions table holds the full text and r
 |---|---|---|---|
 | D-001 | Evaluation protocol | DECIDED 2026-10-23 (the owner started S1 without a veto) | `Liang-SG-strict` is the only headline protocol: an exact replication of Liang et al.'s split (seed 98765, 10,000 validation and 10,000 test users, 80/20 fold-in and targets). Calibration passed (E004). The leave-one-out split and `Liang-SG-fit` are cut. |
 | D-002 | Item filter | REVISED 2026-10-23 | No item filter (`min_item_interactions: 1`), Liang's preprocessing. The 5-positive filter applies only to the unused Day-1 split. |
-| D-003 | Demo data licence | OPEN, before S6 | default: a visitor "pick 5 movies" profile, titles obtained from GroupLens at startup, no per-user rows; the owner emails GroupLens (plan.md §7) |
+| D-003 | Demo data licence | DECIDED 2026-10-24 (the owner chose option B) | nothing data-derived is public. The bundle (derived artifacts + item metadata, no rating or tag rows) is a Release asset of the private repo `createrW/shopsage-demo-bundle`; the app downloads it at startup with a fine-grained token (that repo only, Contents: read-only) from Streamlit secrets (`BUNDLE_TOKEN`) and checks its sha256; visitors build a "pick 5 movies" profile. Revisit if GroupLens answers |
 | D-004 | User tower | DECIDED 2026-10-23, follows D-001 | inductive: mean of history-item embeddings over ≤ 50 fold-in items plus log history length → MLP → 128-d; no user-ID table |
 | D-005 | Hard-negative ablation | REVISED 2026-10-23 | headline: A1 (in-batch + logQ, "without") vs A3 (A1 + per-row negatives mined from ranks 101–500 of A1's seed-42 model, "with"), 3 seeds each; A0 (no logQ), A2 (A1 + 2,048 uniform negatives, MNS) and A4 (full softmax) one seed each, as context |
 | D-006 | Ranker data | REVISED 2026-10-23 | V_A / V_B = the 10,000 Liang validation users split 50/50 (seed 42); candidates = dense Top-500 ∪ BM25 Top-100; labels = each user's held-out 20%; ~11 features including a sparse-EASE score; LambdaRank, 3 LightGBM seeds, with and without the EASE feature |
@@ -126,6 +126,7 @@ Current decisions; experiment_log.md's Decisions table holds the full text and r
 - **Modal 1.6:** `Image.uv_sync` installs dependencies only (no project), so the source is added with `add_local_dir` and `PYTHONPATH`; GPU names are `"T4"`, `"L4"`, `"A10"`, `"L40S"`, `"A100"`, … (no `"A10G"` in the docs as of 2026-10-24); Volumes need `commit()` after writes and `reload()` before reads.
 - **Milvus Lite search details (3.2.2):** `filter="id not in [...]"` works in `search` and in each `AnnSearchRequest(expr=...)` of `hybrid_search`, so seen items go before the cut; `RRFRanker(k)` scores `1/(k + rank)` with ranks from 1; an empty sparse vector is rejected on insert (a placeholder term is used); sparse search returns matching items only. Real BM25 queries (hundreds of terms) make sparse search ~40× slower than scipy.
 - **macOS OpenMP clash:** faiss (under Milvus Lite), torch and LightGBM (Homebrew libomp) each bundle their own libomp. Whichever loads second segfaults once its thread pool runs: LightGBM after faiss, torch after LightGBM. Separate processes are fine (`shopsage rank` loads only LightGBM's). In the shared pytest process the ranker test runs LightGBM with `num_threads=1` for both training and `predict`. Linux uses GNU libgomp.
+- **Private GitHub release assets:** `GET /repos/{owner}/{repo}/releases/tags/{tag}` and `GET .../releases/assets/{id}` need only Contents: read for a fine-grained token (GitHub docs, checked 2026-10-24). Download with `Accept: application/octet-stream`; the API answers 302 to a signed asset-store URL, so with urllib send the token through `Request.add_unredirected_header("Authorization", ...)`: a forwarded `Authorization` header breaks the signed request. Locally, `gh auth token` gives a token for tests; the owner's read-only PAT goes only into Streamlit secrets.
 - **The API key in this agent's shell:** the owner's `~/.zshrc` exports `ANTHROPIC_API_KEY`, but the agent's shell snapshot predates it; commands that call the API read it with `ANTHROPIC_API_KEY="$(zsh -ic 'printf %s "$ANTHROPIC_API_KEY"')"`, never printing it. `uv sync` must name `--extra llm` (with `dev` and `train`) or the anthropic SDK is removed.
 - **Milvus Lite servers** live until the process exits; `MilvusStore.close()` releases them (`milvus_lite.server_manager.server_manager_instance.release_server`).
 - **Tests that check `sys.modules`** must run in a subprocess: other tests in the session import torch.
@@ -199,3 +200,4 @@ uv run shopsage stats | grep split_sha256        # the Liang split: 4f93a0e6f611
 | 2026-10-24 | S3 done: BM25 documents and weights, RRF, the Milvus Lite serving index; ablation (b) logged as E008 (BM25 0.2529, hybrid −0.0715 vs dense; Milvus identical to offline, exact numpy / scipy 16–40× faster on the laptop); 133 tests green |
 | 2026-10-24 | the owner pushed S3 (`a54bdbe`) and installed libomp; S4 done: LightGBM LambdaRank re-ranker logged as E009 (system Recall@50 0.5420, NDCG@10 0.3428; +0.021 / +0.015 over EASE; 8.6 ms p95); macOS libomp clash found and contained; 141 tests green |
 | 2026-10-24 | the owner pushed S4 (`2b05c58`) and added the API key; S5 done: Claude Haiku expansion logged as E010 (always-on −0.031 HR@50; routed to unknown tags +0.022 on fresh events; \$0.18); 150 tests green |
+| 2026-10-24 | the owner pushed S5 (`d1d6080`) and chose D-003 option B: a private bundle repo with a read-only token in Streamlit secrets; S6 detailed in plan.md |

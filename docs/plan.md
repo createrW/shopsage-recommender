@@ -2,7 +2,7 @@
 
 **English** | [简体中文](plan.zh-CN.md)
 
-**Updated:** 2026-10-24, after S5 · **Progress:** S0–S5 done (E007 sweep, E008 recall paths, E009 ranker, E010 LLM expansion); S6 (demo) is next · **Code:** `2b05c58` (S4) on `main`, pushed to [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender); S5 is uncommitted · **Companion:** [memory.md](memory.md) (facts, rules, decisions)
+**Updated:** 2026-10-24, after S5 and the D-003 decision (option B) · **Progress:** S0–S5 done (E007 sweep, E008 recall paths, E009 ranker, E010 LLM expansion); S6 (demo) is next · **Code:** `d1d6080` (S5) on `main`, pushed to [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender); the D-003 doc updates are uncommitted · **Companion:** [memory.md](memory.md) (facts, rules, decisions)
 
 - **Goal:** a two-stage recommender on MovieLens-20M (Two-Tower dense recall and BM25 sparse recall, a LightGBM re-ranker, optional LLM query expansion, Milvus Lite retrieval, a Streamlit demo) with every reported number measured.
 - **Architecture:** offline, PyTorch trains the towers on a cloud GPU, numpy and scipy compute exact candidates for evaluation, and LightGBM re-ranks the union of both recall paths. Online, the demo runs on CPU: a numpy user tower, Milvus Lite (dense, sparse BM25 and RRF hybrid search), LightGBM, and Claude Haiku for query expansion.
@@ -25,7 +25,7 @@ Cloud deployment follows the owner's hosting plan, `cloud_hosting_plan_2026-10-1
 | Ranking | LightGBM LambdaRank over dense top-500 ∪ BM25 top-100, 12 features with sparse EASE; 3 seeds (E009) | S6 ships it in the demo |
 | LLM | Claude Haiku expansion with structured output, cache and fallbacks; ablation (c): routed expansion +0.022 HR@50 on fresh events (E010) | S6: the demo's free-text box |
 | Demo | the probe deployed on Community Cloud: 482 MB peak, hybrid p95 176 ms (E005) | S6: full demo; latency fallback planned (§8) |
-| Repository | 150 tests green; lint, types and lock clean; S4 on GitHub | commit and push S5 (you, §7) |
+| Repository | 150 tests green; lint, types and lock clean; S5 on GitHub | the bundle repository and token (you, §7) |
 
 Measured so far, `Liang-SG-strict`, 10,000 test users: MostPop Recall@50 0.2352, NDCG@10 0.1275; EASE Recall@50 0.5210, NDCG@10 0.3280 (E004). Two-Tower A1, 3 seeds (E007): Recall@50 0.5361 ± 0.0005, NDCG@10 0.3351 ± 0.0005, +0.0151 [+0.0119, +0.0184] Recall@50 over EASE. Hard negatives: A3 − A1 = −0.0020 [−0.0033, −0.0007], so the +0.08 target is not met; the logQ correction is worth +0.225 (A1 − A0). BM25 Recall@50 0.2529; RRF hybrid 0.4647, −0.0715 [−0.0748, −0.0685] against dense (E008). **Two-stage system (LightGBM ranker, E009): Recall@50 0.5420 ± 0.0006, NDCG@10 0.3428**, +0.0209 / +0.0148 over EASE; 8.6 ms p95 per user on the laptop CPU. LLM expansion for BM25 tag queries: always-on −0.031 HR@50; routed to unknown tags +0.022 [+0.012, +0.032] on fresh events (E010).
 
@@ -115,11 +115,22 @@ Scaffold, Polars pipeline, md5-checked download, leave-one-out split, EDA notebo
 
 ### S6. Demo and deployment (~5 h; laptop, then Streamlit Community Cloud)
 
-- [ ] Apply D-003: where the titles come from, and what the bundle may contain.
-- [ ] Export the bundle (item embeddings, `user_tower.npz`, sparse EASE, BM25 weights, the LightGBM model, item metadata as permitted) to a GitHub Release; pin its tag and sha256 in `configs/deploy/streamlit.yaml`. The Milvus Lite collection is built at startup from the bundle.
-- [ ] `serving/app.py`: pick 5 movies → Top-10 with scores and the path that retrieved each item; a dense / BM25 / hybrid toggle; a free-text query with an LLM toggle that shows the expansion, expanding only queries that are not vocabulary terms (E010) and serving cached expansions without a key; a latency readout and a benchmark button.
+- [x] D-003 decided (2026-10-24, option B): the bundle is private (experiment_log.md, D-003). Its contents are derived artifacts plus item metadata, no rating or tag rows. It lives as a Release asset of `createrW/shopsage-demo-bundle` (private), and the app reads it with a read-only token from Streamlit secrets.
+- [ ] `serving/bundle.py`:
+  - `export_bundle` writes one `tar.gz`:
+    - `item_embeddings.npy` and `user_tower.npz` (A1-s42);
+    - `ease_top100.npz` (λ 1,000, 100 neighbours);
+    - the BM25 weights and vocabulary (E008 settings);
+    - `ranker-s42.txt` (E009);
+    - `items.parquet` (titles, years, genres) and the item statistics the ranker features need;
+    - the Haiku cache (E010);
+    - `manifest.json` (source runs, split sha256, sha256 per file).
+  - `fetch_bundle`: GitHub API with `Authorization` as an *unredirected* header (the 302 to the asset store must not carry it), a sha256 check, and extraction to `artifacts/demo/`; cached across reruns.
+- [ ] Upload with `gh release create bundle-<date> <tar.gz> --repo createrW/shopsage-demo-bundle`; pin the repository, tag and sha256 in `configs/deploy/streamlit.yaml` (public: none of them is secret).
+- [ ] `serving/recommender.py`: a torch-free engine over the bundle (numpy user tower, exact dense + BM25 candidates, the ranker features, LightGBM top 10 with the path that retrieved each item); routed LLM expansion for the text box; Milvus Lite as a switchable engine with its parity check.
 - [ ] Serving engine from host measurements: exact numpy / scipy (8.6 ms p95 for the whole path on the laptop, E009) vs Milvus Lite (hybrid p95 48.7 ms on the laptop, E008); Milvus shown with its parity check either way. Import LightGBM before pymilvus on macOS (memory.md §7).
-- [ ] Deploy at `yi-shopsage.streamlit.app`; memory within 690 MB; p95 ≤ 200 ms on the host; record the GIF. Log E011.
+- [ ] `serving/app.py`: pick 5 movies → Top-10 with scores and the path that retrieved each item; a dense / BM25 / hybrid toggle; a free-text query with an LLM toggle that shows the expansion, expanding only queries that are not vocabulary terms (E010) and serving cached expansions without a key; a latency readout and a benchmark button. The S1 probe stays reachable as a second page.
+- [ ] Deploy at `yi-shopsage.streamlit.app` with `BUNDLE_TOKEN` (and optionally `ANTHROPIC_API_KEY`) in the app's secrets; memory within 690 MB; p95 ≤ 200 ms on the host; record the GIF. Log E011.
 - **Exit:** live URL; the latency row of §2 filled.
 
 ### S7. Write-up and publish (~3 h)
@@ -205,7 +216,7 @@ The S1 probe and the S6 demo deploy the same way:
 5. S6: upload the demo bundle to a GitHub Release, put its tag and sha256 in `configs/deploy/streamlit.yaml`, and push.
 6. Checks: no torch import; Milvus Lite starts and answers; memory within the 690 MB guarantee (2.7 GB maximum); p50/p95 latency of a Top-10 request; a cold start after the app sleeps (12 hours idle).
 
-**Fallback:** Hugging Face Spaces (Docker or Streamlit SDK; CPU basic, 2 vCPU and 16 GB, free), for example if Milvus Lite or the bundle does not fit. D-003 applies there too.
+**Fallback:** Hugging Face Spaces (Docker or Streamlit SDK; CPU basic, 2 vCPU and 16 GB, free), for example if Milvus Lite or the bundle does not fit. D-003 applies there too: the Space would read the same private bundle with the same read-only token.
 
 ### 6.5 Cost guardrails (the hosting plan's rules, applied here)
 
@@ -213,8 +224,9 @@ The S1 probe and the S6 demo deploy the same way:
 - **RunPod:** prepaid credit without auto-recharge; terminate pods once the artifacts are copied out.
 - **Nothing runs long-term in the cloud:** training boxes are ephemeral, and the only always-on service is the free Streamlit app (this project's version of the hosting plan's "`terraform destroy` when done").
 - **Anthropic:** set a low monthly spend limit in the Console; responses are cached, so reruns cost nothing.
+- **The bundle token is read-only and scoped to one repository** (Contents: read, `shopsage-demo-bundle` only, 90-day expiry), so a leaked token exposes the bundle and nothing else; rotate it in GitHub and in the app's Secrets.
 - **Secrets stay out of git:** `.streamlit/secrets.toml` is git-ignored and outside the Docker build context; keys come from environment variables or Streamlit secrets.
-- **The demo Docker image stays local,** off public registries, until D-003 is decided.
+- **The demo Docker image stays local,** off public registries. Like the app, it fetches the private bundle at runtime, so no image contains data-derived files (D-003).
 
 ### 6.6 Where the repo refines the hosting plan
 
@@ -247,15 +259,22 @@ Vendor figures were re-checked on the dates shown; the platform choices are the 
 - [x] `brew install libomp` (2026-10-24).
 - [x] Commit and push S4 (`2b05c58`, 2026-10-24).
 - [x] An Anthropic API key in `~/.zshrc` (2026-10-24); S5 spent \$0.18.
-- [ ] Commit and push S5:
+- [x] Commit and push S5 (`d1d6080`, 2026-10-24).
+
+- [x] D-003: option B, a private bundle (2026-10-24).
+- [ ] Create the private bundle repository (now; it must exist before its token can be scoped to it):
 
   ```bash
-  git add -A
-  git commit -m "S5: Claude Haiku query expansion, routed to unknown tags (E010)"
-  git push
+  gh repo create createrW/shopsage-demo-bundle --private --description "Private model bundle for the ShopSage demo (derived from MovieLens-20M; not for redistribution)"
   ```
 
-- [ ] Decide D-003 for S6 (below) if GroupLens has not answered: the demo needs a bundle derived from the data.
+- [ ] Create its read-only token: github.com → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → Generate new token. Set:
+  - Name: `shopsage-demo-read`; Expiration: 90 days; Resource owner: `createrW`.
+  - Repository access: **Only select repositories** → `shopsage-demo-bundle`.
+  - Permissions → Repository permissions → **Contents: Read-only** (the only permission the release endpoints need; checked in GitHub's docs on 2026-10-24).
+
+  Keep the token (`github_pat_…`) for the deploy step. It goes into the Streamlit app's Settings → Secrets as `BUNDLE_TOKEN = "github_pat_…"`. Never commit it, and never send it to me: locally I upload and test with your existing `gh` login.
+- [ ] Optional, for live LLM expansion in the demo: a separate Anthropic key with a small monthly limit (e.g. \$5), added to the same Secrets as `ANTHROPIC_API_KEY`. Without it the demo serves cached expansions only.
 
 - [ ] Email GroupLens about D-003 (an answer can take time):
 
@@ -287,7 +306,7 @@ Vendor figures were re-checked on the dates shown; the platform choices are the 
 
 **Later**
 
-- [ ] Before S6: the GroupLens answer on D-003 (above).
+- [ ] If GroupLens grants permission (D-003): make `shopsage-demo-bundle` public, or ship the bundle in the open.
 
 ## 8. Risks and cut order
 
@@ -302,7 +321,7 @@ Cut order if late: C2 in ablation (c), then the A0 / A2 / A4 context arms, the r
 | The sweep fails or stalls on Modal | finished runs are skipped on a re-run; a 2-epoch trial first; RunPod (Option B) as the fallback |
 | Milvus Lite is slow on Community Cloud: probe hybrid p95 176 ms on the host (E005); real queries are heavier (laptop: 48.7 ms vs 1.5 ms for exact numpy / scipy, E008) | S6 measures numpy exact dense top-k and scipy BM25 on the host (same results; FLAT overlap 1.000); if Milvus plus the ranker misses D-013, the demo serves through numpy / scipy and shows Milvus as the alternative engine with its latency |
 | The demo exceeds 690 MB | probe peak 482 MB (E005); trim the bundle; Hugging Face Spaces |
-| The licence rules out titles or artifacts | the D-003 email now; fallback paths in S6 |
+| The licence rules out titles or artifacts | D-003 option B: nothing data-derived is public (private bundle, read-only token); the GroupLens email is still worth sending |
 
 ## 9. Definition of done
 
