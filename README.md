@@ -11,15 +11,15 @@ Two-stage recommender on MovieLens-20M, built as a production-style offline pipe
 
 ## Results
 
-Protocol `Liang-SG-strict`: 10,000 test users who are never seen in training. For each of them a random 20% of their positives are held out as targets and the other 80% are the input. Every one of the 20,108 catalogue items is ranked, with the user's input items excluded. Recall@50 is truncated (hits / min(50, number of targets)). Cells read mean [95% CI], bootstrapped over the test users; trained models will also report mean ± sd over 3 seeds.
+Protocol `Liang-SG-strict`: 10,000 test users who are never seen in training. For each of them a random 20% of their positives are held out as targets and the other 80% are the input. Every one of the 20,108 catalogue items is ranked, with the user's input items excluded. Recall@50 is truncated (hits / min(50, number of targets)). Cells read mean [95% CI], bootstrapped over the test users; trained models report mean ± sd over 3 seeds. The Two-Tower (A1) beats EASE by +0.0151 [+0.0119, +0.0184] Recall@50 (paired); mined hard negatives do not help (A3 − A1 = −0.0020 [−0.0033, −0.0007]); the logQ correction is worth +0.225 (E007).
 
 | Model | Recall@50 <sub>95% CI</sub> | NDCG@10 <sub>95% CI</sub> | Run |
 |---|:-:|:-:|:-:|
 | MostPop | 0.2352 [0.2310, 0.2396] | 0.1275 [0.1241, 0.1311] | E004 |
 | EASE ([Steck 2019](https://arxiv.org/abs/1905.03375)), λ = 1,000 | 0.5210 [0.5156, 0.5264] | 0.3280 [0.3231, 0.3331] | E004 |
 | BM25 over item text | pending | pending | S3 |
-| Two-Tower, in-batch + logQ (A1) | pending | pending | S2 |
-| Two-Tower + mined hard negatives (A3) | pending | pending | S2 |
+| Two-Tower, in-batch + logQ (A1), 3 seeds | 0.5361 ± 0.0005 (seed 42: [0.5306, 0.5417]) | 0.3351 ± 0.0005 (seed 42: [0.3304, 0.3405]) | E007 |
+| Two-Tower + mined hard negatives (A3), 3 seeds | 0.5341 ± 0.0008 | 0.3351 ± 0.0011 | E007 |
 | Hybrid: Two-Tower + BM25, RRF | pending | pending | S3 |
 | + LightGBM re-ranker | pending | pending | S4 |
 

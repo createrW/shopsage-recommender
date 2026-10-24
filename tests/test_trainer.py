@@ -53,6 +53,15 @@ def test_train_exports_a_tested_model(liang_dir: Path, tmp_path: Path) -> None:
     stats = summary["test"]["recall@50"]
     assert 0.0 <= stats["ci_low"] <= stats["mean"] <= stats["ci_high"] <= 1.0
     assert summary["config"]["arm"] == "A1"
+    assert _plain(summary)  # Modal unpickles it on a machine without torch
+
+
+def _plain(value: object) -> bool:
+    if isinstance(value, dict):
+        return all(type(k) is str and _plain(v) for k, v in value.items())
+    if isinstance(value, list):
+        return all(_plain(v) for v in value)
+    return value is None or type(value) in (str, int, float, bool)
 
 
 @pytest.mark.parametrize("arm", ["A0", "A2", "A4"])

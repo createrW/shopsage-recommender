@@ -2,15 +2,15 @@
 
 **English** | [简体中文](memory.zh-CN.md)
 
-**Updated:** 2026-10-24, S2 code done (the sweep is with the owner). Read this first, then [plan.md](plan.md); together they are the source of truth for the next step. This file holds facts, rules and decisions; plan.md holds the steps and their checkboxes.
+**Updated:** 2026-10-24, after the S2 sweep (E007). Read this first, then [plan.md](plan.md); together they are the source of truth for the next step. This file holds facts, rules and decisions; plan.md holds the steps and their checkboxes.
 
 ## 1. The project
 
 - **What:** a two-stage recommender on MovieLens-20M: Two-Tower dense recall and BM25 sparse recall plus their RRF hybrid, a LightGBM re-ranker, optional Claude Haiku query expansion, Milvus Lite as the serving retrieval engine, and a CPU-only Streamlit demo. Every reported number comes from a logged run.
 - **Why:** the owner's MLE portfolio flagship; the README is the page reviewers see.
 - **Owner:** Yi Zhao (USC), who also does every GitHub push.
-- **Where:** `/Users/zy/Project/new_sys/projects/shopsage-recommender`, branch `main`. Commits `3e0f08f` (Day 1) and `05f74c4` (S1) are pushed to `https://github.com/createrW/shopsage-recommender` (CI green); the S2 changes are uncommitted.
-- **State:** S0 and S1 done; S2 code done and checked on MPS (E006); the owner runs the Modal sweep, then I log it as E007 and build tables (a); S3 (BM25, Milvus serving index) can proceed meanwhile. Re-planned efficiency-first on 2026-10-23 (plan.md §3).
+- **Where:** `/Users/zy/Project/new_sys/projects/shopsage-recommender`, branch `main`. Commits `3e0f08f` (Day 1) and `05f74c4` (S1) are pushed to `https://github.com/createrW/shopsage-recommender` (CI green); S2 is committed locally as `fefcf6c` (not pushed); the summary fix and the E007 docs are uncommitted.
+- **State:** S0, S1 and S2 done; the sweep is logged as E007 with ablation (a). S3 (BM25, Milvus serving index, table (b)) is next. Re-planned efficiency-first on 2026-10-23 (plan.md §3).
 
 ## 2. Inputs that live outside the repo
 
@@ -71,6 +71,7 @@
 - `shopsage evaluate`: 211 s for MostPop plus a three-λ EASE grid, 3.5 GB peak RSS (EASE's Gram and weight matrices are 1.6 GB each in float32). The Recall@50 bootstrap half-width is about ±0.005 at 10,000 users.
 - Deployment probe on the laptop (20,108 items, synthetic dense and sparse vectors): hybrid search p95 34–44 ms, dense p95 18–24 ms; Streamlit plus the app peak at about 450 MB.
 - **On Streamlit Community Cloud (E005):** import pymilvus 1.9 s, build 7.9 s; dense p50/p95 76.3/135.2 ms, sparse 63.0/94.6 ms, hybrid 118.0/176.3 ms; overlap 1.000; peak RSS 482 MB. Memory fits 690 MB; the hybrid p95 alone takes 176 of the 200 ms budget, so S6 measures a numpy / scipy serving path and falls back to it if needed.
+- **Two-Tower sweep (E007, Modal A10, 3 seeds for A1 and A3):** A1 Recall@50 0.5361 ± 0.0005, NDCG@10 0.3351 ± 0.0005, Recall@20 0.3997, HR@50 0.9371; A1 − EASE +0.0151 [+0.0119, +0.0184] Recall@50, +0.0071 NDCG@10. A3 − A1 = −0.0020 [−0.0033, −0.0007] (hard-negative target +0.08 **not met**); A0 0.3111 (logQ is worth +0.225); A2 0.5342; A4 0.5333. τ 0.05, lr 3e-3; best epochs 22–30. Peak GPU 0.98 GB (A1) to 3.21 GB (A4); 21.5 s per A1 epoch; 2.5 A10-hours ≈ \$2.75. Run of record for S3–S6: `A1-s42` (`artifacts/runs/A1-s42/`).
 - **Two-Tower check (E006, MPS, not a result):** A1 after 3 epochs, test Recall@50 0.5145 [0.5088, 0.5199], NDCG@10 0.3163, still rising; 129–146 s per epoch on the M5; peak memory A1 2.1 GB, A2 2.2 GB, A4 5.0 GB.
 
 ### Day-1 run (raw data, and the leave-one-out split, kept but not used for results)
@@ -134,7 +135,7 @@ Current decisions; experiment_log.md's Decisions table holds the full text and r
 | Path | Contents |
 |---|---|
 | `README.md` | front page: results with the measured baselines, architecture, quickstart, cloud training and VRAM, dataset, experiments, demo, design rationale, limitations, roadmap |
-| `docs/experiment_log.md` | rules, protocols, TARGETS, decisions D-001 to D-014, run matrix, entries E001–E006 |
+| `docs/experiment_log.md` | rules, protocols, TARGETS, decisions D-001 to D-014, run matrix, entries E001–E007 |
 | `docs/design.md`, `docs/api_spec.md` | the Day-1 design and the artifact / CLI contract (v0.4), partly superseded (§6) |
 | `docs/plan.md`, `docs/memory.md` | the step plan and status; this memory (each with a `.zh-CN.md` twin) |
 | `src/shopsage_rec/cli.py`, `config.py` | the Typer CLI (`prepare`, `stats`, `evaluate`; defaults follow the Liang split); `DataConfig`, `SplitConfig` (`leave_one_out` or `liang`) |
@@ -155,7 +156,7 @@ Current decisions; experiment_log.md's Decisions table holds the full text and r
 | `.github/workflows/ci.yml` | ruff, ruff format, mypy, pytest; the demo requirements without torch; `serving/requirements.txt` against `uv.lock`; the Milvus Lite probe on Linux |
 | `Dockerfile`, `.dockerignore` | CPU demo image (never built yet); the Hugging Face Spaces fallback |
 | `.streamlit/`, `packages.txt` | Community Cloud settings, secrets template, `libgomp1` |
-| `data/`, `artifacts/` (git-ignored) | `data/raw/ml-20m/`, `data/processed/` (Day-1), `data/processed/liang/`; `artifacts/eval/local-20261023-1306/` (E004); `artifacts/runs/` (E006 checks: `smoke-A1-mps`, `check-A1-full3-mps`) |
+| `data/`, `artifacts/` (git-ignored) | `data/raw/ml-20m/`, `data/processed/` (Day-1), `data/processed/liang/`; `artifacts/eval/local-20261023-1306/` (E004); `artifacts/runs/` (E007: 13 sweep runs and `sweep_summary.json`, 0.6 GB; E006 checks: `smoke-A1-mps`, `check-A1-full3-mps`) |
 
 ## 9. Resuming
 
@@ -184,3 +185,5 @@ uv run shopsage stats | grep split_sha256        # the Liang split: 4f93a0e6f611
 | 2026-10-24 | the owner pushed S1 as `05f74c4`; CI green, including the Milvus Lite probe on Linux |
 | 2026-10-24 | the owner deployed the probe on Community Cloud (E005) and said "go s2"; S2 code done: Two-Tower A0–A4, mining, sweep plan, Modal script; MPS checks (E006); 122 tests green |
 | 2026-10-23 | S1 done: the Liang split reproduces the published counts; `shopsage evaluate`; MostPop and EASE reproduce their published Recall@50 (E004); FAISS out, Milvus Lite in; the Milvus Lite probe measured on the laptop; README and experiment_log synced |
+| 2026-10-24 | Modal trial (`--epochs 2 --tune-epochs 1`): image build and data prep on Modal work; A1 on an A10 21.5 s per epoch, 0.98 GB peak; the run then failed locally unpickling `torch.__version__` (a `TorchVersion`) in the summary; fixed by returning plain JSON |
+| 2026-10-24 | the owner ran the full sweep on Modal (13 runs, 2.5 A10-hours); logged as E007: A1 beats EASE (Recall@50 0.5361 vs 0.5210), mined hard negatives give no gain (A3 − A1 −0.0020), logQ is worth +0.225; S2 done |

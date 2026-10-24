@@ -2,15 +2,15 @@
 
 [English](memory.md) | **简体中文**
 
-**更新：** 2026-10-24，S2 代码完成（批量训练在负责人手里）。先读这份，再读 [plan.zh-CN.md](plan.zh-CN.md)；两份合起来就是下一步的依据。这份文档记录事实、规则和决策；plan 里是步骤和勾选项。
+**更新：** 2026-10-24，S2 批量训练完成后（E007）。先读这份，再读 [plan.zh-CN.md](plan.zh-CN.md)；两份合起来就是下一步的依据。这份文档记录事实、规则和决策；plan 里是步骤和勾选项。
 
 ## 1. 项目概况
 
 - **是什么：** 基于 MovieLens-20M 的两阶段推荐系统：Two-Tower 稠密召回和 BM25 稀疏召回，外加二者的 RRF 混合；LightGBM 重排器；可选的 Claude Haiku 查询扩展；Milvus Lite 作为服务端检索引擎；只用 CPU 的 Streamlit demo。所有对外报告的数字都来自有记录的运行。
 - **为什么做：** 这是你 MLE 作品集的旗舰项目；README 是评审者看到的页面。
 - **负责人：** Yi Zhao（USC），所有 GitHub push 也由本人完成。
-- **位置：** `/Users/zy/Project/new_sys/projects/shopsage-recommender`，`main` 分支。提交 `3e0f08f`（Day 1）和 `05f74c4`（S1）已 push 到 `https://github.com/createrW/shopsage-recommender`（CI 通过）；S2 的改动尚未提交。
-- **状态：** S0 和 S1 已完成；S2 代码已完成并在 MPS 上检查过（E006）；负责人运行 Modal 批量训练，之后我记为 E007 并做表 (a)；同时可以推进 S3（BM25、Milvus 服务索引）。2026-10-23 按效率优先重新规划（plan.zh-CN.md §3）。
+- **位置：** `/Users/zy/Project/new_sys/projects/shopsage-recommender`，`main` 分支。提交 `3e0f08f`（Day 1）和 `05f74c4`（S1）已 push 到 `https://github.com/createrW/shopsage-recommender`（CI 通过）；S2 已在本地提交为 `fefcf6c`（未 push）；汇总修复和 E007 文档尚未提交。
+- **状态：** S0、S1 和 S2 已完成；批量训练记为 E007，含消融 (a)。下一步是 S3（BM25、Milvus 服务索引、表 (b)）。2026-10-23 按效率优先重新规划（plan.zh-CN.md §3）。
 
 ## 2. 仓库之外的输入
 
@@ -71,6 +71,7 @@
 - `shopsage evaluate`：MostPop 加三个 λ 的 EASE 网格用时 211 秒，峰值 RSS 3.5 GB（EASE 的 Gram 矩阵和权重矩阵在 float32 下各 1.6 GB）。10,000 个用户时 Recall@50 的 bootstrap 半宽约 ±0.005。
 - 笔记本上的部署探测（20,108 个物品，合成的稠密和稀疏向量）：混合检索 p95 34–44 ms，稠密检索 p95 18–24 ms；Streamlit 加应用的峰值内存约 450 MB。
 - **Streamlit Community Cloud 上（E005）：** import pymilvus 1.9 s，建库 7.9 s；稠密 p50/p95 76.3/135.2 ms，稀疏 63.0/94.6 ms，混合 118.0/176.3 ms；重合度 1.000；峰值 RSS 482 MB。内存在 690 MB 之内；但光混合检索的 p95 就占了 200 ms 预算中的 176 ms，所以 S6 要实测 numpy / scipy 服务路径，必要时改用它。
+- **Two-Tower 批量训练（E007，Modal A10，A1 和 A3 各 3 个种子）：** A1 Recall@50 0.5361 ± 0.0005、NDCG@10 0.3351 ± 0.0005、Recall@20 0.3997、HR@50 0.9371；A1 − EASE：Recall@50 +0.0151 [+0.0119, +0.0184]，NDCG@10 +0.0071。A3 − A1 = −0.0020 [−0.0033, −0.0007]（困难负样本 +0.08 的目标**没有达到**）；A0 0.3111（logQ 带来 +0.225）；A2 0.5342；A4 0.5333。τ 0.05，lr 3e-3；最佳 epoch 22–30。GPU 峰值 0.98 GB（A1）到 3.21 GB（A4）；A1 每 epoch 21.5 s；2.5 个 A10 小时，约 \$2.75。S3–S6 使用的代表运行：`A1-s42`（`artifacts/runs/A1-s42/`）。
 - **Two-Tower 检查（E006，MPS，不算结果）：** A1 训练 3 个 epoch 后测试 Recall@50 0.5145 [0.5088, 0.5199]、NDCG@10 0.3163，仍在上升；M5 上每 epoch 129–146 s；峰值显存 A1 2.1 GB、A2 2.2 GB、A4 5.0 GB。
 
 ### Day 1 运行（原始数据，以及保留但不用于结果的 leave-one-out 划分）
@@ -134,7 +135,7 @@
 | 路径 | 内容 |
 |---|---|
 | `README.md` | 首页：含实测基线的结果、架构、快速上手、云端训练与显存、数据集、实验、demo、设计理由、局限性、路线图 |
-| `docs/experiment_log.md` | 规则、评估协议、TARGETS、决策 D-001 到 D-014、实验矩阵、条目 E001–E006 |
+| `docs/experiment_log.md` | 规则、评估协议、TARGETS、决策 D-001 到 D-014、实验矩阵、条目 E001–E007 |
 | `docs/design.md`、`docs/api_spec.md` | Day 1 的设计，以及产物 / CLI 约定（v0.4），部分已被取代（§6） |
 | `docs/plan.md`、`docs/memory.md` | 步骤计划与进度；本记忆文档（各有一份 `.zh-CN.md` 对应版本） |
 | `src/shopsage_rec/cli.py`、`config.py` | Typer CLI（`prepare`、`stats`、`evaluate`；默认值跟随 Liang 划分）；`DataConfig`、`SplitConfig`（`leave_one_out` 或 `liang`） |
@@ -155,7 +156,7 @@
 | `.github/workflows/ci.yml` | ruff、ruff format、mypy、pytest；不装 torch 安装 demo 依赖；核对 `serving/requirements.txt` 与 `uv.lock`；在 Linux 上运行 Milvus Lite 探测 |
 | `Dockerfile`、`.dockerignore` | CPU 版 demo 镜像（还没构建过）；Hugging Face Spaces 的后备方案 |
 | `.streamlit/`、`packages.txt` | Community Cloud 设置、secrets 模板、`libgomp1` |
-| `data/`、`artifacts/`（被 git 忽略） | `data/raw/ml-20m/`、`data/processed/`（Day 1）、`data/processed/liang/`；`artifacts/eval/local-20261023-1306/`（E004）；`artifacts/runs/`（E006 的检查：`smoke-A1-mps`、`check-A1-full3-mps`） |
+| `data/`、`artifacts/`（被 git 忽略） | `data/raw/ml-20m/`、`data/processed/`（Day 1）、`data/processed/liang/`；`artifacts/eval/local-20261023-1306/`（E004）；`artifacts/runs/`（E007：13 个批量训练运行和 `sweep_summary.json`，0.6 GB；E006 的检查：`smoke-A1-mps`、`check-A1-full3-mps`） |
 
 ## 9. 恢复工作
 
@@ -184,3 +185,5 @@ uv run shopsage stats | grep split_sha256        # Liang 划分：4f93a0e6f611..
 | 2026-10-24 | 负责人把 S1 push 为 `05f74c4`；CI 通过，包括 Linux 上的 Milvus Lite 探测 |
 | 2026-10-24 | 负责人在 Community Cloud 上部署了探测（E005）并说"go s2"；S2 代码完成：Two-Tower A0–A4、挖掘、批量训练计划、Modal 脚本；MPS 检查（E006）；122 个测试通过 |
 | 2026-10-23 | S1 完成：Liang 划分复现了已发表的计数；`shopsage evaluate`；MostPop 和 EASE 复现了已发表的 Recall@50（E004）；去掉 FAISS，加入 Milvus Lite；在笔记本上实测了 Milvus Lite 探测；README 和 experiment_log 已同步 |
+| 2026-10-24 | Modal 试跑（`--epochs 2 --tune-epochs 1`）：镜像构建和 Modal 上的数据准备都正常；A10 上 A1 每 epoch 21.5 s，峰值 0.98 GB；之后本地反序列化汇总里的 `torch.__version__`（`TorchVersion` 类型）失败；已改为返回纯 JSON |
+| 2026-10-24 | 负责人在 Modal 上跑完整套批量训练（13 次运行，2.5 个 A10 小时）；记为 E007：A1 超过 EASE（Recall@50 0.5361 对 0.5210），挖掘的困难负样本没有提升（A3 − A1 −0.0020），logQ 带来 +0.225；S2 完成 |

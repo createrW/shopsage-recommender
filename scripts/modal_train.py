@@ -100,9 +100,9 @@ def train(job: dict[str, Any]) -> dict[str, Any]:
         arm=job["arm"], seed=job["seed"], epochs=job["epochs"], tau=job["tau"], lr=job["lr"]
     )
     mined = Path(RUNS) / job["mined_from"] if job["mined_from"] else None
-    summary = train_two_tower(PROCESSED, RUNS, cfg, run_id=job["run_id"], mined_from=mined)
+    train_two_tower(PROCESSED, RUNS, cfg, run_id=job["run_id"], mined_from=mined)
     volume.commit()
-    return summary
+    return json.loads(done.read_text())  # plain JSON types: the local side has no torch
 
 
 @app.function(volumes={VOLUME_PATH: volume}, cpu=8, memory=32768, timeout=3600)

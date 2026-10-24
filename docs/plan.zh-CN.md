@@ -2,7 +2,7 @@
 
 [English](plan.md) | **简体中文**
 
-**更新：** 2026-10-24，S2 代码完成 · **进度：** S0 和 S1 已完成；S2 代码已完成并在笔记本上检查过，批量训练交给你（§6.3）；同时可以开始 S3 · **代码：** `main` 上的 `05f74c4`，已 push 到 [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender)；S2 的改动尚未提交 · **配套文档：** [memory.zh-CN.md](memory.zh-CN.md)（事实、规则、决策）
+**更新：** 2026-10-24，S2 批量训练完成后 · **进度：** S0、S1 和 S2 已完成（批量训练记为 E007）；下一步是 S3 · **代码：** `05f74c4` 已 push 到 [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender)；S2 已在本地提交为 `fefcf6c`（未 push）；汇总修复和 E007 文档尚未提交 · **配套文档：** [memory.zh-CN.md](memory.zh-CN.md)（事实、规则、决策）
 
 - **目标：** 在 MovieLens-20M 上做一个两阶段推荐系统（Two-Tower 稠密召回和 BM25 稀疏召回、LightGBM 重排、可选的 LLM 查询扩展、Milvus Lite 检索、Streamlit demo），所有对外报告的数字都来自实测。
 - **架构：** 离线部分，PyTorch 在云 GPU 上训练双塔，numpy 和 scipy 为评估计算精确候选，LightGBM 对两条召回路径的并集重排。在线部分，demo 只用 CPU：numpy 实现的用户塔、Milvus Lite（稠密、稀疏 BM25 和 RRF 混合检索）、LightGBM，以及用于查询扩展的 Claude Haiku。
@@ -20,14 +20,14 @@
 | 数据 | ML-20M 下载；Liang 划分，精确复现了已发表的计数（E004）；Day 1 的划分保留 | — |
 | 评估 | 带屏蔽的全量 top-k、截断 Recall / NDCG / HR、百分位 bootstrap 与配对 bootstrap；`shopsage evaluate` | S2：用同一套代码给 Two-Tower 打分 |
 | 基线 | MostPop 和 EASE，已对照已发表数字完成校准（E004） | — |
-| 模型 | Two-Tower 训练器（A0–A4 五个组）、困难负样本挖掘、批量训练计划；`shopsage train / mine / sweep`；`scripts/modal_train.py`；MPS 上 3 个 epoch 的 A1 检查（E006） | 你在 Modal 上跑批量训练（§6.3） |
+| 模型 | Two-Tower A0–A4 已在 Modal 上训练完（E007）：A1 Recall@50 0.5361、NDCG@10 0.3351，高于 EASE；消融 (a) 完成 | S4 对它的候选重排 |
 | 检索 | Milvus Lite 探测：在笔记本上实测了稠密、稀疏和混合检索（E004） | S3：BM25 路径、Milvus 服务索引、消融 (a) 和 (b) |
 | 排序 | — | S4：基于两条召回路径的 LightGBM |
 | LLM | 设计 | S5：Claude Haiku 扩展，消融 (c) |
 | Demo | 探测已部署到 Community Cloud：峰值 482 MB，混合检索 p95 176 ms（E005） | S6：完整 demo；已规划延迟兜底方案（§8） |
 | 仓库 | 122 个测试通过；lint、类型检查和 lock 都干净；S1 已上 GitHub，CI 通过 | 提交并 push S2（由你来做，§7） |
 
-目前的实测结果（`Liang-SG-strict`，10,000 个测试用户）：MostPop Recall@50 0.2352、NDCG@10 0.1275；EASE Recall@50 0.5210、NDCG@10 0.3280（E004）。Two-Tower A1 在 MPS 上只训练 3 个 epoch（只是检查，不算结果）：Recall@50 0.5145、NDCG@10 0.3163（E006）。
+目前的实测结果（`Liang-SG-strict`，10,000 个测试用户）：MostPop Recall@50 0.2352、NDCG@10 0.1275；EASE Recall@50 0.5210、NDCG@10 0.3280（E004）。Two-Tower A1，3 个种子（E007）：Recall@50 0.5361 ± 0.0005、NDCG@10 0.3351 ± 0.0005，Recall@50 比 EASE 高 +0.0151 [+0.0119, +0.0184]。困难负样本：A3 − A1 = −0.0020 [−0.0033, −0.0007]，+0.08 的目标没有达到；logQ 校正带来 +0.225（A1 − A0）。
 
 ## 2. 范围与目标（你 2026-10-23 的需求）
 
@@ -81,7 +81,7 @@
 - [ ] 在 Streamlit Community Cloud 上部署探测，记录主机上的内存和延迟：需要你提交、push 并创建 Community Cloud 应用（§7）。
 - **完成标准：** 已达到，只差主机上的测量，它要等部署完成。
 
-### S2. Two-Tower、负样本、Modal 批量训练 ✅ 代码（2026-10-24，笔记本） · ⏳ 批量训练（你）
+### S2. Two-Tower、负样本、Modal 批量训练 ✅（2026-10-24；代码在笔记本上，批量训练在 Modal 上）
 
 - [x] `features/items.py`：类型 multi-hot、5 年分桶、带缺失标记的 genome PCA-64，缓存到 `item_features.npz`。
 - [x] `models/two_tower.py`：物品塔（`item_idx` embedding ⊕ 特征 → MLP → 128 维，L2 归一化）；归纳式用户塔（对最多 50 个采样历史物品的 embedding 取均值 ⊕ 历史长度的对数 → MLP → 128 维）；`sample_history` 会排除目标物品。
@@ -90,14 +90,14 @@
 - [x] 一致性测试：在 1,000 个用户上对比 numpy 用户塔和 torch（< 1e-5）。
 - [x] `shopsage train / mine / sweep`；`scripts/train.sh`；`scripts/modal_train.py`（在 Volume 上准备数据 → 4 次 τ/lr 检查 → 第一阶段并行 → 挖掘 → 第二阶段 → `sweep_summary.json`；重跑时会跳过已完成的运行）。
 - [x] MPS 冒烟运行（A1、A2、A4，10% 用户）和一次全量数据 3 个 epoch 的 A1 检查（E006）。
-- [ ] **交接：由你运行批量训练（§6.3）。** **完成标准：** `artifacts/runs/sweep_summary.json` 和 13 个运行目录拷回笔记本；之后我记为 E007。
+- [x] 在 Modal 上批量训练（你，2026-10-24）：13 次运行，2.5 个 A10 小时，约 \$2.75；已拷回 `artifacts/runs/`；记为 E007，含消融 (a) 和配对 Δ。
 
 ### S3. BM25、Milvus 服务索引、消融 (a) 和 (b)（约 4 小时；笔记本；可以和你的批量训练同时进行）
 
 - [ ] `retrieval/bm25.py`：物品文档（片名、类型、top genome 标签，以及只来自训练用户的标签）；BM25 权重存为 scipy.sparse 矩阵；用户查询是其 fold-in 物品的词项。
 - [ ] `retrieval/milvus_store.py`：一个同时含稠密和稀疏向量字段的 collection，载入后 flush；`search_dense`、`search_sparse` 和 `search_hybrid`（RRF，k = 60）；按历史长度多取，再去掉看过的物品。与 numpy 和 scipy 的 top-k 做一致性测试。
 - [ ] `retrieval/fusion.py`：离线评估用的 RRF。
-- [ ] 表格：(a) 来自批量训练（A0–A4；A3 − A1 带配对置信区间和逐种子 Δ）；(b) MostPop、EASE、BM25、稠密、混合。记为 E007（批量训练）和 E008。
+- [ ] 表 (b)：MostPop、EASE、BM25、稠密（A1-s42）、混合。记为 E008。（表 (a) 已完成：E007。）
 - **完成标准：** 表 (a) 和 (b) 写进 experiment_log.md；一致性测试通过。
 
 ### S4. LightGBM 排序器（约 4 小时；笔记本 CPU）
@@ -151,7 +151,7 @@
 | 工作负载 | 平台 | 本仓库中的实现 | 成本 |
 |---|---|---|---|
 | 数据、EDA、测试、EASE、BM25、LightGBM、LLM 调用 | 笔记本 | `make` 目标、`shopsage` CLI | \$0（LLM 调用约 \$1） |
-| Two-Tower 批量训练 | Modal A10；RunPod 作为备选 | `scripts/modal_train.py`；`scripts/bootstrap_cloud.sh` 和 `scripts/train.sh` | 约 \$3–6（估计），在每月 \$30 的额度之内 |
+| Two-Tower 批量训练 | Modal A10；RunPod 作为备选 | `scripts/modal_train.py`；`scripts/bootstrap_cloud.sh` 和 `scripts/train.sh` | 约 \$3（按实测的 A1 epoch 估计），在每月 \$30 的额度之内 |
 | Demo | Streamlit Community Cloud | `serving/app.py`、`.streamlit/`、`packages.txt`、`configs/deploy/streamlit.yaml` | \$0 |
 | Demo 备选 | Hugging Face Spaces（CPU basic：2 vCPU、16 GB） | `Dockerfile` | \$0 |
 | Demo 资源包 | 固定 sha256 的 GitHub Release 附件 | S6 | \$0 |
@@ -161,14 +161,14 @@
 
 **显存要求：最低 8 GB，建议 16 GB 及以上；默认用 24 GB 的 A10（Modal 写作 `"A10"`）。** 笔记本上的实测（E006，MPS，B = 4,096；MPS 报告的是驱动分配量，是 CUDA 数字的上界）：A1 2.1 GB，A2 2.2 GB，A4（全量 softmax）5.0 GB。A3 每行多 8 个挖掘负样本，大小与 A2 相当，另外 GPU 上要放挖掘池（116,677 × 400，int64 约 0.37 GB；磁盘上 int32 为 0.19 GB）。
 
-| 组 | 峰值显存（MPS 实测） | 每 epoch 秒数，M5 MPS（实测） | 每 epoch 秒数，A10（估计，±50%） |
+| 组 | 峰值显存（MPS 实测） | 每 epoch 秒数，M5 MPS（实测） | 每 epoch 秒数，A10 |
 |---|:-:|:-:|:-:|
-| A0、A1（in-batch） | 2.1 GB | 129–146 | ~35–45 |
-| A2（+2,048 个均匀负样本） | 2.2 GB | ~150（10% 用户的运行按 ×10 换算） | ~40–50 |
-| A3（每行 +8 个挖掘负样本） | ≈ A2 | 未实测 | ~45–60 |
-| A4（全量 softmax） | 5.0 GB | ~420（10% 用户的运行按 ×10 换算） | ~110–140 |
+| A0、A1（in-batch） | 2.1 GB（A10：0.98 GB，实测） | 129–146 | **21.5（实测，Modal 试跑）** |
+| A2（+2,048 个均匀负样本） | 2.2 GB | ~150（10% 用户的运行按 ×10 换算） | ~25（估计） |
+| A3（每行 +8 个挖掘负样本） | ≈ A2 | 未实测 | ~30（估计） |
+| A4（全量 softmax） | 5.0 GB | ~420（10% 用户的运行按 ×10 换算） | ~75（估计） |
 
-- **批量训练估计：** 4 次调参 × 10 个 epoch，然后 9 次 × 30 个 epoch（A4 最长，约 1 小时），约 3–5 个 A10 小时，按 Modal A10 的价格（约 \$1.10 每小时）约 \$3–6；同一阶段的运行并行，墙钟时间约 1.5–2 小时。以上都是估计；`metrics.json`（`wall_s`、`peak_memory_gb`、`gpu`）会给出实测值。
+- **批量训练估计：** 4 次调参 × 10 个 epoch，然后 9 次 × 30 个 epoch（A4 最长，约 1 小时），约 2.5 个 A10 小时，按 Modal A10 的价格（约 \$1.10 每小时）约 \$3；同一阶段的运行并行，墙钟时间约 1–1.5 小时。以上都是估计；`metrics.json`（`wall_s`、`peak_memory_gb`、`gpu`）会给出实测值。
 
 **方案 A：Modal（托管计划的选择）。**
 
@@ -242,15 +242,16 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 - [x] 提交并 push S1（`05f74c4`，2026-10-24；CI 通过，包括 Linux 上的 Milvus Lite 探测）。
 
 - [x] 在 Community Cloud 上部署探测（2026-10-24；E005：482 MB，混合检索 p95 176 ms）。
-- [ ] 提交并 push S2：
+- [x] 提交 S2（`fefcf6c`，2026-10-24）。
+- [ ] 提交批量训练结果并 push：
 
   ```bash
   git add -A
-  git commit -m "S2: Two-Tower (A0-A4), hard-negative mining, Modal sweep, MPS check (E005, E006)"
+  git commit -m "S2: Modal sweep results (E007), plain-JSON run summaries"
   git push
   ```
 
-- [ ] 在 Modal 上运行 S2 批量训练（§6.3 方案 A），然后用 `modal volume get` 把结果拷回来，告诉我"sweep done"。
+- [x] 在 Modal 上运行 S2 批量训练（2026-10-24；E007）。注意：入口程序会先在本地写 `artifacts/runs/sweep_summary.json`，`modal volume get` 不肯覆盖它；改为下载到一个空目录。
 - [ ] 就 D-003 给 GroupLens 发邮件（回复可能要等一段时间）。邮件是写给 GroupLens 的，所以保留英文：
 
   ```text

@@ -359,7 +359,7 @@ def train_two_tower(
         "wall_s": round(time.perf_counter() - started, 1),
         "versions": {
             "shopsage_rec": __version__,
-            "torch": torch.__version__,
+            "torch": str(torch.__version__),  # a TorchVersion would need torch to unpickle
             "python": platform.python_version(),
         },
     }

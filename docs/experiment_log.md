@@ -92,7 +92,7 @@ The owner's updated scope (2026-10-23) set four targets, which replace the brief
 | Recall@50 (truncated) | ≥ 0.55 | EASE 0.521, Mult-VAE 0.537, RecVAE 0.553 (the highest verified) | EASE 0.5210 [0.5156, 0.5264] (E004) | at the published frontier, 0.029 above EASE; the likeliest route is the system's Recall@50 after the ranker |
 | NDCG@10 after the ranker | ≥ 0.32 | EASE 0.329 (`Liang-SG-fit`, Milogradskii et al. 2024) | EASE 0.3280 [0.3231, 0.3331] (E004) | the EASE baseline already meets it, so the ranker counts only if it beats EASE |
 | Latency, retrieval and ranking to 10 | ≤ 200 ms p95 on the demo host | — | S1 probe on the laptop: Milvus Lite hybrid search p95 34 ms (E004) | likely; measured on the host in S6 |
-| Hard-negative ablation | Recall@50 +0.08 (A3 − A1) | — | — | ambitious, since A1 already has logQ and accidental-hit masking; reported as measured (S3) |
+| Hard-negative ablation | Recall@50 +0.08 (A3 − A1) | — | — | ambitious, since A1 already has logQ and accidental-hit masking; **measured −0.0020 [−0.0033, −0.0007]: not met** (E007) |
 
 Sources: [Liang et al. 2018](https://arxiv.org/abs/1802.05814) (Mult-VAE); [Steck 2019](https://arxiv.org/abs/1905.03375), Table 1 (popularity, EASE); Shenbin et al., WSDM 2020 (RecVAE); Milogradskii et al., RecSys 2024 (NDCG@10, fold-in-in-training variant).
 
@@ -138,11 +138,11 @@ Every result cell reads `pending` until its run is logged. All runs use `Liang-S
 |---|---|---|---|---|---|
 | MostPop | anchor | — | 0.2352 | 0.1275 | — |
 | EASE | anchor | — | 0.5210 | 0.3280 | — |
-| A0 | in-batch, no logQ | 1 | pending | pending | pending |
-| A1 (ref, "without") | in-batch + logQ | 3 | pending | pending | — |
-| A2 | A1 + 2,048 uniform negatives (MNS) | 1 | pending | pending | pending |
-| A3 ("with") | A1 + negatives mined from ranks 101–500 of A1 seed 42 | 3 | pending | pending | pending |
-| A4 | full softmax over 20,108 items | 1 | pending | pending | pending |
+| A0 | in-batch, no logQ | 1 | 0.3111 | 0.1413 | −0.2252 [−0.2297, −0.2203] (E007) |
+| A1 (ref, "without") | in-batch + logQ | 3 | 0.5361 ± 0.0005 | 0.3351 ± 0.0005 | — (E007) |
+| A2 | A1 + 2,048 uniform negatives (MNS) | 1 | 0.5342 | 0.3332 | −0.0021 [−0.0045, +0.0003] (E007) |
+| A3 ("with") | A1 + negatives mined from ranks 101–500 of A1 seed 42 | 3 | 0.5341 ± 0.0008 | 0.3351 ± 0.0011 | −0.0020 [−0.0033, −0.0007] (E007) |
+| A4 | full softmax over 20,108 items | 1 | 0.5333 | 0.3335 | −0.0030 [−0.0053, −0.0007] (E007) |
 
 ### Ablation (b): recall paths (S3, D-010)
 
@@ -479,3 +479,46 @@ Status: **recorded; not a reported result.** A check that the S2 trainer runs en
 `check-A1-full3-mps`: 8,538,846 rows, 2,085 steps per epoch; V_A Recall@50 0.5027 after epoch 2 and 0.5117 after epoch 3 (still rising); test Recall@20 0.3800, NDCG@100 0.4127, HR@50 0.9248; 418 s wall-clock. The A3 path (mining then training on mined negatives) is exercised by the test suite only.
 
 **Observations:** three epochs already put the Two-Tower within 0.007 of EASE's Recall@50 (0.5210, E004). Peak memory is set by the item tower over the full catalogue (A4: every item each step), not by the user side; every arm fits an 8 GB GPU. MPS peak memory is the driver's allocation, an upper bound on what CUDA reports.
+
+### E007 — 2026-10-24 — S2: the Two-Tower sweep on Modal (ablation (a))
+
+Status: **recorded.** The owner ran `modal run scripts/modal_train.py` (after a 2-epoch trial, whose runs were deleted from the Volume). All numbers below come from `artifacts/runs/<run_id>/metrics.json` and `per_user.parquet`, copied back from the `shopsage-data` Volume.
+
+| Field | Value |
+|---|---|
+| Run id / W&B | `tune-A1-*` (4), `A0-s42`, `A1-s42/43/44`, `A2-s42`, `A3-s42/43/44`, `A4-s42` / W&B project `shopsage-recommender` (owner's account) |
+| Code | working tree on top of `05f74c4` (S2 not yet committed), with the plain-JSON summary fix; `shopsage_rec` 0.1.0, torch 2.14.1+cu126, Python 3.12.10 |
+| Data | split_sha256 `4f93a0e6f611` (rebuilt on Modal from the raw archive, md5-checked; identical to the laptop's) |
+| Protocol / users | `Liang-SG-strict`; epoch chosen on V_A (5,000 validation users, Recall@50, evaluated every 2 epochs); test on all 10,000 test users through the numpy user tower |
+| Hardware / seeds | Modal, one NVIDIA A10 (24 GB) per run, bf16 autocast / seeds 42, 43, 44 for A1 and A3, 42 for the rest; bootstrap seed 42, 2,000 resamples |
+| Settings | B = 4,096, ≤ 50 history items, 128-d, 30 epochs, fused AdamW (no decay on embeddings); τ = 0.05, lr = 3e-3 chosen by the tuning runs; A2 M = 2,048; A3 k = 8 per row from ranks 101–500 of `A1-s42` |
+| Cost / peak memory | 9,017 GPU-seconds (2.50 A10-hours ≈ \$2.75 at \$1.10/h, plus CPU jobs; the Modal dashboard has the bill); peak GPU memory 0.98 GB (A0, A1), 1.30 GB (A2), 1.38 GB (A3), 3.21 GB (A4) |
+
+**Tuning** (A1, seed 42, 10 epochs; V_A Recall@50): τ 0.05 / lr 1e-3 0.52690; τ 0.05 / lr 3e-3 **0.52695** (chosen; a near tie); τ 0.1 / lr 1e-3 0.51391; τ 0.1 / lr 3e-3 0.51702.
+
+**Results** (test, 10,000 users). Three-seed arms: mean ± sd over seeds; single runs: mean [95% CI].
+
+| Arm | Seeds | Best epoch | Recall@20 | Recall@50 | NDCG@10 | NDCG@100 | HR@50 | s / epoch |
+|---|---|---|---|---|---|---|---|---|
+| A0, in-batch, no logQ | 1 | 30 | 0.2030 | 0.3111 [0.3049, 0.3171] | 0.1413 | 0.2294 | 0.7803 | 19.0 |
+| A1, in-batch + logQ (ref) | 3 | 28, 30, 28 | 0.3997 ± 0.0017 | **0.5361 ± 0.0005** | **0.3351 ± 0.0005** | 0.4324 ± 0.0001 | 0.9371 ± 0.0016 | 21.5 |
+| A2, + 2,048 uniform | 1 | 24 | 0.3975 | 0.5342 [0.5287, 0.5398] | 0.3332 | 0.4306 | 0.9354 | 30.7 |
+| A3, + 8 mined per row | 3 | 22, 24, 26 | 0.3995 ± 0.0003 | 0.5341 ± 0.0008 | 0.3351 ± 0.0011 | 0.4317 ± 0.0008 | 0.9346 ± 0.0005 | 26.6 |
+| A4, full softmax | 1 | 30 | 0.4001 | 0.5333 [0.5277, 0.5388] | 0.3335 | 0.4309 | 0.9340 | 75.5 |
+| EASE (E004) | — | — | 0.3893 | 0.5210 | 0.3280 | 0.4201 | 0.9246 | — |
+
+Per-seed A1 Recall@50: 0.5363 [0.5306, 0.5417], 0.5356 [0.5300, 0.5413], 0.5365 [0.5309, 0.5420]; A3: 0.5343, 0.5349, 0.5332.
+
+**Paired Δ** (same users, same resample indices; seed-averaged per user for the 3-seed arms):
+
+| Comparison | Δ Recall@50 [95% CI] | Δ NDCG@10 [95% CI] | Per-seed Δ Recall@50 |
+|---|---|---|---|
+| **A3 − A1 (the hard-negative ablation)** | **−0.0020 [−0.0033, −0.0007]** | −0.0001 [−0.0011, +0.0010] | −0.0020, −0.0007, −0.0033 |
+| A1 − A0 (logQ correction) | +0.2252 [+0.2203, +0.2297] (seed 42) | +0.1942 [+0.1896, +0.1986] | — |
+| A2 − A1 (seed 42) | −0.0021 [−0.0045, +0.0003] | −0.0023 [−0.0040, −0.0006] | — |
+| A4 − A1 (seed 42) | −0.0030 [−0.0053, −0.0007] | −0.0019 [−0.0037, −0.0002] | — |
+| A1 − EASE | +0.0151 [+0.0119, +0.0184] | +0.0071 [+0.0045, +0.0099] | +0.0152, +0.0146, +0.0155 |
+
+**Against the targets.** Recall@50 ≥ 0.55: not met by retrieval alone (A1 0.5361; RecVAE's published 0.553 is the frontier); the ranker (S4) is the remaining route. NDCG@10 ≥ 0.32: already met by the retriever (0.3351), and A1 beats EASE on both metrics. Hard-negative ablation +0.08: **not met**; mined negatives give no gain (−0.0020, CI below zero).
+
+**Observations:** the logQ correction is the decisive negative-sampling choice here (+0.225 Recall@50 over plain in-batch, whose popularity bias leaves it near MostPop). With logQ and accidental-hit masking in place, every extra source of negatives (uniform, mined, all items) lands within 0.003 of A1 or slightly below it: the in-batch softmax at B = 4,096 already sees 4,095 negatives per row, and the correction already removes the sampling bias that extra negatives would otherwise fix. Mined ranks 101–500 also hold unlabelled positives (a held-out user's 20% targets are, by construction, items like those). A3 peaks earlier (epochs 22–26) than A1 (28–30). The A0 curve was still rising at epoch 30, but its gap to A1 (0.23) is far outside any plausible remaining gain.

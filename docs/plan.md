@@ -2,7 +2,7 @@
 
 **English** | [简体中文](plan.zh-CN.md)
 
-**Updated:** 2026-10-24, S2 code done · **Progress:** S0 and S1 done; S2 code done and checked on the laptop, the sweep is handed off to you (§6.3); S3 can start meanwhile · **Code:** `05f74c4` on `main`, pushed to [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender); the S2 changes are uncommitted · **Companion:** [memory.md](memory.md) (facts, rules, decisions)
+**Updated:** 2026-10-24, after the S2 sweep · **Progress:** S0, S1 and S2 done (sweep logged as E007); S3 is next · **Code:** `05f74c4` pushed to [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender); S2 committed locally as `fefcf6c` (not pushed); the summary fix and the E007 docs are uncommitted · **Companion:** [memory.md](memory.md) (facts, rules, decisions)
 
 - **Goal:** a two-stage recommender on MovieLens-20M (Two-Tower dense recall and BM25 sparse recall, a LightGBM re-ranker, optional LLM query expansion, Milvus Lite retrieval, a Streamlit demo) with every reported number measured.
 - **Architecture:** offline, PyTorch trains the towers on a cloud GPU, numpy and scipy compute exact candidates for evaluation, and LightGBM re-ranks the union of both recall paths. Online, the demo runs on CPU: a numpy user tower, Milvus Lite (dense, sparse BM25 and RRF hybrid search), LightGBM, and Claude Haiku for query expansion.
@@ -20,14 +20,14 @@ Cloud deployment follows the owner's hosting plan, `cloud_hosting_plan_2026-10-1
 | Data | ML-20M download; the Liang split, an exact replication of the published counts (E004); the Day-1 split kept | — |
 | Evaluation | masked full-corpus top-k, truncated Recall / NDCG / HR, percentile and paired bootstrap; `shopsage evaluate` | S2: the same code scores the Two-Tower |
 | Baselines | MostPop and EASE, calibrated against their published figures (E004) | — |
-| Models | Two-Tower trainer with arms A0–A4, hard-negative mining, the sweep plan; `shopsage train / mine / sweep`; `scripts/modal_train.py`; a 3-epoch A1 check on MPS (E006) | your Modal sweep (§6.3) |
+| Models | Two-Tower A0–A4 trained on Modal (E007): A1 Recall@50 0.5361, NDCG@10 0.3351, above EASE; ablation (a) done | S4 re-ranks its candidates |
 | Retrieval | Milvus Lite probe: dense, sparse and hybrid search measured on the laptop (E004) | S3: BM25 path, Milvus serving index, ablations (a) and (b) |
 | Ranking | — | S4: LightGBM over both recall paths |
 | LLM | design | S5: Claude Haiku expansion, ablation (c) |
 | Demo | the probe deployed on Community Cloud: 482 MB peak, hybrid p95 176 ms (E005) | S6: full demo; latency fallback planned (§8) |
 | Repository | 122 tests green; lint, types and lock clean; S1 on GitHub, CI green | commit and push S2 (you, §7) |
 
-Measured so far, `Liang-SG-strict`, 10,000 test users: MostPop Recall@50 0.2352, NDCG@10 0.1275; EASE Recall@50 0.5210, NDCG@10 0.3280 (E004). Two-Tower A1 after only 3 epochs on MPS (a check, not a result): Recall@50 0.5145, NDCG@10 0.3163 (E006).
+Measured so far, `Liang-SG-strict`, 10,000 test users: MostPop Recall@50 0.2352, NDCG@10 0.1275; EASE Recall@50 0.5210, NDCG@10 0.3280 (E004). Two-Tower A1, 3 seeds (E007): Recall@50 0.5361 ± 0.0005, NDCG@10 0.3351 ± 0.0005, +0.0151 [+0.0119, +0.0184] Recall@50 over EASE. Hard negatives: A3 − A1 = −0.0020 [−0.0033, −0.0007], so the +0.08 target is not met; the logQ correction is worth +0.225 (A1 − A0).
 
 ## 2. Scope and targets (owner's spec, 2026-10-23)
 
@@ -81,7 +81,7 @@ Scaffold, Polars pipeline, md5-checked download, leave-one-out split, EDA notebo
 - [ ] Deploy the probe on Streamlit Community Cloud and record its memory and latency on the host: needs your commit, push and Community Cloud app (§7).
 - **Exit:** met, except the host measurement, which waits for the deploy.
 
-### S2. Two-Tower, negatives, Modal sweep ✅ code (2026-10-24, laptop) · ⏳ sweep (you)
+### S2. Two-Tower, negatives, Modal sweep ✅ (2026-10-24; code on the laptop, sweep on Modal)
 
 - [x] `features/items.py`: genre multi-hot, 5-year bucket, genome PCA-64 with a missing flag, cached in `item_features.npz`.
 - [x] `models/two_tower.py`: item tower (`item_idx` embedding ⊕ features → MLP → 128-d, L2-normalised); inductive user tower (mean of history-item embeddings over ≤ 50 sampled history items ⊕ log history length → MLP → 128-d); `sample_history` leaves the target out.
@@ -90,14 +90,14 @@ Scaffold, Polars pipeline, md5-checked download, leave-one-out split, EDA notebo
 - [x] Parity test: the numpy user tower against torch on 1,000 users (< 1e-5).
 - [x] `shopsage train / mine / sweep`; `scripts/train.sh`; `scripts/modal_train.py` (prepare on a Volume → 4-run τ/lr check → stage 1 in parallel → mine → stage 2 → `sweep_summary.json`; finished runs are skipped on a re-run).
 - [x] MPS smoke runs (A1, A2, A4 at 10% of users) and a 3-epoch full-data A1 check (E006).
-- [ ] **Hand-off: you run the sweep (§6.3).** **Exit:** `artifacts/runs/sweep_summary.json` and the 13 run directories copied back to the laptop; I then log E007.
+- [x] Sweep on Modal (you, 2026-10-24): 13 runs, 2.5 A10-hours ≈ \$2.75; copied back to `artifacts/runs/`; logged as E007 with ablation (a) and paired deltas.
 
 ### S3. BM25, Milvus serving index, ablations (a) and (b) (~4 h; laptop; can overlap your sweep)
 
 - [ ] `retrieval/bm25.py`: item documents (title, genres, top genome tags, and tags from training users only); BM25 weights as a scipy.sparse matrix; the user query is the fold-in items' terms.
 - [ ] `retrieval/milvus_store.py`: one collection with dense and sparse vector fields, flushed after loading; `search_dense`, `search_sparse` and `search_hybrid` (RRF, k = 60); over-fetch by the history size, then drop seen items. Parity tests against the numpy and scipy top-k.
 - [ ] `retrieval/fusion.py`: RRF for offline evaluation.
-- [ ] Tables: (a) from the sweep (A0–A4; A3 − A1 with its paired CI and per-seed Δs); (b) MostPop, EASE, BM25, dense, hybrid. Log E007 (sweep) and E008.
+- [ ] Table (b): MostPop, EASE, BM25, dense (A1-s42), hybrid. Log E008. (Table (a) is done: E007.)
 - **Exit:** tables (a) and (b) in experiment_log.md; parity tests green.
 
 ### S4. LightGBM ranker (~4 h; laptop CPU)
@@ -151,7 +151,7 @@ Failure modes that no step's main path exercises; each gets a test in the step n
 | Workload | Platform | In this repo | Cost |
 |---|---|---|---|
 | Data, EDA, tests, EASE, BM25, LightGBM, LLM calls | laptop | `make` targets, the `shopsage` CLI | \$0 (LLM calls ≈ \$1) |
-| Two-Tower sweep | Modal A10; RunPod as the alternative | `scripts/modal_train.py`; `scripts/bootstrap_cloud.sh` and `scripts/train.sh` | ≈ \$3–6 (estimate), inside the \$30 monthly credit |
+| Two-Tower sweep | Modal A10; RunPod as the alternative | `scripts/modal_train.py`; `scripts/bootstrap_cloud.sh` and `scripts/train.sh` | ≈ \$3 (estimate from the measured A1 epoch), inside the \$30 monthly credit |
 | Demo | Streamlit Community Cloud | `serving/app.py`, `.streamlit/`, `packages.txt`, `configs/deploy/streamlit.yaml` | \$0 |
 | Demo fallback | Hugging Face Spaces (CPU basic: 2 vCPU, 16 GB) | `Dockerfile` | \$0 |
 | Demo artifacts | sha256-pinned GitHub Release asset | S6 | \$0 |
@@ -161,14 +161,14 @@ Failure modes that no step's main path exercises; each gets a test in the step n
 
 **VRAM requirement: 8 GB minimum, 16 GB or more recommended; a 24 GB A10 (Modal's `"A10"`) is the default.** Measured on the laptop (E006, MPS, B = 4,096; MPS reports the driver's allocation, an upper bound on CUDA's): A1 2.1 GB, A2 2.2 GB, A4 (full softmax) 5.0 GB. A3 adds 8 mined negatives per row, about A2's size, plus the mined pool on the GPU (116,677 × 400 as int64 ≈ 0.37 GB; 0.19 GB as int32 on disk).
 
-| Arm | Peak memory (measured on MPS) | s / epoch, M5 MPS (measured) | s / epoch, A10 (estimate, ±50%) |
+| Arm | Peak memory (measured on MPS) | s / epoch, M5 MPS (measured) | s / epoch, A10 |
 |---|:-:|:-:|:-:|
-| A0, A1 (in-batch) | 2.1 GB | 129–146 | ~35–45 |
-| A2 (+2,048 uniform) | 2.2 GB | ~150 (10% run, scaled ×10) | ~40–50 |
-| A3 (+8 mined per row) | ≈ A2 | not measured | ~45–60 |
-| A4 (full softmax) | 5.0 GB | ~420 (10% run, scaled ×10) | ~110–140 |
+| A0, A1 (in-batch) | 2.1 GB (A10: 0.98 GB, measured) | 129–146 | **21.5 (measured, Modal trial)** |
+| A2 (+2,048 uniform) | 2.2 GB | ~150 (10% run, scaled ×10) | ~25 (estimate) |
+| A3 (+8 mined per row) | ≈ A2 | not measured | ~30 (estimate) |
+| A4 (full softmax) | 5.0 GB | ~420 (10% run, scaled ×10) | ~75 (estimate) |
 
-- **Sweep estimate:** 4 tuning runs × 10 epochs, then 9 runs × 30 epochs (A4 the longest, ~1 h) ≈ 3–5 A10-hours ≈ \$3–6 at Modal's A10 rate (about \$1.10 per hour); about 1.5–2 hours of wall-clock because the runs of a stage go in parallel. Estimates; `metrics.json` (`wall_s`, `peak_memory_gb`, `gpu`) replaces them.
+- **Sweep estimate:** 4 tuning runs × 10 epochs, then 9 runs × 30 epochs (A4 the longest, ~1 h) ≈ 2.5 A10-hours ≈ \$3 at Modal's A10 rate (about \$1.10 per hour); about 1–1.5 hours of wall-clock because the runs of a stage go in parallel. Estimates; `metrics.json` (`wall_s`, `peak_memory_gb`, `gpu`) replaces them.
 
 **Option A: Modal (the hosting plan's choice).**
 
@@ -242,15 +242,16 @@ Vendor figures were re-checked on the dates shown; the platform choices are the 
 - [x] Commit and push S1 (`05f74c4`, 2026-10-24; CI green, including the Milvus Lite probe on Linux).
 
 - [x] Deploy the probe on Community Cloud (2026-10-24; E005: 482 MB, hybrid p95 176 ms).
-- [ ] Commit and push S2:
+- [x] Commit S2 (`fefcf6c`, 2026-10-24).
+- [ ] Commit the sweep results and push:
 
   ```bash
   git add -A
-  git commit -m "S2: Two-Tower (A0-A4), hard-negative mining, Modal sweep, MPS check (E005, E006)"
+  git commit -m "S2: Modal sweep results (E007), plain-JSON run summaries"
   git push
   ```
 
-- [ ] Run the S2 sweep on Modal (§6.3, Option A), then copy the runs back with `modal volume get` and tell me "sweep done".
+- [x] Run the S2 sweep on Modal (2026-10-24; E007). Note: `modal volume get` refuses to overwrite `artifacts/runs/sweep_summary.json`, which the entrypoint already writes locally; download into an empty directory instead.
 - [ ] Email GroupLens about D-003 (an answer can take time):
 
   ```text
