@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from pathlib import Path
 
@@ -19,4 +20,9 @@ def test_run_probe_matches_exact_search_and_times_all_three_paths(tmp_path: Path
     assert {"pymilvus", "milvus_lite", "numpy"} <= set(report.versions)
     labels = [label for label, _ in report.rows()]
     assert "peak RSS" in labels
-    assert "torch" not in sys.modules  # the demo stack never imports torch
+
+
+def test_the_demo_stack_never_imports_torch() -> None:
+    # a fresh interpreter: other tests of the session import torch
+    code = "import sys, shopsage_rec.serving.probe; sys.exit('torch' in sys.modules)"
+    assert subprocess.run([sys.executable, "-c", code], check=False).returncode == 0

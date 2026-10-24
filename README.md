@@ -2,7 +2,7 @@
 
 Two-stage recommender on MovieLens-20M, built as a production-style offline pipeline. A PyTorch Two-Tower retriever and a BM25 retriever generate candidates, a LightGBM LambdaRank model re-ranks them, Milvus Lite serves both recall paths (dense, sparse and RRF hybrid search) in a CPU-only Streamlit demo, and Claude Haiku optionally expands free-text queries. Everything is measured under the strong-generalisation protocol of [Liang et al. (2018)](https://arxiv.org/abs/1802.05814) against MostPop and EASE, with bootstrap confidence intervals. MovieLens-20M stands in for implicit-feedback e-commerce logs, with a rating ≥ 4.0 as the positive event.
 
-**Status:** step S1 of S1–S7 done (2026-10-23): the Liang split, the evaluation code and the MostPop and EASE baselines, which reproduce their published numbers. Next is the Two-Tower and its training sweep (S2). Plan and progress: [docs/plan.md](docs/plan.md) ([中文](docs/plan.zh-CN.md)).
+**Status:** S1 done (2026-10-23): the Liang split, the evaluation code and the MostPop and EASE baselines, which reproduce their published numbers. S2 code done (2026-10-24): the Two-Tower with five negative-sampling arms, hard-negative mining and a one-command Modal sweep; the sweep's results are pending. Plan and progress: [docs/plan.md](docs/plan.md) ([中文](docs/plan.zh-CN.md)).
 
 [![CI](https://img.shields.io/github/actions/workflow/status/createrW/shopsage-recommender/ci.yml?branch=main&label=CI)](https://github.com/createrW/shopsage-recommender/actions/workflows/ci.yml)
 [![Python 3.11 | 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](pyproject.toml)
@@ -87,30 +87,36 @@ uv run pytest                        # unit, property-based and real-data tests
 
 ## Training on a cloud GPU
 
-Following the project's hosting plan, the Two-Tower trains on a rented GPU: Modal's A10, or RunPod as the cheaper alternative. The laptop (Apple M5, 16 GB) handles the data, the baselines, tests, the ranker and the demo. The training sweep lands in S2. One command sets up a fresh Linux GPU box today:
+Following the project's hosting plan, the Two-Tower trains on a rented GPU: Modal's A10, or RunPod as the cheaper alternative. The laptop (Apple M5, 16 GB) handles the data, the baselines, tests, the ranker and the demo.
+
+**Modal (one command, runs in parallel):**
+
+```bash
+uv tool install modal && modal setup
+modal secret create wandb WANDB_API_KEY=...          # or WANDB_MODE=offline
+modal run scripts/modal_train.py                     # data prep, τ/lr check, arms A0–A4, mining, A3
+modal volume get shopsage-data artifacts/runs artifacts/
+```
+
+**Any Linux GPU box (sequential):**
 
 ```bash
 git clone https://github.com/createrW/shopsage-recommender.git
 cd shopsage-recommender
 export WANDB_API_KEY=...             # or WANDB_MODE=offline
 bash scripts/bootstrap_cloud.sh      # uv sync --extra train --extra llm, then download + the Liang split
+bash scripts/train.sh --sweep        # or: bash scripts/train.sh --one --arm A1 --seed 42
 ```
 
 On Linux, torch comes from the explicit index `https://download.pytorch.org/whl/cu126` (torch 2.14.1+cu126). It works on NVIDIA drivers ≥ 525 (≥ 560 natively), as on Colab, Kaggle, RunPod and Modal hosts. Blackwell GPUs (RTX 50xx, B200) need the cu130 index instead.
 
-| GPU | B = 4,096 | B = 8,192 | B = 16,384 + 4,096 sampled negatives (worst case) |
-|---|:-:|:-:|:-:|
-| T4 16 GB | 1.4 GB / ~26 s | 2.5 GB / ~30 s | 6.1 GB / ~49 s |
-| A10G 24 GB | 1.4 GB / ~12 s | 2.5 GB / ~16 s | 6.1 GB / ~26 s |
-| RTX 3060 12 GB | 1.4 GB / ~20 s | 2.5 GB / ~27 s | 6.1 GB / ~46 s |
-| RTX 4060 8 GB | 1.4 GB / ~25 s | 2.5 GB / ~34 s | 6.1 GB / ~57 s |
-| Apple M5 16 GB, MPS (measured, E002) | 2.3 GB (K = 4,096; 1.2 GB in-batch) / 88 s (in-batch) | — | — |
+| Arm (B = 4,096) | Peak memory, M5 MPS (measured, E006) | s / epoch, M5 MPS (measured, E006) |
+|---|:-:|:-:|
+| A1, in-batch + logQ | 2.1 GB | 129–146 |
+| A2, + 2,048 uniform negatives | 2.2 GB | ~150 (10% of users, scaled) |
+| A4, full softmax | 5.0 GB | ~420 (10% of users, scaled) |
 
-**Reading the table.** Cells are peak memory / seconds per epoch:
-
-- **GPU rows.** A roofline estimate (±30%) for the Day-1 shapes: a 136,674 × 128 user table and 13,681 items. The Liang model has no user table and 20,108 items, so the table is an upper bound, and S2 re-measures it.
-- **M5 row.** Measured with synthetic tensors (E002).
-- **VRAM requirement.** **8 GB minimum, 16 GB or more recommended**; a 24 GB A10 is the best value.
+- **VRAM requirement.** **8 GB minimum, 16 GB or more recommended**; a 24 GB A10 is the default. MPS reports the driver's allocation, an upper bound on CUDA's figure; each run's `metrics.json` records the measured GPU peak.
 - **Precision.** bf16 autocast runs when `torch.cuda.is_bf16_supported(including_emulation=False)` (compute capability ≥ 8.0), else fp16 with `GradScaler` (the T4 is sm_75).
 - **Masking.** Accidental hits (other columns that are positives of the row's user) are masked.
 
@@ -122,7 +128,7 @@ On Linux, torch comes from the explicit index `https://download.pytorch.org/whl/
 shopsage-recommender/
 ├── configs/
 │   ├── data/                      # movielens_20m_liang.yaml (headline), movielens_20m.yaml (Day-1 split)
-│   └── train/, deploy/            # Two-Tower / LightGBM drafts (S2, S4) and the demo config (S6)
+│   └── train/, deploy/            # LightGBM draft (S4) and the demo config (S6)
 ├── data/                          # raw/, processed/ (git-ignored); samples/README.md (licence)
 ├── docs/
 │   ├── plan.md, plan.zh-CN.md     # plan and status: done, not done, cloud deployment (EN / 中文)
@@ -137,13 +143,13 @@ shopsage-recommender/
 │   ├── config.py                  # DataConfig, SplitConfig (leave_one_out | liang)
 │   ├── data/                      # loader, preprocess, split (leave-one-out), liang, pipeline
 │   ├── evaluation/                # masked top-k, Recall/NDCG/HR, bootstrap, the evaluate runner
-│   ├── models/                    # MostPop and EASE (S1); Two-Tower and trainer (S2)
+│   ├── models/                    # MostPop and EASE (S1); Two-Tower, losses, trainer, mining, sweep (S2)
 │   ├── retrieval/                 # BM25, RRF fusion, Milvus Lite store (S3)
 │   ├── ranking/                   # LightGBM re-ranker (S4)
 │   ├── llm/                       # Claude Haiku query expansion (S5)
 │   └── serving/                   # Streamlit app.py (deployment probe now, demo in S6) + requirements.txt
 ├── tests/                         # pytest + hypothesis
-├── scripts/                       # download, prepare, cloud bootstrap, step benchmark; train (S2)
+├── scripts/                       # download, prepare, cloud bootstrap, step benchmark; train.sh, modal_train.py (S2)
 ├── artifacts/                     # eval runs, checkpoints, demo bundle (git-ignored)
 ├── .github/workflows/ci.yml       # lint, types, tests; demo requirements + Milvus Lite probe on Linux
 ├── Dockerfile                     # CPU image for the demo (Hugging Face Spaces fallback)
@@ -243,7 +249,7 @@ The decision log (D-001 to D-014) is in [docs/experiment_log.md](docs/experiment
 
 - [x] S0 (Day 1): data pipeline, scaffold, EDA, the Day-1 split
 - [x] S1: Liang split, evaluation code, MostPop and EASE calibrated (E004), Milvus Lite deployment probe
-- [ ] S2: Two-Tower with in-batch, uniform and mined negatives; one Modal training sweep
+- [ ] S2: Two-Tower with in-batch, uniform and mined negatives (code done); one Modal training sweep (pending)
 - [ ] S3: BM25 path, Milvus Lite serving index, ablations (a) and (b)
 - [ ] S4: LightGBM re-ranker over both recall paths
 - [ ] S5: Claude Haiku query expansion, ablation (c)

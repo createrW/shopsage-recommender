@@ -2,7 +2,7 @@
 
 **English** | [简体中文](plan.zh-CN.md)
 
-**Updated:** 2026-10-23, after S1 · **Progress:** S0 and S1 done; S2 is next · **Code:** `3e0f08f` on `main`, pushed to [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender); the S1 changes are uncommitted · **Companion:** [memory.md](memory.md) (facts, rules, decisions)
+**Updated:** 2026-10-24, S2 code done · **Progress:** S0 and S1 done; S2 code done and checked on the laptop, the sweep is handed off to you (§6.3); S3 can start meanwhile · **Code:** `05f74c4` on `main`, pushed to [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender); the S2 changes are uncommitted · **Companion:** [memory.md](memory.md) (facts, rules, decisions)
 
 - **Goal:** a two-stage recommender on MovieLens-20M (Two-Tower dense recall and BM25 sparse recall, a LightGBM re-ranker, optional LLM query expansion, Milvus Lite retrieval, a Streamlit demo) with every reported number measured.
 - **Architecture:** offline, PyTorch trains the towers on a cloud GPU, numpy and scipy compute exact candidates for evaluation, and LightGBM re-ranks the union of both recall paths. Online, the demo runs on CPU: a numpy user tower, Milvus Lite (dense, sparse BM25 and RRF hybrid search), LightGBM, and Claude Haiku for query expansion.
@@ -20,14 +20,14 @@ Cloud deployment follows the owner's hosting plan, `cloud_hosting_plan_2026-10-1
 | Data | ML-20M download; the Liang split, an exact replication of the published counts (E004); the Day-1 split kept | — |
 | Evaluation | masked full-corpus top-k, truncated Recall / NDCG / HR, percentile and paired bootstrap; `shopsage evaluate` | S2: the same code scores the Two-Tower |
 | Baselines | MostPop and EASE, calibrated against their published figures (E004) | — |
-| Models | MPS benchmark (E002); config drafts | S2: Two-Tower with in-batch, uniform and mined negatives; one Modal sweep |
+| Models | Two-Tower trainer with arms A0–A4, hard-negative mining, the sweep plan; `shopsage train / mine / sweep`; `scripts/modal_train.py`; a 3-epoch A1 check on MPS (E006) | your Modal sweep (§6.3) |
 | Retrieval | Milvus Lite probe: dense, sparse and hybrid search measured on the laptop (E004) | S3: BM25 path, Milvus serving index, ablations (a) and (b) |
 | Ranking | — | S4: LightGBM over both recall paths |
 | LLM | design | S5: Claude Haiku expansion, ablation (c) |
-| Demo | the probe app (`serving/app.py`) runs headless; `serving/requirements.txt`; CI runs the probe on Linux | deploy the probe on Community Cloud (you, §7); S6: full demo |
-| Repository | 101 tests green, real-data tests included; lint, types and lock clean; on GitHub, CI green for Day 1 | commit and push S1 (you, §7) |
+| Demo | the probe deployed on Community Cloud: 482 MB peak, hybrid p95 176 ms (E005) | S6: full demo; latency fallback planned (§8) |
+| Repository | 122 tests green; lint, types and lock clean; S1 on GitHub, CI green | commit and push S2 (you, §7) |
 
-Measured so far, `Liang-SG-strict`, 10,000 test users: MostPop Recall@50 0.2352, NDCG@10 0.1275; EASE Recall@50 0.5210, NDCG@10 0.3280 (E004). No model of this project has been trained yet.
+Measured so far, `Liang-SG-strict`, 10,000 test users: MostPop Recall@50 0.2352, NDCG@10 0.1275; EASE Recall@50 0.5210, NDCG@10 0.3280 (E004). Two-Tower A1 after only 3 epochs on MPS (a check, not a result): Recall@50 0.5145, NDCG@10 0.3163 (E006).
 
 ## 2. Scope and targets (owner's spec, 2026-10-23)
 
@@ -81,22 +81,23 @@ Scaffold, Polars pipeline, md5-checked download, leave-one-out split, EDA notebo
 - [ ] Deploy the probe on Streamlit Community Cloud and record its memory and latency on the host: needs your commit, push and Community Cloud app (§7).
 - **Exit:** met, except the host measurement, which waits for the deploy.
 
-### S2. Two-Tower, negatives, Modal sweep (~5 h on the laptop, then your sweep on Modal)
+### S2. Two-Tower, negatives, Modal sweep ✅ code (2026-10-24, laptop) · ⏳ sweep (you)
 
-- [ ] `models/two_tower.py`: item tower (`item_idx` embedding ⊕ genre multi-hot ⊕ 5-year bucket ⊕ genome PCA-64 with a missing flag → MLP → 128-d, L2-normalised); user tower (mean of history-item embeddings over ≤ 50 fold-in items ⊕ log history length → MLP → 128-d).
-- [ ] `models/losses.py`: `sampled_softmax(user, pos, *, tau, logq, mask, extra_neg=None)` with logQ correction and accidental-hit masking; extra negatives `uniform` (M = 2,048, shared by the batch), `mined` (k per row from that user's ranks 101–500) or `full` (all items).
-- [ ] `models/trainer.py`: `AdamW(fused=True)`, the bf16/fp16 rule, 30 epochs, a checkpoint on V_A Recall@50, W&B logging. `models/export.py`: `item_embeddings.npy`, `user_tower.npz`, `manifest.json`. `models/mining.py`: ranks 101–500 per training user from a given run.
-- [ ] Parity test: the numpy user tower against torch on 1,000 users (max abs diff < 1e-5).
-- [ ] `shopsage train` and `scripts/train.sh`; `scripts/modal_train.py`: prepare the data on a Modal Volume → a 4-run τ/lr check on A1 → stage 1 in parallel (A0, A1 × 3, A2, A4) → mine from A1 seed 42 → stage 2 (A3 × 3) → test metrics → `summary.json`.
-- [ ] MPS smoke run on the laptop (1 epoch, 10% of users).
-- **Hand-off:** you run the sweep (§6.3). **Exit:** `summary.json` with test Recall@50 and NDCG@10 per arm and seed; peak VRAM in W&B.
+- [x] `features/items.py`: genre multi-hot, 5-year bucket, genome PCA-64 with a missing flag, cached in `item_features.npz`.
+- [x] `models/two_tower.py`: item tower (`item_idx` embedding ⊕ features → MLP → 128-d, L2-normalised); inductive user tower (mean of history-item embeddings over ≤ 50 sampled history items ⊕ log history length → MLP → 128-d); `sample_history` leaves the target out.
+- [x] `models/losses.py`: `sampled_softmax` with logQ correction and accidental-hit masking (`PositiveSet`); extra negatives shared (uniform, full) or per row (mined).
+- [x] `models/trainer.py`: arms A0–A4, fused AdamW (no decay on embeddings), the bf16/fp16 rule, best epoch on V_A Recall@50, export (`item_embeddings.npy`, `user_tower.npz`, `model.pt`), test metrics with CIs (`per_user.parquet`, `metrics.json`), peak memory, W&B (offline without a key). `models/mining.py`: ranks 101–500 per training user. `models/sweep.py`: the job plan.
+- [x] Parity test: the numpy user tower against torch on 1,000 users (< 1e-5).
+- [x] `shopsage train / mine / sweep`; `scripts/train.sh`; `scripts/modal_train.py` (prepare on a Volume → 4-run τ/lr check → stage 1 in parallel → mine → stage 2 → `sweep_summary.json`; finished runs are skipped on a re-run).
+- [x] MPS smoke runs (A1, A2, A4 at 10% of users) and a 3-epoch full-data A1 check (E006).
+- [ ] **Hand-off: you run the sweep (§6.3).** **Exit:** `artifacts/runs/sweep_summary.json` and the 13 run directories copied back to the laptop; I then log E007.
 
 ### S3. BM25, Milvus serving index, ablations (a) and (b) (~4 h; laptop; can overlap your sweep)
 
 - [ ] `retrieval/bm25.py`: item documents (title, genres, top genome tags, and tags from training users only); BM25 weights as a scipy.sparse matrix; the user query is the fold-in items' terms.
 - [ ] `retrieval/milvus_store.py`: one collection with dense and sparse vector fields, flushed after loading; `search_dense`, `search_sparse` and `search_hybrid` (RRF, k = 60); over-fetch by the history size, then drop seen items. Parity tests against the numpy and scipy top-k.
 - [ ] `retrieval/fusion.py`: RRF for offline evaluation.
-- [ ] Tables: (a) from the sweep (A0–A4; A3 − A1 with its paired CI and per-seed Δs); (b) MostPop, EASE, BM25, dense, hybrid. Log E005 and E006.
+- [ ] Tables: (a) from the sweep (A0–A4; A3 − A1 with its paired CI and per-seed Δs); (b) MostPop, EASE, BM25, dense, hybrid. Log E007 (sweep) and E008.
 - **Exit:** tables (a) and (b) in experiment_log.md; parity tests green.
 
 ### S4. LightGBM ranker (~4 h; laptop CPU)
@@ -150,7 +151,7 @@ Failure modes that no step's main path exercises; each gets a test in the step n
 | Workload | Platform | In this repo | Cost |
 |---|---|---|---|
 | Data, EDA, tests, EASE, BM25, LightGBM, LLM calls | laptop | `make` targets, the `shopsage` CLI | \$0 (LLM calls ≈ \$1) |
-| Two-Tower sweep | Modal A10; RunPod as the alternative | `scripts/modal_train.py` (S2); `scripts/bootstrap_cloud.sh` and `scripts/train.sh` | ≈ \$1.1–1.7 (estimate), inside the \$30 monthly credit |
+| Two-Tower sweep | Modal A10; RunPod as the alternative | `scripts/modal_train.py`; `scripts/bootstrap_cloud.sh` and `scripts/train.sh` | ≈ \$3–6 (estimate), inside the \$30 monthly credit |
 | Demo | Streamlit Community Cloud | `serving/app.py`, `.streamlit/`, `packages.txt`, `configs/deploy/streamlit.yaml` | \$0 |
 | Demo fallback | Hugging Face Spaces (CPU basic: 2 vCPU, 16 GB) | `Dockerfile` | \$0 |
 | Demo artifacts | sha256-pinned GitHub Release asset | S6 | \$0 |
@@ -158,37 +159,39 @@ Failure modes that no step's main path exercises; each gets a test in the step n
 
 ### 6.3 Training hand-off: what you run
 
-**VRAM requirement: 8 GB minimum, 16 GB or more recommended; a 24 GB A10 is the best value.** The Day-1 table below (peak memory / seconds per epoch; roofline estimate ±30%; only the M5 row is measured) is an upper bound for the Liang shapes, which have no 136,674-row user table and 20,108 items; S2 re-measures.
+**VRAM requirement: 8 GB minimum, 16 GB or more recommended; a 24 GB A10 (Modal's `"A10"`) is the default.** Measured on the laptop (E006, MPS, B = 4,096; MPS reports the driver's allocation, an upper bound on CUDA's): A1 2.1 GB, A2 2.2 GB, A4 (full softmax) 5.0 GB. A3 adds 8 mined negatives per row, about A2's size, plus the mined pool on the GPU (116,677 × 400 as int64 ≈ 0.37 GB; 0.19 GB as int32 on disk).
 
-| GPU | B = 4,096 | B = 8,192 | B = 16,384 + 4,096 sampled negatives (worst case) |
+| Arm | Peak memory (measured on MPS) | s / epoch, M5 MPS (measured) | s / epoch, A10 (estimate, ±50%) |
 |---|:-:|:-:|:-:|
-| T4 16 GB | 1.4 GB / ~26 s | 2.5 GB / ~30 s | 6.1 GB / ~49 s |
-| A10G 24 GB | 1.4 GB / ~12 s | 2.5 GB / ~16 s | 6.1 GB / ~26 s |
-| RTX 3060 12 GB | 1.4 GB / ~20 s | 2.5 GB / ~27 s | 6.1 GB / ~46 s |
-| RTX 4060 8 GB | 1.4 GB / ~25 s | 2.5 GB / ~34 s | 6.1 GB / ~57 s |
-| Apple M5 16 GB, MPS (measured, E002) | 2.3 GB (K = 4,096; 1.2 GB in-batch) / 88 s (in-batch) | — | — |
+| A0, A1 (in-batch) | 2.1 GB | 129–146 | ~35–45 |
+| A2 (+2,048 uniform) | 2.2 GB | ~150 (10% run, scaled ×10) | ~40–50 |
+| A3 (+8 mined per row) | ≈ A2 | not measured | ~45–60 |
+| A4 (full softmax) | 5.0 GB | ~420 (10% run, scaled ×10) | ~110–140 |
 
-- **Sweep estimate:** 9 full runs of ~6 min each plus 4 short tuning runs ≈ 1–1.5 A10-hours ≈ \$1.1–1.7, about 25 minutes of wall-clock in parallel; budget 3 hours. All estimates; W&B logs replace them.
+- **Sweep estimate:** 4 tuning runs × 10 epochs, then 9 runs × 30 epochs (A4 the longest, ~1 h) ≈ 3–5 A10-hours ≈ \$3–6 at Modal's A10 rate (about \$1.10 per hour); about 1.5–2 hours of wall-clock because the runs of a stage go in parallel. Estimates; `metrics.json` (`wall_s`, `peak_memory_gb`, `gpu`) replaces them.
 
-**Option A: Modal (the hosting plan's choice).** The script lands in S2; the commands show its intended shape.
+**Option A: Modal (the hosting plan's choice).**
 
 ```bash
 uv tool install modal && modal setup                 # once: the CLI, then a browser login
-modal secret create wandb WANDB_API_KEY=...          # once
-modal run scripts/modal_train.py                     # S2: the whole sweep
-modal volume get shopsage-artifacts runs artifacts/runs
+modal secret create wandb WANDB_API_KEY=<your key>   # once; without W&B: modal secret create wandb WANDB_MODE=offline
+cd /Users/zy/Project/new_sys/projects/shopsage-recommender
+modal run scripts/modal_train.py                     # data prep + the whole sweep; prints the per-arm summary
+modal volume get shopsage-data artifacts/runs artifacts/   # the 13 run directories
 ```
 
-**Option B: RunPod or any Linux GPU box,** sequential, about an hour on an A10.
+`modal run` must stay connected (keep the laptop awake); if it drops, run it again: finished runs are skipped. Other GPU: `SHOPSAGE_GPU=L4 modal run scripts/modal_train.py`. Short trial first, if you like: `modal run scripts/modal_train.py --epochs 2 --tune-epochs 1` (then delete `artifacts/runs` on the Volume with `modal volume rm -r shopsage-data artifacts/runs` before the real sweep, since finished run ids are reused).
+
+**Option B: RunPod or any Linux GPU box,** sequential, about 4–5 hours on an A10.
 
 ```bash
 git clone https://github.com/createrW/shopsage-recommender.git && cd shopsage-recommender
 export WANDB_API_KEY=...                             # or WANDB_MODE=offline
 bash scripts/bootstrap_cloud.sh                      # uv, train + llm extras, torch check, download, Liang split
-bash scripts/train.sh --sweep                        # S2
+bash scripts/train.sh --sweep                        # the whole sweep, one run after another
 ```
 
-Copy `artifacts/` back, then **terminate** the pod: a stopped pod keeps billing for its volume disk (RunPod: \$0.20 per GB-month idle). A Community Cloud RTX 4090 (24 GB, \$0.34 per hour) is enough.
+Copy `artifacts/runs/` back, then **terminate** the pod: a stopped pod keeps billing for its volume disk (RunPod: \$0.20 per GB-month idle). A Community Cloud RTX 4090 (24 GB, \$0.34 per hour) is enough.
 
 **Option C: a free T4 on Colab or Kaggle,** for smoke runs only (fp16, about twice as slow).
 
@@ -225,7 +228,7 @@ Vendor figures were re-checked on the dates shown; the platform choices are the 
 | Modal A100 40 GB at \$1.50/h | \$0.000583/s ≈ \$2.10/h | not needed: the worst case peaks at 6.1 GB |
 | Hugging Face Spaces GPU at \$0.60/h | T4 small \$0.40/h; CPU basic 2 vCPU, 16 GB, free (huggingface.co/pricing, 2026-10-23) | the demo stays on CPU; Spaces is the fallback host |
 | RunPod RTX 4090 at ~\$0.40/h (spot) | \$0.34/h Community Cloud, \$0.89/h Secure Cloud; idle volume disk \$0.20 per GB-month (runpod.io/pricing, 2026-10-23) | the alternative to Modal; terminate pods after use |
-| P02 training: 8–12 GB VRAM, 10–15 hours | roofline: ≤ 6.1 GB peak; the sweep needs ~1–1.5 A10-hours (±30%) | 8 GB minimum, 16 GB or more recommended; measured in S2 |
+| P02 training: 8–12 GB VRAM, 10–15 hours | measured on MPS (E006): ≤ 5.0 GB peak (A4); the sweep needs ~3–5 A10-hours (estimate) | 8 GB minimum, 16 GB or more recommended |
 | P02 checkpoints: ~500 MB | ~78 MB of parameters plus 155 MB of AdamW state per checkpoint at the Day-1 shapes (estimate) | keep the best checkpoint per run; artifacts never go into git |
 | Demo: interviewers type a user_id | the GroupLens licence forbids redistribution without permission (D-003) | a visitor "pick 5 movies" profile; a user-id picker only with GroupLens's permission |
 | Resume line: "<200 ms CPU inference; 50+ test users" | nothing measured yet | latency measured on the live host (S6); a user count only if real, as the hosting plan itself warns in its Part 1 |
@@ -236,15 +239,18 @@ Vendor figures were re-checked on the dates shown; the platform choices are the 
 
 - [x] Reply "go S1" (2026-10-23; no default vetoed, so D-001 and the other §3 defaults are decided).
 - [x] Create the GitHub repo and push Day 1 (`createrW/shopsage-recommender`; CI green).
-- [ ] Commit and push S1. I can make the commit if you ask; I never push.
+- [x] Commit and push S1 (`05f74c4`, 2026-10-24; CI green, including the Milvus Lite probe on Linux).
+
+- [x] Deploy the probe on Community Cloud (2026-10-24; E005: 482 MB, hybrid p95 176 ms).
+- [ ] Commit and push S2:
 
   ```bash
   git add -A
-  git commit -m "S1: Liang split, evaluation, MostPop/EASE calibration (E004), Milvus Lite probe"
+  git commit -m "S2: Two-Tower (A0-A4), hard-negative mining, Modal sweep, MPS check (E005, E006)"
   git push
   ```
 
-- [ ] Deploy the probe (§6.4): at share.streamlit.io, create an app from `createrW/shopsage-recommender`, branch `main`, main file `src/shopsage_rec/serving/app.py`, App URL `yi-shopsage`. Open the page once it has built (it runs the probe on load, about 10 s) and send me the table, or a screenshot: peak RSS and the three p95 values are what I record.
+- [ ] Run the S2 sweep on Modal (§6.3, Option A), then copy the runs back with `modal volume get` and tell me "sweep done".
 - [ ] Email GroupLens about D-003 (an answer can take time):
 
   ```text
@@ -268,10 +274,10 @@ Vendor figures were re-checked on the dates shown; the platform choices are the 
   Yi Zhao
   ```
 
-**Before the S2 hand-off** (the training sweep)
+**Before the sweep** (needed for the step above)
 
-- [ ] A Modal account: `uv tool install modal && modal setup`, then a workspace budget.
-- [ ] A W&B account and API key, stored for Modal with `modal secret create wandb WANDB_API_KEY=...`.
+- [ ] A Modal account: `uv tool install modal && modal setup`, then a workspace budget (e.g. \$15) under Settings → Usage.
+- [ ] A W&B account and API key, stored for Modal with `modal secret create wandb WANDB_API_KEY=...` (or `WANDB_MODE=offline` to skip W&B).
 
 **Later**
 
@@ -287,8 +293,9 @@ Cut order if late: C2 in ablation (c), then the A0 / A2 / A4 context arms, the r
 | The Liang replication is off (counts differ) | golden and real-data count tests in S1, fixed before S2 |
 | EASE misses its calibration figure | metric and split bugs are fixed before any model number is reported |
 | The targets are not reached | report against the published anchors; never change the protocol or the metric to chase them |
-| Milvus Lite fails or is slow on Community Cloud (Debian 11 is not on its supported list) | milvus-lite 3.x is pure Python over faiss-cpu; CI runs the probe on Linux once S1 is pushed, and the probe deploy measures the host; a numpy fallback or Hugging Face Spaces |
-| The demo exceeds 690 MB | the S1 probe; trim the bundle; Hugging Face Spaces |
+| The sweep fails or stalls on Modal | finished runs are skipped on a re-run; a 2-epoch trial first; RunPod (Option B) as the fallback |
+| Milvus Lite is slow on Community Cloud: measured hybrid p95 176 ms of the 200 ms budget (E005) | S6 measures numpy exact dense top-k and scipy BM25 on the host (same results; FLAT overlap 1.000); if Milvus plus the ranker misses D-013, the demo serves through numpy / scipy and shows Milvus as the alternative engine with its latency |
+| The demo exceeds 690 MB | probe peak 482 MB (E005); trim the bundle; Hugging Face Spaces |
 | The licence rules out titles or artifacts | the D-003 email now; fallback paths in S6 |
 
 ## 9. Definition of done

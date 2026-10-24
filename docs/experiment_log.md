@@ -441,3 +441,41 @@ Without a `flush()` after inserting, every query scanned the unflushed rows in P
 **Observations:** EASE alone already reaches the NDCG@10 target (0.32) under this protocol, so the ranker counts only if it beats EASE; the Recall@50 target (0.55) sits 0.029 above EASE. The bootstrap half-width on Recall@50 is about ±0.005 at 10,000 users. pymilvus 3.0.2 imports pandas, and milvus-lite 3.2.2 runs on faiss-cpu.
 
 **Next:** S2, the Two-Tower and the Modal sweep.
+
+### E005 — 2026-10-24 — S1 probe on Streamlit Community Cloud (the demo host)
+
+Status: **recorded** (the owner's screenshot of the deployed probe page). Same probe as E004 (synthetic 20,108 items, 128-d dense, 20-term sparse vectors, 100 queries per path, top-50; Milvus Lite 3.2.2, pymilvus 3.0.2), run at page load on the Community Cloud host from `05f74c4`.
+
+| Measure | Value |
+|---|---|
+| `import pymilvus` | 1.9 s |
+| Build the collection (insert, index, flush) | 7.9 s |
+| Dense p50 / p95 | 76.3 / 135.2 ms |
+| Sparse p50 / p95 | 63.0 / 94.6 ms |
+| Hybrid (RRF) p50 / p95 | 118.0 / 176.3 ms |
+| Dense overlap with exact | 1.000 |
+| Peak RSS | 482 MB |
+
+**Observations:** memory fits the 690 MB guarantee with ~200 MB to spare. Latency is 4–5× the laptop's (E004): the hybrid p95 alone uses 176 of the 200 ms budget (D-013) before the user tower and the LightGBM re-rank, so Milvus Lite as the demo's online path puts the latency target at risk. **Plan for S6:** measure the numpy exact dense top-k (one 20,108 × 128 matvec) and a scipy BM25 matvec on the host; if Milvus cannot meet D-013 with the ranker, the demo serves through numpy / scipy (identical results: FLAT overlap 1.000) and shows Milvus as the alternative engine with its measured latency. One shared host, one page load; S6 repeats with more queries.
+
+### E006 — 2026-10-24 — S2: Two-Tower smoke and a 3-epoch A1 check on the laptop (MPS)
+
+Status: **recorded; not a reported result.** A check that the S2 trainer runs end to end on real data and how fast; the reported Two-Tower numbers come from the Modal sweep (30 epochs, τ / lr tuned). `shopsage train`, `Liang-SG-strict`, epoch kept on V_A Recall@50, test on all 10,000 test users through the numpy user tower.
+
+| Field | Value |
+|---|---|
+| Code | working tree on top of `05f74c4`, S2 changes not yet committed; `shopsage_rec` 0.1.0, torch 2.14.1 |
+| Data | split_sha256 `4f93a0e6f611`; 20,108 items; genome PCA-64 (`item_features.npz`) |
+| Hardware / seed | Apple M5 16 GB, MPS, bf16 autocast / seed 42; bootstrap seed 42 |
+| Settings | B = 4,096, τ = 0.05, lr = 2e-3, ≤ 50 history items sampled per row, 128-d; no W&B |
+
+| Run | Users | Epochs | s / epoch | Peak memory | Test Recall@50 [95% CI] | NDCG@10 |
+|---|---|---|---|---|---|---|
+| `smoke-A1-mps` (A1) | 10% of training users | 1 | 12.3 | 1.18 GB | 0.4207 [0.4151, 0.4267] | 0.2392 |
+| `smoke-A2-mps` (A2, M = 2,048 uniform) | 10% | 1 | 14.9 | 2.22 GB | 0.4090 [0.4033, 0.4149] | 0.2312 |
+| `smoke-A4-mps` (A4, full softmax) | 10% | 1 | 41.8 | 4.97 GB | 0.4150 [0.4094, 0.4207] | 0.2350 |
+| `check-A1-full3-mps` (A1) | all 116,677 | 3 | 129–146 | 2.12 GB | 0.5145 [0.5088, 0.5199] | 0.3163 |
+
+`check-A1-full3-mps`: 8,538,846 rows, 2,085 steps per epoch; V_A Recall@50 0.5027 after epoch 2 and 0.5117 after epoch 3 (still rising); test Recall@20 0.3800, NDCG@100 0.4127, HR@50 0.9248; 418 s wall-clock. The A3 path (mining then training on mined negatives) is exercised by the test suite only.
+
+**Observations:** three epochs already put the Two-Tower within 0.007 of EASE's Recall@50 (0.5210, E004). Peak memory is set by the item tower over the full catalogue (A4: every item each step), not by the user side; every arm fits an 8 GB GPU. MPS peak memory is the driver's allocation, an upper bound on what CUDA reports.

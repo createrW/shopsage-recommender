@@ -4,8 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import polars as pl
 import pytest
+
+from shopsage_rec.config import DataConfig, SplitConfig
+from shopsage_rec.data.pipeline import run_prepare
 
 RATINGS_CSV = """userId,movieId,rating,timestamp
 1,10,4.0,100
@@ -87,3 +91,49 @@ def interactions() -> pl.DataFrame:
             "timestamp": pl.Int64,
         },
     )
+
+
+def write_synthetic_raw(
+    raw: Path, n_users: int = 120, n_items: int = 300, n_tags: int = 70, seed: int = 0
+) -> None:
+    """A MovieLens-shaped raw directory: skewed popularity, 5-29 ratings per user, a tag genome
+    for every movie but the last 20."""
+    rng = np.random.default_rng(seed)
+    popularity = 1.0 / np.arange(1, n_items + 1) ** 0.8
+    popularity /= popularity.sum()
+    lines = ["userId,movieId,rating,timestamp"]
+    for user in range(1, n_users + 1):
+        k = int(rng.integers(5, 30))
+        for t, item in enumerate(rng.choice(n_items, size=k, replace=False, p=popularity)):
+            lines.append(f"{user},{item + 1},{rng.choice([3.0, 4.0, 4.5, 5.0])},{1000 + t}")
+    raw.mkdir(parents=True)
+    (raw / "ratings.csv").write_text("\n".join(lines) + "\n")
+    genres = ("Drama", "Comedy", "Action|Sci-Fi", "(no genres listed)")
+    movies = ["movieId,title,genres"] + [
+        f"{i},Movie {i} ({1950 + i % 60}),{genres[i % 4]}" for i in range(1, n_items + 1)
+    ]
+    (raw / "movies.csv").write_text("\n".join(movies) + "\n")
+    (raw / "tags.csv").write_text("userId,movieId,tag,timestamp\n1,1,fun,5\n")
+    scores = rng.random((n_items - 20, n_tags))
+    genome = ["movieId,tagId,relevance"] + [
+        f"{i + 1},{t + 1},{scores[i, t]:.4f}" for i in range(n_items - 20) for t in range(n_tags)
+    ]
+    (raw / "genome-scores.csv").write_text("\n".join(genome) + "\n")
+
+
+@pytest.fixture
+def liang_dir(tmp_path: Path) -> Path:
+    """A prepared Liang split (20 validation and 20 test users) of synthetic data."""
+    raw = tmp_path / "raw"
+    write_synthetic_raw(raw)
+    processed = tmp_path / "liang"
+    run_prepare(
+        DataConfig(
+            raw_dir=raw,
+            processed_dir=processed,
+            min_item_interactions=1,
+            min_user_interactions=5,
+            split=SplitConfig(strategy="liang", seed=98765, n_heldout_users=20),
+        )
+    )
+    return processed

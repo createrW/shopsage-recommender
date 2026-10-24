@@ -12,8 +12,6 @@ import scipy.sparse as sp
 from typer.testing import CliRunner
 
 from shopsage_rec.cli import app
-from shopsage_rec.config import DataConfig, SplitConfig
-from shopsage_rec.data.pipeline import run_prepare
 from shopsage_rec.evaluation.metrics import topk_masked
 from shopsage_rec.evaluation.runner import evaluate_baselines
 from shopsage_rec.models.baselines import EASE, MostPop, gram_matrix
@@ -75,41 +73,6 @@ def test_ease_from_gram_leaves_the_gram_untouched() -> None:
 
     assert np.array_equal(gram, before)
     assert not np.allclose(a.weights, b.weights)
-
-
-def _write_raw(raw: Path, n_users: int = 120, n_items: int = 300, seed: int = 0) -> None:
-    rng = np.random.default_rng(seed)
-    popularity = 1.0 / np.arange(1, n_items + 1) ** 0.8
-    popularity /= popularity.sum()
-    lines = ["userId,movieId,rating,timestamp"]
-    for user in range(1, n_users + 1):
-        k = int(rng.integers(5, 30))
-        for t, item in enumerate(rng.choice(n_items, size=k, replace=False, p=popularity)):
-            lines.append(f"{user},{item + 1},{rng.choice([3.0, 4.0, 4.5, 5.0])},{1000 + t}")
-    raw.mkdir(parents=True)
-    (raw / "ratings.csv").write_text("\n".join(lines) + "\n")
-    movies = ["movieId,title,genres"] + [
-        f"{i},Movie {i} (1999),Drama" for i in range(1, n_items + 1)
-    ]
-    (raw / "movies.csv").write_text("\n".join(movies) + "\n")
-    (raw / "tags.csv").write_text("userId,movieId,tag,timestamp\n1,1,fun,5\n")
-
-
-@pytest.fixture
-def liang_dir(tmp_path: Path) -> Path:
-    raw = tmp_path / "raw"
-    _write_raw(raw)
-    processed = tmp_path / "liang"
-    run_prepare(
-        DataConfig(
-            raw_dir=raw,
-            processed_dir=processed,
-            min_item_interactions=1,
-            min_user_interactions=5,
-            split=SplitConfig(strategy="liang", seed=98765, n_heldout_users=20),
-        )
-    )
-    return processed
 
 
 def test_evaluate_baselines_writes_per_user_metrics_and_a_summary(

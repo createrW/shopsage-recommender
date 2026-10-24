@@ -2,15 +2,15 @@
 
 **English** | [简体中文](memory.zh-CN.md)
 
-**Updated:** 2026-10-23, after S1. Read this first, then [plan.md](plan.md); together they are the source of truth for the next step. This file holds facts, rules and decisions; plan.md holds the steps and their checkboxes.
+**Updated:** 2026-10-24, S2 code done (the sweep is with the owner). Read this first, then [plan.md](plan.md); together they are the source of truth for the next step. This file holds facts, rules and decisions; plan.md holds the steps and their checkboxes.
 
 ## 1. The project
 
 - **What:** a two-stage recommender on MovieLens-20M: Two-Tower dense recall and BM25 sparse recall plus their RRF hybrid, a LightGBM re-ranker, optional Claude Haiku query expansion, Milvus Lite as the serving retrieval engine, and a CPU-only Streamlit demo. Every reported number comes from a logged run.
 - **Why:** the owner's MLE portfolio flagship; the README is the page reviewers see.
 - **Owner:** Yi Zhao (USC), who also does every GitHub push.
-- **Where:** `/Users/zy/Project/new_sys/projects/shopsage-recommender`, branch `main`. Commit `3e0f08f` (Day 1) is pushed to `https://github.com/createrW/shopsage-recommender` (CI green); the S1 changes are uncommitted.
-- **State:** S0 (Day 1) and S1 done; S2 (Two-Tower and the Modal sweep) is next. Re-planned efficiency-first on 2026-10-23 (plan.md §3).
+- **Where:** `/Users/zy/Project/new_sys/projects/shopsage-recommender`, branch `main`. Commits `3e0f08f` (Day 1) and `05f74c4` (S1) are pushed to `https://github.com/createrW/shopsage-recommender` (CI green); the S2 changes are uncommitted.
+- **State:** S0 and S1 done; S2 code done and checked on MPS (E006); the owner runs the Modal sweep, then I log it as E007 and build tables (a); S3 (BM25, Milvus serving index) can proceed meanwhile. Re-planned efficiency-first on 2026-10-23 (plan.md §3).
 
 ## 2. Inputs that live outside the repo
 
@@ -70,6 +70,8 @@
 - EASE already meets the NDCG@10 target (0.32); the Recall@50 target (0.55) is 0.029 above EASE. RecVAE's 0.553 is the highest published Recall@50 under this protocol.
 - `shopsage evaluate`: 211 s for MostPop plus a three-λ EASE grid, 3.5 GB peak RSS (EASE's Gram and weight matrices are 1.6 GB each in float32). The Recall@50 bootstrap half-width is about ±0.005 at 10,000 users.
 - Deployment probe on the laptop (20,108 items, synthetic dense and sparse vectors): hybrid search p95 34–44 ms, dense p95 18–24 ms; Streamlit plus the app peak at about 450 MB.
+- **On Streamlit Community Cloud (E005):** import pymilvus 1.9 s, build 7.9 s; dense p50/p95 76.3/135.2 ms, sparse 63.0/94.6 ms, hybrid 118.0/176.3 ms; overlap 1.000; peak RSS 482 MB. Memory fits 690 MB; the hybrid p95 alone takes 176 of the 200 ms budget, so S6 measures a numpy / scipy serving path and falls back to it if needed.
+- **Two-Tower check (E006, MPS, not a result):** A1 after 3 epochs, test Recall@50 0.5145 [0.5088, 0.5199], NDCG@10 0.3163, still rising; 129–146 s per epoch on the M5; peak memory A1 2.1 GB, A2 2.2 GB, A4 5.0 GB.
 
 ### Day-1 run (raw data, and the leave-one-out split, kept but not used for results)
 
@@ -82,7 +84,7 @@
 | MPS (M5, B = 4,096, bf16) | 37.25 ms per step → 88 s per epoch in-batch; peak 2.30 GB with 4,096 sampled negatives (1.16 GB in-batch); 30 epochs ≈ 44 min (E002) |
 | Popularity | the top-100 movies hold 23.5% of positives; Gini 0.90 over the 26,744 rated movies |
 | Local disk (2026-10-23) | `data/raw` 1.0 GB, `data/processed` 138 MB, `data/processed/liang` 146 MB, `.venv` 946 MB |
-| Tests | 101 passing (2026-10-23), the slow real-data test included |
+| Tests | 122 passing (2026-10-24), the slow real-data test included |
 
 ## 6. Decisions
 
@@ -116,6 +118,9 @@ Current decisions; experiment_log.md's Decisions table holds the full text and r
 - **LightGBM on macOS** needs `brew install libomp` (not installed as of 2026-10-23); Linux and Streamlit Cloud use `libgomp1`.
 - **torch on Linux** comes from the cu126 index (NVIDIA driver ≥ 525); Blackwell GPUs need the cu130 index.
 - **AMP:** bf16 only when `torch.cuda.is_bf16_supported(including_emulation=False)` (compute capability ≥ 8.0); a T4 uses fp16 with `GradScaler`; MPS ran bf16 autocast.
+- **MPS has no float64:** tensors moved to MPS must be float32 (the item-frequency vector for logQ hit this).
+- **Modal 1.6:** `Image.uv_sync` installs dependencies only (no project), so the source is added with `add_local_dir` and `PYTHONPATH`; GPU names are `"T4"`, `"L4"`, `"A10"`, `"L40S"`, `"A100"`, … (no `"A10G"` in the docs as of 2026-10-24); Volumes need `commit()` after writes and `reload()` before reads.
+- **Tests that check `sys.modules`** must run in a subprocess: other tests in the session import torch.
 - **MPS timing:** fewer than 30 timed steps is too noisy (a 3-step run looked 30% faster than it is).
 - **Polars `is_in`:** testing a column against a Series of the same dtype is deprecated; use `.is_in(series.implode())`.
 - **Docker:** the daemon was not running on 2026-10-18 or on 2026-10-23, so the image has never been built locally; only static checks have passed.
@@ -129,7 +134,7 @@ Current decisions; experiment_log.md's Decisions table holds the full text and r
 | Path | Contents |
 |---|---|
 | `README.md` | front page: results with the measured baselines, architecture, quickstart, cloud training and VRAM, dataset, experiments, demo, design rationale, limitations, roadmap |
-| `docs/experiment_log.md` | rules, protocols, TARGETS, decisions D-001 to D-014, run matrix, entries E001–E004 |
+| `docs/experiment_log.md` | rules, protocols, TARGETS, decisions D-001 to D-014, run matrix, entries E001–E006 |
 | `docs/design.md`, `docs/api_spec.md` | the Day-1 design and the artifact / CLI contract (v0.4), partly superseded (§6) |
 | `docs/plan.md`, `docs/memory.md` | the step plan and status; this memory (each with a `.zh-CN.md` twin) |
 | `src/shopsage_rec/cli.py`, `config.py` | the Typer CLI (`prepare`, `stats`, `evaluate`; defaults follow the Liang split); `DataConfig`, `SplitConfig` (`leave_one_out` or `liang`) |
@@ -137,18 +142,20 @@ Current decisions; experiment_log.md's Decisions table holds the full text and r
 | `src/shopsage_rec/evaluation/` | `metrics` (masked top-k, Recall / NDCG / HR), `bootstrap`, `runner` (`evaluate_baselines`) |
 | `src/shopsage_rec/models/baselines.py` | `MostPop`, `gram_matrix`, `EASE` |
 | `src/shopsage_rec/serving/` | `app.py` (Streamlit entry point: the probe), `probe.py` (`run_probe`), `requirements.txt` (generated) |
-| `src/shopsage_rec/{features,retrieval,ranking,llm}/` | placeholders holding only a docstring (S2–S5) |
+| `src/shopsage_rec/features/items.py` | item-tower inputs: genres, year bucket, genome PCA-64, cached in `<processed>/item_features.npz` |
+| `src/shopsage_rec/models/` | `baselines.py`; S2: `two_tower.py` (`TwoTower`, `sample_history`), `losses.py` (`sampled_softmax`, `PositiveSet`), `numpy_tower.py` (the torch-free user tower), `trainer.py` (`TrainConfig`, `ARMS`, `train_two_tower`), `mining.py`, `sweep.py` (the job plan, pure Python) |
+| `src/shopsage_rec/{retrieval,ranking,llm}/` | placeholders holding only a docstring (S3–S5) |
 | `configs/data/` | `movielens_20m_liang.yaml` (default, hash `2f24b2c594e1`) and `movielens_20m.yaml` (Day-1, hash `aec7ddd4dc98`) |
-| `configs/train/*.yaml` | drafts written for the leave-one-out design; S2 updates them |
+| `configs/train/lgbm_ranker.yaml` | ranker draft (S4); the Two-Tower has no YAML: `TrainConfig` and CLI options, snapshotted in each `metrics.json` |
 | `configs/deploy/streamlit.yaml` | demo config draft: bundle, artifacts, Milvus Lite retrieval, LLM expansion |
-| `scripts/` | `download_data.sh`, `prepare_data.sh` (default: the Liang config), `bootstrap_cloud.sh` (train + llm extras, the Liang split), `bench_two_tower_step.py`; S2 adds `train.sh` and `modal_train.py` |
-| `tests/` | 101 tests, among them `test_liang.py` (with the real-data count test), `test_liang_pipeline.py`, `test_metrics.py`, `test_baselines.py`, `test_probe.py` |
+| `scripts/` | `download_data.sh`, `prepare_data.sh` (default: the Liang config), `bootstrap_cloud.sh` (train + llm extras, the Liang split), `bench_two_tower_step.py`, `train.sh` (sequential sweep), `modal_train.py` (the Modal sweep: Volume `shopsage-data`, GPU `A10`) |
+| `tests/` | 122 tests, among them `test_two_tower.py`, `test_trainer.py`, `test_sweep.py`, `test_item_features.py`, `test_liang.py` (with the real-data count test), `test_liang_pipeline.py`, `test_metrics.py`, `test_baselines.py`, `test_probe.py` |
 | `notebooks/01_eda.ipynb` | the EDA on the Day-1 split, executed; figures in `docs/figures/` |
 | `Makefile` | 22 targets (`make help`), including `evaluate` and `demo-requirements` |
 | `.github/workflows/ci.yml` | ruff, ruff format, mypy, pytest; the demo requirements without torch; `serving/requirements.txt` against `uv.lock`; the Milvus Lite probe on Linux |
 | `Dockerfile`, `.dockerignore` | CPU demo image (never built yet); the Hugging Face Spaces fallback |
 | `.streamlit/`, `packages.txt` | Community Cloud settings, secrets template, `libgomp1` |
-| `data/`, `artifacts/` (git-ignored) | `data/raw/ml-20m/`, `data/processed/` (Day-1), `data/processed/liang/`; `artifacts/eval/local-20261023-1306/` (E004) |
+| `data/`, `artifacts/` (git-ignored) | `data/raw/ml-20m/`, `data/processed/` (Day-1), `data/processed/liang/`; `artifacts/eval/local-20261023-1306/` (E004); `artifacts/runs/` (E006 checks: `smoke-A1-mps`, `check-A1-full3-mps`) |
 
 ## 9. Resuming
 
@@ -174,4 +181,6 @@ uv run shopsage stats | grep split_sha256        # the Liang split: 4f93a0e6f611
 | 2026-10-23 | plan.md and memory.md written in English and Chinese; the hosting plan referenced at its new path; vendor prices re-checked |
 | 2026-10-23 | the owner's updated scope (Milvus, a BM25 recall path, new targets) and two rules (efficiency first; the working loop); re-planned into steps S1–S7 with the Liang protocol as the default |
 | 2026-10-23 | the owner pushed Day 1 to `createrW/shopsage-recommender` (CI green) and said "go S1" |
-| 2026-10-23 | S1 done (uncommitted): the Liang split reproduces the published counts; `shopsage evaluate`; MostPop and EASE reproduce their published Recall@50 (E004); FAISS out, Milvus Lite in; the Milvus Lite probe measured on the laptop; README and experiment_log synced |
+| 2026-10-24 | the owner pushed S1 as `05f74c4`; CI green, including the Milvus Lite probe on Linux |
+| 2026-10-24 | the owner deployed the probe on Community Cloud (E005) and said "go s2"; S2 code done: Two-Tower A0–A4, mining, sweep plan, Modal script; MPS checks (E006); 122 tests green |
+| 2026-10-23 | S1 done: the Liang split reproduces the published counts; `shopsage evaluate`; MostPop and EASE reproduce their published Recall@50 (E004); FAISS out, Milvus Lite in; the Milvus Lite probe measured on the laptop; README and experiment_log synced |

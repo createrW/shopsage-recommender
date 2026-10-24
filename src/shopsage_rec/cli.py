@@ -1,7 +1,8 @@
 """``shopsage`` command-line interface (Typer).
 
-Today: ``prepare``, ``stats`` and ``evaluate`` (MostPop and EASE on the Liang split). Planned,
-by step of docs/plan.md: ``train`` (S2), ``rank`` (S4), ``expand`` (S5), ``demo`` (S6).
+Today: ``prepare``, ``stats``, ``evaluate`` (MostPop and EASE on the Liang split), and the
+Two-Tower commands ``train``, ``mine`` and ``sweep`` (they need the ``train`` extra; torch is
+imported only inside them). Planned, by step of docs/plan.md: ``rank`` (S4), ``expand`` (S5).
 
 Default paths (``--config``, ``--processed-dir``) are resolved against the repository root,
 found by walking up from the working directory to the nearest ``pyproject.toml``, so the
@@ -31,6 +32,7 @@ from shopsage_rec.evaluation.runner import (
 DEFAULT_DATA_CONFIG = Path("configs/data/movielens_20m_liang.yaml")
 DEFAULT_PROCESSED_DIR = Path("data/processed/liang")
 DEFAULT_EVAL_DIR = Path("artifacts/eval")
+DEFAULT_RUNS_DIR = Path("artifacts/runs")
 
 app = typer.Typer(
     help="ShopSage Recommender: Two-Tower retrieval + LightGBM ranking on MovieLens-20M.",
@@ -175,6 +177,113 @@ def evaluate(
         raise typer.Exit(1) from exc
     typer.echo(format_summary(result.summary))
     typer.echo(f"wrote {result.out_dir}")
+
+
+def _dirs(processed_dir: Path | None, runs_dir: Path | None) -> tuple[Path, Path]:
+    root = _repo_root()
+    processed = processed_dir if processed_dir is not None else root / DEFAULT_PROCESSED_DIR
+    runs = runs_dir if runs_dir is not None else root / DEFAULT_RUNS_DIR
+    if not (processed / "splits" / "meta.json").is_file():
+        raise typer.BadParameter(
+            f"{processed / 'splits' / 'meta.json'} not found; run `shopsage prepare` first",
+            param_hint="--processed-dir",
+        )
+    return processed, runs
+
+
+@app.command()
+def train(
+    arm: str = typer.Option(
+        "A1", "--arm", help="A0 (no logQ), A1, A2 (uniform), A3 (mined), A4 (full)."
+    ),
+    seed: int = typer.Option(42, "--seed"),
+    epochs: int = typer.Option(30, "--epochs"),
+    tau: float = typer.Option(0.05, "--tau", help="Softmax temperature."),
+    lr: float = typer.Option(2e-3, "--lr"),
+    batch_size: int = typer.Option(4096, "--batch-size"),
+    user_frac: float = typer.Option(
+        1.0, "--user-frac", help="Share of training users (smoke runs)."
+    ),
+    device: str = typer.Option("auto", "--device", help="auto, cuda, mps or cpu."),
+    mined_from: str | None = typer.Option(
+        None, "--mined-from", help="Run id holding mined negatives (A3)."
+    ),
+    run_id: str | None = typer.Option(None, "--run-id", help="Default: <arm>-s<seed>."),
+    processed_dir: Path | None = typer.Option(None, "--processed-dir", "-p"),
+    runs_dir: Path | None = typer.Option(None, "--runs-dir"),
+    no_wandb: bool = typer.Option(False, "--no-wandb", help="Do not log to Weights & Biases."),
+) -> None:
+    """Train one Two-Tower arm, keep its best V_A epoch, export it and test it."""
+    from shopsage_rec.models.trainer import TrainConfig, train_two_tower
+
+    processed, runs = _dirs(processed_dir, runs_dir)
+    try:
+        cfg = TrainConfig(
+            arm=arm, seed=seed, epochs=epochs, tau=tau, lr=lr, batch_size=batch_size,
+            user_frac=user_frac, device=device, wandb=not no_wandb,
+        )  # fmt: skip
+        summary = train_two_tower(
+            processed, runs, cfg, run_id=run_id,
+            mined_from=runs / mined_from if mined_from else None,
+        )  # fmt: skip
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1) from exc
+    test = summary["test"]
+    typer.echo(
+        f"{summary['run_id']}: best epoch {summary['best_epoch']}, "
+        f"V_A recall@50 {summary['va_recall@50']:.4f}, test recall@50 "
+        f"{test['recall@50']['mean']:.4f}, ndcg@10 {test['ndcg@10']['mean']:.4f}, "
+        f"peak {summary['peak_memory_gb']:.2f} GB"
+    )
+
+
+@app.command()
+def mine(
+    run_id: str = typer.Option("A1-s42", "--run-id", help="The reference run to mine from."),
+    processed_dir: Path | None = typer.Option(None, "--processed-dir", "-p"),
+    runs_dir: Path | None = typer.Option(None, "--runs-dir"),
+) -> None:
+    """Write each training user's ranks 101-500 under a run (the A3 negatives)."""
+    from shopsage_rec.models.mining import mine_hard_negatives
+
+    processed, runs = _dirs(processed_dir, runs_dir)
+    typer.echo(f"wrote {mine_hard_negatives(processed, runs / run_id)}")
+
+
+@app.command()
+def sweep(
+    epochs: int = typer.Option(30, "--epochs"),
+    tune_epochs: int = typer.Option(10, "--tune-epochs"),
+    processed_dir: Path | None = typer.Option(None, "--processed-dir", "-p"),
+    runs_dir: Path | None = typer.Option(None, "--runs-dir"),
+    no_wandb: bool = typer.Option(False, "--no-wandb"),
+) -> None:
+    """The whole S2 sweep on this machine, one run after another (Modal runs it in parallel)."""
+    from shopsage_rec.models.mining import mine_hard_negatives
+    from shopsage_rec.models.sweep import Job, run_sweep
+    from shopsage_rec.models.trainer import TrainConfig, train_two_tower
+
+    processed, runs = _dirs(processed_dir, runs_dir)
+
+    def execute(jobs: list[Job]) -> list[dict[str, object]]:
+        out = []
+        for job in jobs:
+            cfg = TrainConfig(
+                arm=job.arm, seed=job.seed, epochs=job.epochs, tau=job.tau, lr=job.lr,
+                wandb=not no_wandb,
+            )  # fmt: skip
+            mined = runs / job.mined_from if job.mined_from else None
+            out.append(train_two_tower(processed, runs, cfg, run_id=job.run_id, mined_from=mined))
+        return out
+
+    def mine_from(run_id: str) -> None:
+        mine_hard_negatives(processed, runs / run_id)
+
+    summary = run_sweep(execute, mine_from, epochs=epochs, tune_epochs=tune_epochs)
+    (runs / "sweep_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    typer.echo(json.dumps(summary["arms"], indent=2))
+    typer.echo(f"wrote {runs / 'sweep_summary.json'}")
 
 
 if __name__ == "__main__":  # pragma: no cover

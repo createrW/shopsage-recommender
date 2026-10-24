@@ -2,7 +2,7 @@
 
 [English](plan.md) | **简体中文**
 
-**更新：** 2026-10-23，S1 完成后 · **进度：** S0 和 S1 已完成；下一步是 S2 · **代码：** `main` 上的 `3e0f08f`，已 push 到 [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender)；S1 的改动尚未提交 · **配套文档：** [memory.zh-CN.md](memory.zh-CN.md)（事实、规则、决策）
+**更新：** 2026-10-24，S2 代码完成 · **进度：** S0 和 S1 已完成；S2 代码已完成并在笔记本上检查过，批量训练交给你（§6.3）；同时可以开始 S3 · **代码：** `main` 上的 `05f74c4`，已 push 到 [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender)；S2 的改动尚未提交 · **配套文档：** [memory.zh-CN.md](memory.zh-CN.md)（事实、规则、决策）
 
 - **目标：** 在 MovieLens-20M 上做一个两阶段推荐系统（Two-Tower 稠密召回和 BM25 稀疏召回、LightGBM 重排、可选的 LLM 查询扩展、Milvus Lite 检索、Streamlit demo），所有对外报告的数字都来自实测。
 - **架构：** 离线部分，PyTorch 在云 GPU 上训练双塔，numpy 和 scipy 为评估计算精确候选，LightGBM 对两条召回路径的并集重排。在线部分，demo 只用 CPU：numpy 实现的用户塔、Milvus Lite（稠密、稀疏 BM25 和 RRF 混合检索）、LightGBM，以及用于查询扩展的 Claude Haiku。
@@ -20,14 +20,14 @@
 | 数据 | ML-20M 下载；Liang 划分，精确复现了已发表的计数（E004）；Day 1 的划分保留 | — |
 | 评估 | 带屏蔽的全量 top-k、截断 Recall / NDCG / HR、百分位 bootstrap 与配对 bootstrap；`shopsage evaluate` | S2：用同一套代码给 Two-Tower 打分 |
 | 基线 | MostPop 和 EASE，已对照已发表数字完成校准（E004） | — |
-| 模型 | MPS 基准（E002）；配置草稿 | S2：带 in-batch、均匀和挖掘负样本的 Two-Tower；一次 Modal 批量训练 |
+| 模型 | Two-Tower 训练器（A0–A4 五个组）、困难负样本挖掘、批量训练计划；`shopsage train / mine / sweep`；`scripts/modal_train.py`；MPS 上 3 个 epoch 的 A1 检查（E006） | 你在 Modal 上跑批量训练（§6.3） |
 | 检索 | Milvus Lite 探测：在笔记本上实测了稠密、稀疏和混合检索（E004） | S3：BM25 路径、Milvus 服务索引、消融 (a) 和 (b) |
 | 排序 | — | S4：基于两条召回路径的 LightGBM |
 | LLM | 设计 | S5：Claude Haiku 扩展，消融 (c) |
-| Demo | 探测应用（`serving/app.py`）可无界面运行；`serving/requirements.txt`；CI 在 Linux 上运行探测 | 在 Community Cloud 上部署探测（由你来做，§7）；S6：完整 demo |
-| 仓库 | 101 个测试通过，含真实数据测试；lint、类型检查和 lock 都干净；已上 GitHub，Day 1 的 CI 通过 | 提交并 push S1（由你来做，§7） |
+| Demo | 探测已部署到 Community Cloud：峰值 482 MB，混合检索 p95 176 ms（E005） | S6：完整 demo；已规划延迟兜底方案（§8） |
+| 仓库 | 122 个测试通过；lint、类型检查和 lock 都干净；S1 已上 GitHub，CI 通过 | 提交并 push S2（由你来做，§7） |
 
-目前的实测结果（`Liang-SG-strict`，10,000 个测试用户）：MostPop Recall@50 0.2352、NDCG@10 0.1275；EASE Recall@50 0.5210、NDCG@10 0.3280（E004）。本项目自己的模型还没有训练。
+目前的实测结果（`Liang-SG-strict`，10,000 个测试用户）：MostPop Recall@50 0.2352、NDCG@10 0.1275；EASE Recall@50 0.5210、NDCG@10 0.3280（E004）。Two-Tower A1 在 MPS 上只训练 3 个 epoch（只是检查，不算结果）：Recall@50 0.5145、NDCG@10 0.3163（E006）。
 
 ## 2. 范围与目标（你 2026-10-23 的需求）
 
@@ -81,22 +81,23 @@
 - [ ] 在 Streamlit Community Cloud 上部署探测，记录主机上的内存和延迟：需要你提交、push 并创建 Community Cloud 应用（§7）。
 - **完成标准：** 已达到，只差主机上的测量，它要等部署完成。
 
-### S2. Two-Tower、负样本、Modal 批量训练（笔记本上约 5 小时，然后由你在 Modal 上跑）
+### S2. Two-Tower、负样本、Modal 批量训练 ✅ 代码（2026-10-24，笔记本） · ⏳ 批量训练（你）
 
-- [ ] `models/two_tower.py`：物品塔（`item_idx` embedding ⊕ 类型 multi-hot ⊕ 5 年分桶 ⊕ genome PCA-64 加缺失标记 → MLP → 128 维，L2 归一化）；用户塔（≤ 50 个 fold-in 物品的历史物品 embedding 均值 ⊕ log 历史长度 → MLP → 128 维）。
-- [ ] `models/losses.py`：`sampled_softmax(user, pos, *, tau, logq, mask, extra_neg=None)`，带 logQ 校正和 accidental-hit 屏蔽；额外负样本可选 `uniform`（M = 2,048，整个 batch 共享）、`mined`（每行 k 个，取自该用户的第 101–500 名）或 `full`（全部物品）。
-- [ ] `models/trainer.py`：`AdamW(fused=True)`、bf16/fp16 规则、30 个 epoch、按 V_A Recall@50 保存 checkpoint、W&B 记录。`models/export.py`：`item_embeddings.npy`、`user_tower.npz`、`manifest.json`。`models/mining.py`：从指定的一次运行中，为每个训练用户取第 101–500 名。
-- [ ] 一致性测试：在 1,000 个用户上对比 numpy 用户塔和 torch（最大绝对误差 < 1e-5）。
-- [ ] `shopsage train` 和 `scripts/train.sh`；`scripts/modal_train.py`：在 Modal Volume 上准备数据 → 在 A1 上做 4 次 τ/lr 检查 → 第 1 阶段并行（A0、A1 × 3、A2、A4）→ 从 A1 种子 42 挖掘 → 第 2 阶段（A3 × 3）→ 测试指标 → `summary.json`。
-- [ ] 在笔记本上做 MPS 冒烟运行（1 个 epoch，10% 的用户）。
-- **交接：** 由你运行批量训练（§6.3）。**完成标准：** `summary.json` 里有每个组、每个种子的测试 Recall@50 和 NDCG@10；W&B 里有峰值显存。
+- [x] `features/items.py`：类型 multi-hot、5 年分桶、带缺失标记的 genome PCA-64，缓存到 `item_features.npz`。
+- [x] `models/two_tower.py`：物品塔（`item_idx` embedding ⊕ 特征 → MLP → 128 维，L2 归一化）；归纳式用户塔（对最多 50 个采样历史物品的 embedding 取均值 ⊕ 历史长度的对数 → MLP → 128 维）；`sample_history` 会排除目标物品。
+- [x] `models/losses.py`：带 logQ 校正和意外命中屏蔽（`PositiveSet`）的 `sampled_softmax`；额外负样本可整批共享（均匀、全量）或按行（挖掘）。
+- [x] `models/trainer.py`：A0–A4 五个组、fused AdamW（embedding 不做衰减）、bf16/fp16 规则、按 V_A Recall@50 选最佳 epoch、导出（`item_embeddings.npy`、`user_tower.npz`、`model.pt`）、带置信区间的测试指标（`per_user.parquet`、`metrics.json`）、峰值显存、W&B（没有 key 时离线记录）。`models/mining.py`：每个训练用户的第 101–500 名。`models/sweep.py`：任务计划。
+- [x] 一致性测试：在 1,000 个用户上对比 numpy 用户塔和 torch（< 1e-5）。
+- [x] `shopsage train / mine / sweep`；`scripts/train.sh`；`scripts/modal_train.py`（在 Volume 上准备数据 → 4 次 τ/lr 检查 → 第一阶段并行 → 挖掘 → 第二阶段 → `sweep_summary.json`；重跑时会跳过已完成的运行）。
+- [x] MPS 冒烟运行（A1、A2、A4，10% 用户）和一次全量数据 3 个 epoch 的 A1 检查（E006）。
+- [ ] **交接：由你运行批量训练（§6.3）。** **完成标准：** `artifacts/runs/sweep_summary.json` 和 13 个运行目录拷回笔记本；之后我记为 E007。
 
 ### S3. BM25、Milvus 服务索引、消融 (a) 和 (b)（约 4 小时；笔记本；可以和你的批量训练同时进行）
 
 - [ ] `retrieval/bm25.py`：物品文档（片名、类型、top genome 标签，以及只来自训练用户的标签）；BM25 权重存为 scipy.sparse 矩阵；用户查询是其 fold-in 物品的词项。
 - [ ] `retrieval/milvus_store.py`：一个同时含稠密和稀疏向量字段的 collection，载入后 flush；`search_dense`、`search_sparse` 和 `search_hybrid`（RRF，k = 60）；按历史长度多取，再去掉看过的物品。与 numpy 和 scipy 的 top-k 做一致性测试。
 - [ ] `retrieval/fusion.py`：离线评估用的 RRF。
-- [ ] 表格：(a) 来自批量训练（A0–A4；A3 − A1 带配对置信区间和逐种子 Δ）；(b) MostPop、EASE、BM25、稠密、混合。记为 E005 和 E006。
+- [ ] 表格：(a) 来自批量训练（A0–A4；A3 − A1 带配对置信区间和逐种子 Δ）；(b) MostPop、EASE、BM25、稠密、混合。记为 E007（批量训练）和 E008。
 - **完成标准：** 表 (a) 和 (b) 写进 experiment_log.md；一致性测试通过。
 
 ### S4. LightGBM 排序器（约 4 小时；笔记本 CPU）
@@ -150,7 +151,7 @@
 | 工作负载 | 平台 | 本仓库中的实现 | 成本 |
 |---|---|---|---|
 | 数据、EDA、测试、EASE、BM25、LightGBM、LLM 调用 | 笔记本 | `make` 目标、`shopsage` CLI | \$0（LLM 调用约 \$1） |
-| Two-Tower 批量训练 | Modal A10；RunPod 作为备选 | `scripts/modal_train.py`（S2）；`scripts/bootstrap_cloud.sh` 和 `scripts/train.sh` | 约 \$1.1–1.7（估计），在每月 \$30 的额度之内 |
+| Two-Tower 批量训练 | Modal A10；RunPod 作为备选 | `scripts/modal_train.py`；`scripts/bootstrap_cloud.sh` 和 `scripts/train.sh` | 约 \$3–6（估计），在每月 \$30 的额度之内 |
 | Demo | Streamlit Community Cloud | `serving/app.py`、`.streamlit/`、`packages.txt`、`configs/deploy/streamlit.yaml` | \$0 |
 | Demo 备选 | Hugging Face Spaces（CPU basic：2 vCPU、16 GB） | `Dockerfile` | \$0 |
 | Demo 资源包 | 固定 sha256 的 GitHub Release 附件 | S6 | \$0 |
@@ -158,37 +159,39 @@
 
 ### 6.3 训练交接：你要运行的内容
 
-**显存要求：最低 8 GB，建议 16 GB 及以上；24 GB 的 A10 性价比最高。** 下面是 Day 1 的表（峰值显存 / 每 epoch 秒数；roofline 估算 ±30%；只有 M5 一行是实测）。它是 Liang 规模的上界，因为 Liang 规模没有 136,674 行的用户表，物品数为 20,108；S2 会重新实测。
+**显存要求：最低 8 GB，建议 16 GB 及以上；默认用 24 GB 的 A10（Modal 写作 `"A10"`）。** 笔记本上的实测（E006，MPS，B = 4,096；MPS 报告的是驱动分配量，是 CUDA 数字的上界）：A1 2.1 GB，A2 2.2 GB，A4（全量 softmax）5.0 GB。A3 每行多 8 个挖掘负样本，大小与 A2 相当，另外 GPU 上要放挖掘池（116,677 × 400，int64 约 0.37 GB；磁盘上 int32 为 0.19 GB）。
 
-| GPU | B = 4,096 | B = 8,192 | B = 16,384 + 4,096 个采样负样本（最坏情况） |
+| 组 | 峰值显存（MPS 实测） | 每 epoch 秒数，M5 MPS（实测） | 每 epoch 秒数，A10（估计，±50%） |
 |---|:-:|:-:|:-:|
-| T4 16 GB | 1.4 GB / ~26 s | 2.5 GB / ~30 s | 6.1 GB / ~49 s |
-| A10G 24 GB | 1.4 GB / ~12 s | 2.5 GB / ~16 s | 6.1 GB / ~26 s |
-| RTX 3060 12 GB | 1.4 GB / ~20 s | 2.5 GB / ~27 s | 6.1 GB / ~46 s |
-| RTX 4060 8 GB | 1.4 GB / ~25 s | 2.5 GB / ~34 s | 6.1 GB / ~57 s |
-| Apple M5 16 GB，MPS（实测，E002） | 2.3 GB（K = 4,096；in-batch 为 1.2 GB）/ 88 s（in-batch） | — | — |
+| A0、A1（in-batch） | 2.1 GB | 129–146 | ~35–45 |
+| A2（+2,048 个均匀负样本） | 2.2 GB | ~150（10% 用户的运行按 ×10 换算） | ~40–50 |
+| A3（每行 +8 个挖掘负样本） | ≈ A2 | 未实测 | ~45–60 |
+| A4（全量 softmax） | 5.0 GB | ~420（10% 用户的运行按 ×10 换算） | ~110–140 |
 
-- **批量训练估计：** 9 次完整运行，每次约 6 分钟，加 4 次短的调参运行，约 1–1.5 个 A10 小时，约 \$1.1–1.7，并行时墙钟约 25 分钟；预算按 3 小时。以上都是估计，以 W&B 记录为准。
+- **批量训练估计：** 4 次调参 × 10 个 epoch，然后 9 次 × 30 个 epoch（A4 最长，约 1 小时），约 3–5 个 A10 小时，按 Modal A10 的价格（约 \$1.10 每小时）约 \$3–6；同一阶段的运行并行，墙钟时间约 1.5–2 小时。以上都是估计；`metrics.json`（`wall_s`、`peak_memory_gb`、`gpu`）会给出实测值。
 
-**方案 A：Modal（托管方案的选择）。** 脚本在 S2 落地；下面的命令展示它的预期形式。
+**方案 A：Modal（托管计划的选择）。**
 
 ```bash
-uv tool install modal && modal setup                 # 一次性：安装 CLI，然后在浏览器登录
-modal secret create wandb WANDB_API_KEY=...          # 一次性
-modal run scripts/modal_train.py                     # S2：完整的批量训练
-modal volume get shopsage-artifacts runs artifacts/runs
+uv tool install modal && modal setup                 # 一次性：装 CLI，然后浏览器登录
+modal secret create wandb WANDB_API_KEY=<你的 key>   # 一次性；不用 W&B：modal secret create wandb WANDB_MODE=offline
+cd /Users/zy/Project/new_sys/projects/shopsage-recommender
+modal run scripts/modal_train.py                     # 数据准备 + 整个批量训练；最后打印各组汇总
+modal volume get shopsage-data artifacts/runs artifacts/   # 13 个运行目录
 ```
 
-**方案 B：RunPod 或任意 Linux GPU 机器，** 按顺序运行，在 A10 上约需一小时。
+`modal run` 期间要保持连接（别让笔记本睡眠）；如果断了，再运行一次即可：已完成的运行会被跳过。换 GPU：`SHOPSAGE_GPU=L4 modal run scripts/modal_train.py`。想先试跑的话：`modal run scripts/modal_train.py --epochs 2 --tune-epochs 1`（正式跑之前用 `modal volume rm -r shopsage-data artifacts/runs` 删掉 Volume 上的 `artifacts/runs`，因为运行 id 会被复用）。
+
+**方案 B：RunPod 或任何 Linux GPU 机器，** 顺序运行，A10 上约 4–5 小时。
 
 ```bash
 git clone https://github.com/createrW/shopsage-recommender.git && cd shopsage-recommender
-export WANDB_API_KEY=...                             # 或者 WANDB_MODE=offline
+export WANDB_API_KEY=...                             # 或 WANDB_MODE=offline
 bash scripts/bootstrap_cloud.sh                      # uv、train + llm extras、torch 检查、下载、Liang 划分
-bash scripts/train.sh --sweep                        # S2
+bash scripts/train.sh --sweep                        # 整个批量训练，逐个运行
 ```
 
-把 `artifacts/` 拷回来，然后**终止（terminate）**这个 pod：处于停止状态的 pod 仍按卷盘计费（RunPod：闲置时每 GB 每月 \$0.20）。Community Cloud 的 RTX 4090（24 GB，每小时 \$0.34）就够用。
+把 `artifacts/runs/` 拷回来，然后**终止**（terminate）pod：停止（stop）的 pod 仍按卷磁盘计费（RunPod：闲置 \$0.20 每 GB·月）。Community Cloud 的 RTX 4090（24 GB，\$0.34 每小时）就够用。
 
 **方案 C：Colab 或 Kaggle 的免费 T4，** 只适合冒烟运行（fp16，耗时约为两倍）。
 
@@ -225,7 +228,7 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 | Modal A100 40 GB 每小时 \$1.50 | \$0.000583/s ≈ \$2.10/h | 不需要：最坏情况的峰值是 6.1 GB |
 | Hugging Face Spaces GPU 每小时 \$0.60 | T4 small \$0.40/h；CPU basic 2 vCPU、16 GB，免费（huggingface.co/pricing，2026-10-23） | demo 留在 CPU 上；Spaces 作为备选平台 |
 | RunPod RTX 4090 约 \$0.40/h（spot） | Community Cloud \$0.34/h，Secure Cloud \$0.89/h；闲置卷盘每 GB 每月 \$0.20（runpod.io/pricing，2026-10-23） | 作为 Modal 的替代；用完终止 pod |
-| P02 训练：8–12 GB 显存，10–15 小时 | roofline：峰值 ≤ 6.1 GB；批量训练约需 1–1.5 个 A10 小时（±30%） | 最低 8 GB，建议 16 GB 及以上；在 S2 实测 |
+| P02 训练：8–12 GB 显存，10–15 小时 | MPS 实测（E006）：峰值 ≤ 5.0 GB（A4）；批量训练约需 3–5 个 A10 小时（估计） | 最低 8 GB，建议 16 GB 及以上 |
 | P02 checkpoint：约 500 MB | 按 Day 1 的规模，每个 checkpoint 约 78 MB 参数加 155 MB AdamW 状态（估计） | 每次运行只保留最佳 checkpoint；产物绝不进 git |
 | Demo：面试官输入 user_id | GroupLens 许可禁止未经许可的再分发（D-003） | 访客"选 5 部电影"画像；只有拿到 GroupLens 的许可才提供 user-id 选择器 |
 | 简历描述："<200 ms CPU inference; 50+ test users" | 目前什么都还没测 | 延迟在线上平台实测（S6）；用户数只写真实的，托管方案的 Part 1 自己也提醒过这一点 |
@@ -236,15 +239,18 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 
 - [x] 回复"go S1"（2026-10-23；没有否决任何默认方案，所以 D-001 和 §3 的其他默认方案都已确定）。
 - [x] 创建 GitHub 仓库并 push Day 1（`createrW/shopsage-recommender`；CI 通过）。
-- [ ] 提交并 push S1。你要的话，提交可以由我来做；push 我从不做。
+- [x] 提交并 push S1（`05f74c4`，2026-10-24；CI 通过，包括 Linux 上的 Milvus Lite 探测）。
+
+- [x] 在 Community Cloud 上部署探测（2026-10-24；E005：482 MB，混合检索 p95 176 ms）。
+- [ ] 提交并 push S2：
 
   ```bash
   git add -A
-  git commit -m "S1: Liang split, evaluation, MostPop/EASE calibration (E004), Milvus Lite probe"
+  git commit -m "S2: Two-Tower (A0-A4), hard-negative mining, Modal sweep, MPS check (E005, E006)"
   git push
   ```
 
-- [ ] 部署探测（§6.4）：在 share.streamlit.io 从 `createrW/shopsage-recommender` 创建应用，branch 填 `main`，main file 填 `src/shopsage_rec/serving/app.py`，App URL 填 `yi-shopsage`。构建完成后打开页面（加载时会自动运行探测，约 10 秒），把表格或截图发给我：我要记录的是峰值 RSS 和三个 p95 数值。
+- [ ] 在 Modal 上运行 S2 批量训练（§6.3 方案 A），然后用 `modal volume get` 把结果拷回来，告诉我"sweep done"。
 - [ ] 就 D-003 给 GroupLens 发邮件（回复可能要等一段时间）。邮件是写给 GroupLens 的，所以保留英文：
 
   ```text
@@ -268,10 +274,10 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
   Yi Zhao
   ```
 
-**S2 交接之前**（训练批量运行）
+**跑批量训练之前**（上一步需要）
 
-- [ ] 注册 Modal 账号：`uv tool install modal && modal setup`，然后设置 workspace budget。
-- [ ] 注册 W&B 并获取 API key，用 `modal secret create wandb WANDB_API_KEY=...` 存到 Modal。
+- [ ] 注册 Modal 账号：`uv tool install modal && modal setup`，然后在 Settings → Usage 设置 workspace budget（例如 \$15）。
+- [ ] 注册 W&B 并获取 API key，用 `modal secret create wandb WANDB_API_KEY=...` 存到 Modal（或用 `WANDB_MODE=offline` 跳过 W&B）。
 
 **之后**
 
@@ -287,8 +293,9 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 | Liang 划分复现有偏差（数量对不上） | S1 的 golden 测试和真实数据计数测试，在 S2 之前修好 |
 | EASE 达不到校准数字 | 在报告任何模型数字之前修好指标和划分的 bug |
 | 目标达不到 | 对照已发表的参考数字汇报；绝不为了凑目标而改协议或指标 |
-| Milvus Lite 在 Community Cloud 上跑不起来或太慢（Debian 11 不在其支持列表上） | milvus-lite 3.x 是基于 faiss-cpu 的纯 Python 实现；S1 push 之后 CI 会在 Linux 上运行探测，部署探测会测量主机；换成 numpy 实现，或改用 Hugging Face Spaces |
-| demo 超过 690 MB | S1 的探测；精简资源包；Hugging Face Spaces |
+| 批量训练在 Modal 上失败或卡住 | 重跑时跳过已完成的运行；先做 2 个 epoch 的试跑；RunPod（方案 B）作为备选 |
+| Milvus Lite 在 Community Cloud 上偏慢：实测混合检索 p95 176 ms，占了 200 ms 预算的大部分（E005） | S6 在主机上实测 numpy 精确稠密 top-k 和 scipy BM25（结果相同；FLAT 重合度 1.000）；如果 Milvus 加排序器达不到 D-013，demo 改走 numpy / scipy，Milvus 作为备选引擎展示并附上其延迟 |
+| demo 超过 690 MB | 探测峰值 482 MB（E005）；精简资源包；Hugging Face Spaces |
 | 许可不允许附带片名或衍生产物 | 现在就发 D-003 邮件；S6 里准备了后备方案 |
 
 ## 9. 完成标准

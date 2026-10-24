@@ -240,7 +240,7 @@ split:
 
 The Liang protocol (`Liang-SG-strict` and `Liang-SG-fit`, §8; D-001, D-002) will add a strong-generalisation `split.strategy` value and a config with `min_item_interactions: 1`, which reproduces Liang et al.'s preprocessing: no item filter, 136,677 users, 20,720 items and 9,990,682 positives (their user split then leaves 20,108 items). On positives, 1 is a no-op, equivalent to their threshold 0; the validator rejects 0. Neither exists today. Because `tie_key` hashes raw ids, a different filter does not change how the surviving ties are broken.
 
-**PLANNED config families.** Draft files exist (`configs/train/two_tower_base.yaml`, `two_tower_hardneg.yaml`, `lgbm_ranker.yaml`; `configs/deploy/streamlit.yaml`), but nothing loads or validates them yet. Schemas are fixed on the day each lands; contents are indicative.
+**Training configuration (S2).** The Two-Tower has no YAML file: its settings are `TrainConfig` (`models/trainer.py`) and the arms A0–A4 (`ARMS`), set from `shopsage train` options and snapshotted into each run's `metrics.json`. **PLANNED config families.** Draft files exist (`configs/train/lgbm_ranker.yaml`, `configs/deploy/streamlit.yaml`), but nothing loads or validates them yet. Schemas are fixed on the day each lands; contents are indicative.
 
 | Directory | Day | Expected contents |
 |---|---|---|
@@ -342,6 +342,9 @@ Typer application, installed as the `shopsage` entry point by `uv sync`. Invoke 
 |---|---|---|
 | `shopsage prepare --config configs/data/movielens_20m_liang.yaml` | CSVs in `raw_dir` | the Liang split of §2.7, including `splits/meta.json` (wraps `run_prepare`); prints the `LiangReport` summary. With `--config configs/data/movielens_20m.yaml` it writes the Day-1 split of §2 and prints a `PrepareReport` |
 | `shopsage stats --processed-dir data/processed/liang` | `<processed-dir>/splits/meta.json` | that file, pretty-printed to stdout |
+| `shopsage train --arm A1 --seed 42 [--epochs 30 --tau 0.05 --lr 0.002 --batch-size 4096 --user-frac 1 --device auto --mined-from RUN --run-id ID --no-wandb]` | the Liang split, `item_features.npz` (built from `genome-scores.csv` on first use) | `artifacts/runs/<run_id>/`: `item_embeddings.npy` (float32 [20,108, 128], unit norm), `user_tower.npz` (`hist_emb`, `w1`, `b1`, `w2`, `b2`: the numpy user tower), `model.pt` (best V_A epoch), `per_user.parquet` and `metrics.json` (config, learning curve, V_A Recall@50, test metrics with CIs, peak memory) |
+| `shopsage mine --run-id A1-s42` | that run's exports | `artifacts/runs/<run_id>/mined_101_500.npy` (int32 [116,677, 400]: ranks 101–500 per training user, training positives excluded) |
+| `shopsage sweep [--epochs 30 --tune-epochs 10 --no-wandb]` | the Liang split | every run of the S2 sweep, one after another, and `artifacts/runs/sweep_summary.json`; `scripts/modal_train.py` runs the same plan on Modal in parallel |
 | `shopsage evaluate --processed-dir data/processed/liang --out-dir artifacts/eval` | the Liang split (`load_liang`) | `<out-dir>/<run-id>/per_user.parquet` (one row per test user with targets, one `model/metric` column each) and `summary.json` (test metrics with bootstrap CIs, EASE's λ selection on V_A, the paired EASE − MostPop differences, timings, peak RSS); options `--models mostpop,ease`, `--ease-lambdas 250,500,1000`, `--run-id` (default `local-YYYYMMDD-HHMM`) |
 
 The flag values shown are also the defaults (since S1 they follow the Liang split), resolved against the repository root found from the current working directory (the nearest directory at or above it that holds `pyproject.toml`, else the current working directory), so both commands work from any subdirectory of the repository. `prepare` also takes `--root DIR`, which must be an existing directory; it is resolved to an absolute path and anchors the config's relative paths (§5.1). When a raw CSV is missing, `prepare` exits 1 with a one-line `Error: ...` message (the loader's hint to run `scripts/download_data.sh`) instead of a traceback, and it creates no output directory before the raw files are loaded.
@@ -352,7 +355,6 @@ Flags are fixed on the day each command lands.
 
 | Command | Day | Purpose | Reads | Writes |
 |---|---|---|---|---|
-| `shopsage train` | 3 (round 2: 5) | train the two-tower | `configs/train/`, splits, as-of features (§5.6) | `artifacts/checkpoints/`, `artifacts/embeddings/` |
 | `shopsage build-index` | 4 | FAISS IVF and HNSW indexes for the ANN study; exact search needs none (D-008) | `item_embeddings.npy` | `artifacts/index/` |
 | `shopsage rank` | 6 | train and apply the LightGBM ranker (D-006) | candidates, as-of features | `artifacts/ranker/` |
 | `shopsage expand` | 8 (swapped with BM25, D-012) | LLM query expansion through the response cache (D-010) | queries, `ANTHROPIC_API_KEY` | `artifacts/llm_cache/` |
