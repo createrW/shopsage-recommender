@@ -69,6 +69,12 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v10.3.0
 
+      # Streamlit Community Cloud installs this file; it must match uv.lock (`make demo-requirements`).
+      - name: serving/requirements.txt matches uv.lock
+        run: |
+          uv export --frozen --no-hashes --no-emit-project --extra demo -o src/shopsage_rec/serving/requirements.txt
+          git diff --exit-code src/shopsage_rec/serving/requirements.txt
+
       # OpenMP runtime the LightGBM wheel links dynamically; the Dockerfile installs the same.
       - name: Install libgomp1
         run: sudo apt-get update -q && sudo apt-get install -y --no-install-recommends libgomp1
@@ -83,6 +89,12 @@ jobs:
         env:
           PYTHONPATH: src # as in the Dockerfile: shopsage_rec is importable, not installed
         run: |
-          .venv-demo/bin/python -c "import faiss, lightgbm, scipy.sparse, streamlit, rank_bm25; import sys; assert 'torch' not in sys.modules"
+          .venv-demo/bin/python -c "import pymilvus, lightgbm, scipy.sparse, streamlit; import sys; assert 'torch' not in sys.modules"
           .venv-demo/bin/python -c "import importlib.util as u; assert u.find_spec('torch') is None, 'torch is installed'"
           .venv-demo/bin/python -c "import anthropic, numpy, polars, pyarrow, pydantic, yaml, shopsage_rec"
+
+      - name: Milvus Lite works on Linux (the deployment probe, small catalogue)
+        env:
+          PYTHONPATH: src
+        run: |
+          .venv-demo/bin/python -c "from shopsage_rec.serving.probe import run_probe; r = run_probe(n_items=2000, dim=32, n_queries=20, k=20); print(r.rows()); assert r.dense_overlap == 1.0"

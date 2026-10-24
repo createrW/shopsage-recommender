@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
 # One-command setup for a fresh Linux GPU box (RunPod pod, `modal shell`, Colab/Kaggle terminal):
-#   install uv -> uv sync --python 3.12 --extra train --extra gpu --extra llm -> download -> prepare,
+#   install uv -> uv sync --python 3.12 --extra train --extra llm -> download -> prepare (Liang split),
 # then show nvidia-smi, the VRAM guidance and the next command.
 # Safe to re-run: every step is idempotent (uv sync, md5-verified download, seeded prepare).
+# Training needs no vector index (offline retrieval is exact numpy), so no FAISS build is involved.
 #
-# Usage: scripts/bootstrap_cloud.sh [--no-gpu] [--skip-data]
-#   --no-gpu     sync the cpu extra (faiss-cpu) instead of the gpu extra (faiss-gpu); implied when
-#                no GPU is visible, GPU 0 is outside sm_70..sm_90, or the host is not Linux x86_64
-#                (faiss-gpu has no other kernels or wheels).
-#                The two extras conflict in pyproject.toml (both install the `faiss` package), so
-#                exactly one is synced. torch is the same build either way.
+# Usage: scripts/bootstrap_cloud.sh [--skip-data]
 #   --skip-data  environment only: no download / prepare
 # Env: SHOPSAGE_PYTHON (default 3.12); UV_LOCKED=1 makes uv fail if uv.lock is out of date.
 #
@@ -31,21 +27,17 @@ have() { command -v "$1" >/dev/null 2>&1; }
 
 usage() {
   cat <<USAGE
-Usage: $(basename "$0") [--no-gpu] [--skip-data]
+Usage: $(basename "$0") [--skip-data]
 
-Fresh Linux GPU box -> uv, Python env (train + gpu + llm extras), MovieLens-20M download and
-prepare. Re-runnable. Env: SHOPSAGE_PYTHON (default 3.12), UV_LOCKED=1 to require uv.lock.
-  --no-gpu     cpu extra (faiss-cpu) instead of gpu (faiss-gpu); implied when nvidia-smi sees
-               no GPU, GPU 0 is outside sm_70..sm_90, or the host is not Linux x86_64
+Fresh Linux GPU box -> uv, Python env (train + llm extras), MovieLens-20M download and the Liang
+split. Re-runnable. Env: SHOPSAGE_PYTHON (default 3.12), UV_LOCKED=1 to require uv.lock.
   --skip-data  skip download + prepare
 USAGE
 }
 
-WITH_GPU=1
 WITH_DATA=1
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --no-gpu) WITH_GPU=0 ;;
     --skip-data) WITH_DATA=0 ;;
     -h | --help)
       usage
@@ -76,6 +68,7 @@ esac
 log "host"
 OS="$(uname -s)"
 ARCH="$(uname -m)"
+info "$OS $ARCH"
 [[ "$OS" == "Linux" ]] || warn "written for Linux GPU boxes; on macOS use 'make setup-train'"
 HAS_GPU=0
 DRIVER_VERSION=""
@@ -111,19 +104,9 @@ if [[ "$cc_major" =~ ^[0-9]+$ ]]; then
   if ((cc_major >= 10)) && [[ "$TORCH_CUDA" != cu13* ]]; then
     warn "GPU 0 is Blackwell ($sm): the ${TORCH_CUDA:-cu126} torch wheels have no kernels for it. Set the pytorch index URL in pyproject.toml to https://download.pytorch.org/whl/cu130 (driver >= 580), run 'uv lock', and re-run."
   fi
-  if ((cc_major < 7 || cc_major >= 10)) && ((WITH_GPU == 1)); then
-    warn "GPU 0 is $sm but faiss-gpu is built for sm_70..sm_90: syncing the cpu extra (faiss-cpu) instead (exact search over 13,681 items runs on the CPU)"
-    WITH_GPU=0
-  fi
 fi
-if ((WITH_GPU == 1)); then
-  if ((HAS_GPU == 0)); then
-    warn "no GPU: syncing the cpu extra (faiss-cpu) instead of the gpu extra"
-    WITH_GPU=0
-  elif [[ "$OS" != "Linux" || "$ARCH" != "x86_64" ]]; then
-    warn "faiss-gpu has Linux x86_64 wheels only (this host: $OS $ARCH): syncing the cpu extra (faiss-cpu)"
-    WITH_GPU=0
-  fi
+if ((HAS_GPU == 0)); then
+  warn "no GPU: the environment and data still set up, but training would run on the CPU"
 fi
 avail_gb="$(df -Pk . | awk 'NR == 2 { printf "%d", $4 / 1048576 }')"
 info "free disk: ${avail_gb} GB"
@@ -155,20 +138,18 @@ else
 fi
 
 # --- 3. Python environment -------------------------------------------------------------------
-# uv sync is exact: a re-run with the other FAISS extra removes the build installed before.
-if ((WITH_GPU == 1)); then FAISS_EXTRA=gpu; else FAISS_EXTRA=cpu; fi
-EXTRAS=(--extra train --extra "$FAISS_EXTRA" --extra llm)
+# uv sync is exact: packages outside these extras are removed.
+EXTRAS=(--extra train --extra llm)
 log "uv sync --python $SHOPSAGE_PYTHON ${EXTRAS[*]}"
 uv sync --python "$SHOPSAGE_PYTHON" "${EXTRAS[@]}"
 # Venv first on PATH: its python3 backs the unzip fallback in download_data.sh on bare images.
 export PATH="${UV_PROJECT_ENVIRONMENT:-$REPO_ROOT/.venv}/bin:$PATH"
 
-# --- 4. Sanity check: torch can use the GPU, lightgbm and faiss import -------------------------
+# --- 4. Sanity check: torch can use the GPU, lightgbm imports ----------------------------------
 log "sanity check"
 HAS_GPU="$HAS_GPU" DRIVER_CUDA="$DRIVER_CUDA" TORCH_CUDA="$TORCH_CUDA" MIN_DRIVER="$MIN_DRIVER" \
-  FAISS_EXTRA="$FAISS_EXTRA" uv run --no-sync python - <<'PY' || warn "sanity check failed; see the messages above"
+  uv run --no-sync python - <<'PY' || warn "sanity check failed; see the messages above"
 import os
-from importlib.metadata import PackageNotFoundError, version
 
 import torch
 
@@ -206,29 +187,14 @@ try:
     print(f"    lightgbm {lightgbm.__version__}")
 except OSError as exc:  # the wheel links the OpenMP runtime dynamically
     print(f"WARNING: lightgbm failed to load ({exc}); apt-get install -y libgomp1")
-
-for dist in ("faiss-gpu", "faiss-cpu"):
-    try:
-        print(f"    {dist} {version(dist)} installed")
-    except PackageNotFoundError:
-        pass
-try:
-    import faiss
-
-    n_gpu = faiss.get_num_gpus() if hasattr(faiss, "get_num_gpus") else 0
-    print(f"    faiss {faiss.__version__}; GPUs visible to faiss: {n_gpu}")
-    if os.environ.get("FAISS_EXTRA") == "gpu" and n_gpu == 0:
-        print("WARNING: faiss-gpu is installed but sees no GPU; re-run with --no-gpu for faiss-cpu")
-except Exception as exc:
-    print(f"WARNING: faiss failed to import: {exc!r}")
 PY
 
 # --- 5. Data ---------------------------------------------------------------------------------
 if [[ $WITH_DATA -eq 1 ]]; then
   log "data: download + md5 verify"
   bash scripts/download_data.sh
-  log "data: prepare"
-  bash scripts/prepare_data.sh
+  log "data: prepare (the Liang split, configs/data/movielens_20m_liang.yaml)"
+  bash scripts/prepare_data.sh configs/data/movielens_20m_liang.yaml
 else
   log "data: skipped (--skip-data)"
 fi
@@ -254,28 +220,25 @@ fi
 
 cat <<'END_VRAM'
 
-VRAM (roofline estimates, +-30%, to be measured on Day 3):
-  GPU tiers         minimum 8 GB; recommended 16 GB or more (A10G 24 GB is the best value)
-  Two-Tower train   136,674 x 128 user and 13,681 x 128 item tables, in-batch softmax, AMP; peak:
+VRAM (roofline estimates, +-30%, measured in S2; docs/plan.md section 6.3):
+  GPU tiers         minimum 8 GB; recommended 16 GB or more (a 24 GB A10 is the best value)
+  Two-Tower train   20,108 x 128 item table, inductive user tower (no user table), in-batch softmax,
+                      AMP; the Day-1 roofline is an upper bound:
                       B=4096 ~1.4 GB | B=8192 ~2.5 GB | B=16384 + 4,096 sampled negatives ~6.1 GB (worst case)
-  evaluation        score users in chunks of <= 8,192; one 136,674 x 13,681 fp32 score matrix is 7.5 GB
-  BGE-M3 fp16       ~1.1 GB of weights (2.3 GB fp32 checkpoint); embeds the 13,681 kept items in ~1 min
-  vLLM (optional)   Qwen/Qwen2.5-0.5B-Instruct reserves --gpu-memory-utilization x VRAM: 0.2 = ~3 GB on a T4,
-                      ~4.5 GB on an A10G (use ~0.35 on an 8 GB card); --max-model-len 4096
-                      --enforce-eager (--dtype half on T4); never at vLLM defaults next to training
-  LightGBM ranker   CPU/RAM only: ~2 GB for 20K users x 500 candidates (~10M rows)
+  evaluation        10,000 test users x 20,108 items in fp32 is 0.8 GB; scored in chunks of <= 8,192 users
+  LightGBM ranker   CPU/RAM only: V_B's 5,000 users x ~600 candidates (~3M rows)
 END_VRAM
 
 log "next"
 if [[ -f scripts/train.sh ]]; then
   info "bash scripts/train.sh"
 else
-  info "bash scripts/train.sh   (arrives on Day 3; not in the repo yet)"
+  info "bash scripts/train.sh   (arrives in S2; not in the repo yet)"
 fi
 if [[ -z "${WANDB_API_KEY:-}" ]]; then
   info "W&B: WANDB_API_KEY not set; run 'uv run wandb login' or export WANDB_MODE=offline"
 fi
 if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
-  info "LLM expansion (Day 8): ANTHROPIC_API_KEY not set"
+  info "LLM expansion (S5): ANTHROPIC_API_KEY not set"
 fi
 info "new shells: export PATH=\"$UV_BIN_DIR:\$PATH\" if uv is not found"

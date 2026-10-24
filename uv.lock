@@ -2,44 +2,19 @@ version = 1
 revision = 5
 requires-python = ">=3.11, <3.13"
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'linux'",
+    "python_full_version >= '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
+    "python_full_version < '3.11.5' and sys_platform == 'linux'",
+    "python_full_version < '3.11.5' and sys_platform == 'win32'",
+    "python_full_version < '3.11.5' and sys_platform == 'emscripten'",
+    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
-conflicts = [[
-    { package = "shopsage-rec", extra = "cpu" },
-    { package = "shopsage-rec", extra = "gpu" },
-], [
-    { package = "shopsage-rec", extra = "demo" },
-    { package = "shopsage-rec", extra = "gpu" },
-]]
 
 [[package]]
 name = "altair"
@@ -251,8 +226,8 @@ name = "beautifulsoup4"
 version = "4.15.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "soupsieve", version = "2.10", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11.5' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "soupsieve", version = "3.0.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11.5' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "soupsieve", version = "2.10", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11.5'" },
+    { name = "soupsieve", version = "3.0.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11.5'" },
     { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/43/65/318323f98dbee45d42dff61d8f047181bc6f2268a9068cfad035a46be5af/beautifulsoup4-4.15.0.tar.gz", hash = "sha256:288e3ca7d54b06f2ac191970bc275c1939cb46d450b255bf6718b04aa37ab4f7", size = 632571, upload-time = "2026-06-07T16:44:20.453Z" }
@@ -278,6 +253,15 @@ css = [
 ]
 
 [[package]]
+name = "cachetools"
+version = "7.2.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3a/5d/15ea0494ebcb9062c7ca79bf026cbba380a50538ae73753fb40bdffa79e2/cachetools-7.2.4.tar.gz", hash = "sha256:e0203b04b75fe13e62098eeb5b2018c4eb1a14c04e2b5b450e70db3ee7e92ec5", size = 44251, upload-time = "2026-10-19T19:09:44.931Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5a/4c/694f7d44f2399b3901232d6ded1c88442a02fc8141936396d9289d951848/cachetools-7.2.4-py3-none-any.whl", hash = "sha256:4cfbebf3eec4040d2073b19c460511ad47eef7b852dbf9a0d385099b4dafa31e", size = 18571, upload-time = "2026-10-19T19:09:43.296Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.10.18"
 source = { registry = "https://pypi.org/simple" }
@@ -291,7 +275,7 @@ name = "cffi"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "pycparser", marker = "implementation_name != 'PyPy'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9e/ef/008a1939e372c06329a3fce4279c02f328488f3526744906eeec3da7ad5f/cffi-2.1.1.tar.gz", hash = "sha256:dd31f52ea1086513bb9df30f8fcee9b8918323ae067a3d5b78bc826a000712be", size = 530807, upload-time = "2026-08-03T21:21:18.939Z" }
 wheels = [
@@ -429,29 +413,17 @@ name = "contourpy"
 version = "1.3.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
+    "python_full_version < '3.11.5' and sys_platform == 'linux'",
+    "python_full_version < '3.11.5' and sys_platform == 'win32'",
+    "python_full_version < '3.11.5' and sys_platform == 'emscripten'",
+    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/58/01/1253e6698a07380cd31a736d248a3f2a50a7c88779a1813da27503cadc2a/contourpy-1.3.3.tar.gz", hash = "sha256:083e12155b210502d0bca491432bb04d56dc3432f95a979b429f2848c3dbe880", size = 13466174, upload-time = "2025-07-26T12:03:12.549Z" }
 wheels = [
@@ -489,19 +461,13 @@ name = "contourpy"
 version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'linux'",
+    "python_full_version >= '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/83/5a/a55177dd22553a277388e8a1b3220e92de91bacb28356cdc73caa240121d/contourpy-1.4.0.tar.gz", hash = "sha256:20156f5a1ac4f8ce02656e39a61e82164a3d359796dc8026f75b062783d500e1", size = 13323726, upload-time = "2026-09-11T19:05:05.808Z" }
 wheels = [
@@ -559,7 +525,7 @@ wheels = [
 
 [package.optional-dependencies]
 toml = [
-    { name = "tomli", marker = "python_full_version <= '3.11' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "tomli", marker = "python_full_version <= '3.11'" },
 ]
 
 [[package]]
@@ -567,15 +533,13 @@ name = "cuda-bindings"
 version = "12.9.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cuda-pathfinder", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "cuda-pathfinder" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/72/84/3e6203d03e58e569297e76cc9309167c85dded353386aa41b4a8baf05843/cuda_bindings-12.9.10-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:d0fd232e51597c0527e053421937cdce8861b6a21d7b2429d3dd0f7c62f2b946", size = 7083823, upload-time = "2026-10-15T14:11:55.272Z" },
     { url = "https://files.pythonhosted.org/packages/51/bc/349fdb2860037429e7b1c5e48d803030031b5b3ef7a9c98413cc58aa082a/cuda_bindings-12.9.10-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1d6a8a4d17fbf5e448de0c0729ab6fde46fc5b9211b96a575d45d8686b6a9707", size = 7607445, upload-time = "2026-10-15T14:11:57.201Z" },
-    { url = "https://files.pythonhosted.org/packages/fb/6f/06b0af5d1dc8003be7799b329de701369f62159964c6fa632822ab6e68fd/cuda_bindings-12.9.10-cp311-cp311-win_amd64.whl", hash = "sha256:1adaf589ece5a25a09f7c9d8289724ceb4a4e29050319087b91c7024c60643e3", size = 7384865, upload-time = "2026-10-15T14:11:59.026Z" },
     { url = "https://files.pythonhosted.org/packages/7f/b2/8cef7e30e02e7ec3bf157ec192c0522546ed807c262752e884c693813494/cuda_bindings-12.9.10-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:aa1e07b12ae190a01ba3e0c85253be6ec1bfa13545a88eac5fd45ae4b0c04333", size = 7063851, upload-time = "2026-10-15T14:12:01.26Z" },
     { url = "https://files.pythonhosted.org/packages/7b/6e/0e07e8b3578547e1083a7ee105c5736033ecb189466f40e45283b46bc7c6/cuda_bindings-12.9.10-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:420e44cfcd939cd69d6cfe8efc5f08b44850994cae399a49b9299a464324ce97", size = 7627380, upload-time = "2026-10-15T14:12:03.328Z" },
-    { url = "https://files.pythonhosted.org/packages/69/d9/f3a7223079160b384ccd32729dde6cf24d5e1667a43a8d5dd947c7c7aaee/cuda_bindings-12.9.10-cp312-cp312-win_amd64.whl", hash = "sha256:a43a26d9b42da215d3ecac5dc35a7e75c219083a7eeab765a718567393b34fca", size = 7601037, upload-time = "2026-10-15T14:12:05.493Z" },
 ]
 
 [[package]]
@@ -596,34 +560,34 @@ wheels = [
 
 [package.optional-dependencies]
 cublas = [
-    { name = "nvidia-cublas-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-cublas-cu12" },
 ]
 cudart = [
-    { name = "nvidia-cuda-runtime-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-cuda-runtime-cu12" },
 ]
 cufft = [
-    { name = "nvidia-cufft-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-cufft-cu12" },
 ]
 cufile = [
-    { name = "nvidia-cufile-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-cufile-cu12" },
 ]
 cupti = [
-    { name = "nvidia-cuda-cupti-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-cuda-cupti-cu12" },
 ]
 curand = [
-    { name = "nvidia-curand-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-curand-cu12" },
 ]
 cusolver = [
-    { name = "nvidia-cusolver-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-cusolver-cu12" },
 ]
 cusparse = [
-    { name = "nvidia-cusparse-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-cusparse-cu12" },
 ]
 nvrtc = [
-    { name = "nvidia-cuda-nvrtc-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-cuda-nvrtc-cu12" },
 ]
 nvtx = [
-    { name = "nvidia-nvtx-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-nvtx-cu12" },
 ]
 
 [[package]]
@@ -741,8 +705,8 @@ name = "faiss-cpu"
 version = "1.15.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-cpu') or (python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-demo') or (python_full_version < '3.12' and extra != 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-cpu') or (python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-demo') or (python_full_version >= '3.12' and extra != 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "packaging" },
 ]
 wheels = [
@@ -756,22 +720,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/64/70/ae64e5acff270117e6cae4e41efc73440a70d9b502ca51b023aa28674233/faiss_cpu-1.15.1-cp311-cp311-win_arm64.whl", hash = "sha256:ad05c3f169b4d02f2805f42c1caa29370b4a2dd1e99c7ee7b66591085ed20b30", size = 9036494, upload-time = "2026-09-16T18:33:51.37Z" },
     { url = "https://files.pythonhosted.org/packages/69/19/a4bd07c73f17556eff1599e27918b8a97eaab468aea7b143bd49ca0535eb/faiss_cpu-1.15.1-cp312-cp312-win_amd64.whl", hash = "sha256:38d192695210a51ff72449d8802ff62601568fcfc6372222a64a069da0ecdb10", size = 16293368, upload-time = "2026-09-16T18:33:55.001Z" },
     { url = "https://files.pythonhosted.org/packages/56/35/c79cd7321c6d8af277691e7a7ca1dd362e0fff24a9697aa944781cdb8c75/faiss_cpu-1.15.1-cp312-cp312-win_arm64.whl", hash = "sha256:4fd6623ed931d16256b268ac2984f672cdf1929702e24b3e741798d0bb08804f", size = 9039754, upload-time = "2026-09-16T18:33:57.835Z" },
-]
-
-[[package]]
-name = "faiss-gpu"
-version = "1.15.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-gpu') or (python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform != 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform != 'linux' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-gpu') or (python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform != 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform != 'linux' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "nvidia-cublas-cu12", marker = "sys_platform == 'linux'" },
-    { name = "nvidia-cuda-runtime-cu12", marker = "sys_platform == 'linux'" },
-    { name = "nvidia-curand-cu12", marker = "sys_platform == 'linux'" },
-    { name = "packaging", marker = "sys_platform == 'linux'" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/8e/fe86155827adc1964a6f1f9f510b936551499dbb881bc400d8f2bf501175/faiss_gpu-1.15.1-cp310-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c9833c9b1c46d925edf6ee457a36869bbc444275984cf83a7d736e7f4a2f3439", size = 135286937, upload-time = "2026-09-16T19:05:28.994Z" },
 ]
 
 [[package]]
@@ -848,6 +796,37 @@ wheels = [
 ]
 
 [[package]]
+name = "grpcio"
+version = "1.84.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c0/3a/5c8e0eea2af3d30cb20d33ac325a98d9b799c069d63101ca4da20bcc776a/grpcio-1.84.1.tar.gz", hash = "sha256:446e7876b9b991fa124c1d414899fa7cf95f89a3e71237ea0161863dc0b2c09f", size = 13421202, upload-time = "2026-10-22T14:59:43.986Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b6/99/8c0a3739dbc75bf509cf2a79a35ebb27e73cd7a1f9be25af842ae66e4749/grpcio-1.84.1-cp311-cp311-linux_armv7l.whl", hash = "sha256:a5ea4e8d1e9745ba6c2c9d14ed0861e9496a8051bf9fd8a17b667d9b9a0c1019", size = 6420007, upload-time = "2026-10-22T14:57:39.037Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/00/c8261b1d56715d09c922145d12427abc1b1be5afad031336d7b00bad7d8c/grpcio-1.84.1-cp311-cp311-macosx_11_0_universal2.whl", hash = "sha256:11c1d07c58922f5dad022b422d3f7998755c3e35e2f1949bac47cfd7a5eb31fd", size = 12325248, upload-time = "2026-10-22T14:57:41.384Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/4a/30f23e49f1b8ab11ccd24cfa146524df5478f45db7167006580cdfeaa321/grpcio-1.84.1-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:6a22342e59b5b2f4c5ed276ef72a3668ec84f38d2f5fad8a64af0b3618e510eb", size = 6995366, upload-time = "2026-10-22T14:57:44.399Z" },
+    { url = "https://files.pythonhosted.org/packages/c1/d8/fd238758e4725f11d509c440de1b03a77c53d5f213fd45ccfb5f4f775aff/grpcio-1.84.1-cp311-cp311-manylinux2014_i686.manylinux_2_17_i686.whl", hash = "sha256:bdd1181edaf42b6e79a457789fd43e85858db1df3861e4e5128ff4d6a49cb638", size = 7747707, upload-time = "2026-10-22T14:57:47.241Z" },
+    { url = "https://files.pythonhosted.org/packages/47/54/d6544884ef836bea968d3ed7abf179c4d33a794dd8a8b1c5cf002fff9620/grpcio-1.84.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:eb881326607275ad2d2d17dce09b823472414dcc559e8f694d5607fe8af3cbc1", size = 7153395, upload-time = "2026-10-22T14:57:50.28Z" },
+    { url = "https://files.pythonhosted.org/packages/06/9c/094cd0afd21348e65d5750a7fa4cfa5f8ba6ca354fe6aff9f1163f4c5d0e/grpcio-1.84.1-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:772ff116d0d31b2817e23fb9a1dfa52fa9fed08be0cd87b593450f034e2968b1", size = 7702992, upload-time = "2026-10-22T14:57:53.602Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/54/254432337e14beb08bc7f29fc10a86ef149f672124073f2e0d446dbf8538/grpcio-1.84.1-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:0225c1e29d1506594e75ac46fd7b327bbfd24c6306a3c479b2164c1c4e87901f", size = 8758120, upload-time = "2026-10-22T14:57:55.728Z" },
+    { url = "https://files.pythonhosted.org/packages/04/29/528ccb437076233d524e09e59320625b8ca9d94f0fb0198703e7100f3bff/grpcio-1.84.1-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:a1ce9e360d0a4a329b925ae8b0bc49d97d663bcce50822eb862873798a86eb10", size = 8110925, upload-time = "2026-10-22T14:57:58.639Z" },
+    { url = "https://files.pythonhosted.org/packages/24/5a/e4005d02dd65884a525f49ba0aa0371967b7fb40f00d35818ab397d91a93/grpcio-1.84.1-cp311-cp311-win32.whl", hash = "sha256:b87f8696bb78a31328e815629d320304c3d5cca1c654d3fd7e5518685bcfb8d2", size = 4460566, upload-time = "2026-10-22T14:58:01.077Z" },
+    { url = "https://files.pythonhosted.org/packages/6e/fc/fc040230b60529a5df349945eb1e4f8a201607a6e3d70f3465d80e801393/grpcio-1.84.1-cp311-cp311-win_amd64.whl", hash = "sha256:e44786d5c166944a53fb1fa3384d03f1dbade6f68007be6d0c5a1a0971cbaca6", size = 5225017, upload-time = "2026-10-22T14:58:03.113Z" },
+    { url = "https://files.pythonhosted.org/packages/69/39/34a3e64818b1fdaf73b6c873f7d085969f20c2aff114c8909cc7ee0cb2b4/grpcio-1.84.1-cp312-cp312-linux_armv7l.whl", hash = "sha256:db2dbe5380dccc2f5df967f31308a744e65d46e21b473a9c3ca033c4299ec3f4", size = 6381194, upload-time = "2026-10-22T14:58:05.289Z" },
+    { url = "https://files.pythonhosted.org/packages/77/bf/5f1922cafaaaa7b2b6a0f6b0614783efa8502f16c8dd9c7b8b131a3dc9d2/grpcio-1.84.1-cp312-cp312-macosx_11_0_universal2.whl", hash = "sha256:f7533921b52ef94210437dedd3911e00b7642ca8d11eda64eb1715778630715e", size = 12304970, upload-time = "2026-10-22T14:58:07.714Z" },
+    { url = "https://files.pythonhosted.org/packages/af/f9/77e9991fd5ae7d754b78b3c8e8eb028ddc886a480b86b934ece85f727f95/grpcio-1.84.1-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:e0dcc7b588e7b7dd3363317296983db23a26af8baa5884db15a10fc0c8534186", size = 6949905, upload-time = "2026-10-22T14:58:10.92Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/a2/af693a3bd3fb43cd97e4ad054ad5b117814c1a24cad048130e982a189f0f/grpcio-1.84.1-cp312-cp312-manylinux2014_i686.manylinux_2_17_i686.whl", hash = "sha256:a92bb13dd1b31a16f631ab415710de59f404c37364c018e7486496fb449a89da", size = 7714870, upload-time = "2026-10-22T14:58:13.622Z" },
+    { url = "https://files.pythonhosted.org/packages/00/98/456ef643a796ba04ad737e39a820c27291c238db87f7d168355dbdaf7b4b/grpcio-1.84.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:474408c92b27c823ea6aab2315e2ea52d5a4e0040b37ce1e65e89d9149c48205", size = 7121552, upload-time = "2026-10-22T14:58:16.454Z" },
+    { url = "https://files.pythonhosted.org/packages/a9/bc/c98f29a74b772ba9025f13243dc9547807583b1d111282bdcc53bb4f8db6/grpcio-1.84.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:912694cac76adb4f45563b38ae4d06d77a2081e8ed5cb20a3918c1affba83c63", size = 7673450, upload-time = "2026-10-22T14:58:19.009Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/2f/713bbfaf1cd7ce3a4626b8c0e93ec3f7493d8f52ccdb1ddb02fc98fc7d7e/grpcio-1.84.1-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:f821954e4d89e97f7d51c03073d6964e177f2d11181550a5a22c082fac614f43", size = 8725415, upload-time = "2026-10-22T14:58:22.23Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/ef/21db8160edde5646a0f688c9f7e97bf6106965e4e2ae1dcfe9649fe2db01/grpcio-1.84.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:02612f3c19ed3dd885e2fff1236bf5629e5b43b5aa84c3290b0d5f62f26b0ef7", size = 8090355, upload-time = "2026-10-22T14:58:25.039Z" },
+    { url = "https://files.pythonhosted.org/packages/34/0e/a762461094659b13a86a027461a6acdf4734dbbe17b19bb193191801b570/grpcio-1.84.1-cp312-cp312-win32.whl", hash = "sha256:380b58bf32707b4e3019c9567dab30375bd21f9a5c98aa24401aff1e73f3b262", size = 4444024, upload-time = "2026-10-22T14:58:27.015Z" },
+    { url = "https://files.pythonhosted.org/packages/51/b5/2dbcb95b7b3622253bbb09b79dd87787dd05709303e571cc0eb150f860d1/grpcio-1.84.1-cp312-cp312-win_amd64.whl", hash = "sha256:1a221fe42e444cd0099752028810a289efafce1b5690dfe19a831d2a2fe6ea62", size = 5218662, upload-time = "2026-10-22T14:58:29.124Z" },
+]
+
+[[package]]
 name = "h11"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -890,8 +869,8 @@ name = "httpcore2"
 version = "2.14.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "h11", marker = "sys_platform != 'emscripten' or extra == 'extra-12-shopsage-rec-gpu'" },
-    { name = "truststore", marker = "sys_platform != 'emscripten' or extra == 'extra-12-shopsage-rec-gpu'" },
+    { name = "h11" },
+    { name = "truststore" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/30/ff/b53af1b49bb2cb5fa97c92215614b173ca5c1a99ded80e2d52f15a94fa6d/httpcore2-2.14.0.tar.gz", hash = "sha256:4f57a1a8249fe6af589d935cfd456f1d13bbdcb0f0fc72af9142368fc94811d7", size = 69096, upload-time = "2026-10-18T16:29:21.898Z" }
 wheels = [
@@ -918,11 +897,11 @@ name = "httpx2"
 version = "2.14.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "anyio", marker = "sys_platform != 'emscripten' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "httpcore2", marker = "sys_platform != 'emscripten' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "httpx2-jsfetch", marker = "(python_full_version >= '3.12' and sys_platform == 'emscripten') or (python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform != 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform != 'emscripten' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "anyio", marker = "sys_platform != 'emscripten'" },
+    { name = "httpcore2", marker = "sys_platform != 'emscripten'" },
+    { name = "httpx2-jsfetch", marker = "python_full_version >= '3.12' and sys_platform == 'emscripten'" },
     { name = "idna" },
-    { name = "truststore", marker = "sys_platform != 'emscripten' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "truststore", marker = "sys_platform != 'emscripten'" },
     { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e8/67/58353f1848b4ba568e1ec22ea1e0d8e039f0bca5fde7e2d1f07739fd83e7/httpx2-2.14.0.tar.gz", hash = "sha256:47ad61a3c40282cd8d0dc96311531f00f5bfc71a066c6fe3b36d8f63fb9e4f6e", size = 102036, upload-time = "2026-10-18T16:29:22.627Z" }
@@ -947,7 +926,7 @@ dependencies = [
     { name = "click" },
     { name = "filelock" },
     { name = "fsspec" },
-    { name = "hf-xet", marker = "platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "hf-xet", marker = "platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'" },
     { name = "httpx" },
     { name = "packaging" },
     { name = "pyyaml" },
@@ -1057,7 +1036,7 @@ name = "ipykernel"
 version = "7.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "appnope", marker = "sys_platform == 'darwin' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "appnope", marker = "sys_platform == 'darwin'" },
     { name = "comm" },
     { name = "debugpy" },
     { name = "ipython" },
@@ -1080,17 +1059,17 @@ name = "ipython"
 version = "9.17.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
     { name = "ipython-pygments-lexers" },
     { name = "jedi" },
     { name = "matplotlib-inline" },
-    { name = "pexpect", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32') or (sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "pexpect", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
     { name = "prompt-toolkit" },
-    { name = "psutil", marker = "(sys_platform != 'cygwin' and sys_platform != 'emscripten') or (sys_platform == 'cygwin' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'cygwin' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "psutil", marker = "sys_platform != 'cygwin' and sys_platform != 'emscripten'" },
     { name = "pygments" },
     { name = "stack-data" },
     { name = "traitlets" },
-    { name = "typing-extensions", marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b9/32/99451b1283ec5d92ad77073f12e1c667dc10775384d8f15c2914207149dd/ipython-9.17.1.tar.gz", hash = "sha256:8919be8c27f20a6f4423145028063f6637b42a03ce57665bb12015ee1f073529", size = 4539289, upload-time = "2026-09-01T08:29:32.6Z" }
 wheels = [
@@ -1408,10 +1387,10 @@ dependencies = [
     { name = "jupyter-server-terminals" },
     { name = "nbconvert" },
     { name = "nbformat" },
-    { name = "overrides", marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "overrides", marker = "python_full_version < '3.12'" },
     { name = "packaging" },
     { name = "prometheus-client" },
-    { name = "pywinpty", marker = "(os_name == 'nt' and sys_platform != 'linux') or (os_name != 'nt' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (os_name != 'nt' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "pywinpty", marker = "os_name == 'nt' and sys_platform != 'linux'" },
     { name = "pyzmq" },
     { name = "send2trash" },
     { name = "terminado" },
@@ -1429,7 +1408,7 @@ name = "jupyter-server-terminals"
 version = "0.5.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pywinpty", marker = "(os_name == 'nt' and sys_platform != 'linux') or (os_name != 'nt' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (os_name != 'nt' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "pywinpty", marker = "os_name == 'nt' and sys_platform != 'linux'" },
     { name = "terminado" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f4/a7/bcd0a9b0cbba88986fe944aaaf91bfda603e5a50bda8ed15123f381a3b2f/jupyter_server_terminals-0.5.4.tar.gz", hash = "sha256:bbda128ed41d0be9020349f9f1f2a4ab9952a73ed5f5ac9f1419794761fb87f5", size = 31770, upload-time = "2026-01-14T16:53:20.213Z" }
@@ -1455,7 +1434,7 @@ dependencies = [
     { name = "packaging" },
     { name = "tornado" },
     { name = "traitlets" },
-    { name = "typing-extensions", marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/33/8d/995cc142f6083346b35e7d3eadc5a6717ee89ce64ea53577010ac493bc3c/jupyterlab-4.6.4.tar.gz", hash = "sha256:404f49b081819378524886c9db66dba57a5565981eff885830df1baba3a17df5", size = 28335647, upload-time = "2026-09-21T15:25:18.779Z" }
 wheels = [
@@ -1597,10 +1576,10 @@ version = "4.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "narwhals" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/63/8e/4db5e29290d7e619c307fdb8dab0a0514090af2ce3ec483050e024ec6126/lightgbm-4.7.0.tar.gz", hash = "sha256:f8e20f682c9aabd000bcf4a7ed8aa6f473c1adfecccae34ec24e823d156f4af0", size = 1792896, upload-time = "2026-07-18T21:00:56.139Z" }
 wheels = [
@@ -1666,13 +1645,13 @@ name = "matplotlib"
 version = "3.11.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "contourpy", version = "1.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "contourpy", version = "1.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "contourpy", version = "1.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "contourpy", version = "1.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "cycler" },
     { name = "fonttools" },
     { name = "kiwisolver" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "packaging" },
     { name = "pillow" },
     { name = "pyparsing" },
@@ -1721,6 +1700,22 @@ wheels = [
 ]
 
 [[package]]
+name = "milvus-lite"
+version = "3.2.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "faiss-cpu" },
+    { name = "grpcio" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "pyarrow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/47/e2/ac0c50e571661b1fc4d6ad075a3961f51f9c578a078e132b277eb25324e3/milvus_lite-3.2.2.tar.gz", hash = "sha256:c171dd372071d06425b478975562c5a1c13178333a74883eb04e8a8e6fca1d28", size = 765527, upload-time = "2026-10-13T08:38:34.584Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/45/a1/369dc72338c9fe96a21199281ddf29d3797dba5c582f25db59ff9d2df300/milvus_lite-3.2.2-py3-none-any.whl", hash = "sha256:106e2437054713afa31208cd081f1e2682253213949a5f544d983dfce1b3a16d", size = 276845, upload-time = "2026-10-13T08:38:30.657Z" },
+]
+
+[[package]]
 name = "mistune"
 version = "3.3.4"
 source = { registry = "https://pypi.org/simple" }
@@ -1744,7 +1739,7 @@ version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ast-serialize" },
-    { name = "librt", marker = "platform_python_implementation != 'PyPy' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "librt", marker = "platform_python_implementation != 'PyPy'" },
     { name = "mypy-extensions" },
     { name = "pathspec" },
     { name = "typing-extensions" },
@@ -1853,26 +1848,14 @@ name = "networkx"
 version = "3.6.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
+    "python_full_version < '3.11.5' and sys_platform == 'linux'",
+    "python_full_version < '3.11.5' and sys_platform == 'win32'",
+    "python_full_version < '3.11.5' and sys_platform == 'emscripten'",
+    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6a/51/63fe664f3908c97be9d2e4f1158eb633317598cfa6e1fc14af5383f17512/networkx-3.6.1.tar.gz", hash = "sha256:26b7c357accc0c8cde558ad486283728b65b6a95d85ee1cd66bafab4c8168509", size = 2517025, upload-time = "2025-12-08T17:02:39.908Z" }
 wheels = [
@@ -1884,16 +1867,10 @@ name = "networkx"
 version = "3.7"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'linux'",
+    "python_full_version >= '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/dc/76/3af777226b63a5e64a6b36b1ec5855c14e2b94a37096d4760e595fc43511/networkx-3.7.tar.gz", hash = "sha256:fd77a511bd90f39f3d016351345b52cf5319b813bdca01de3f755d3cca62e96a", size = 1866482, upload-time = "2026-09-21T16:45:16.974Z" }
 wheels = [
@@ -1943,26 +1920,14 @@ name = "numpy"
 version = "2.4.6"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
+    "python_full_version < '3.11.5' and sys_platform == 'linux'",
+    "python_full_version < '3.11.5' and sys_platform == 'win32'",
+    "python_full_version < '3.11.5' and sys_platform == 'emscripten'",
+    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d0/ad/fed0499ce6a338d2a03ebae59cd15093910c8875328855781952abf6c2fe/numpy-2.4.6.tar.gz", hash = "sha256:f3a3570c4a2a16746ac2c31a7c7c7b0c186b95ce902e33db6f28094ed7387dda", size = 20735807, upload-time = "2026-05-18T23:37:14.07Z" }
 wheels = [
@@ -2002,16 +1967,10 @@ name = "numpy"
 version = "2.5.4"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'linux'",
+    "python_full_version >= '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/95/b0/c7453d0b6e2073c3264468b106ee1563750cecc910965e67357e3698c83e/numpy-2.5.4.tar.gz", hash = "sha256:9a94cf751c9ad8ebaa835bcd3d40dacf8534ad086b88c38029b65123c7999d2a", size = 20866315, upload-time = "2026-10-10T20:05:31.422Z" }
 wheels = [
@@ -2035,7 +1994,6 @@ source = { registry = "https://pypi.org/simple" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/af/eb/ff4b8c503fa1f1796679dce648854d58751982426e4e4b37d6fce49d259c/nvidia_cublas_cu12-12.6.4.1-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:08ed2686e9875d01b58e3cb379c6896df8e76c75e0d4a7f7dace3d7b6d9ef8eb", size = 393138322, upload-time = "2024-11-20T17:40:25.65Z" },
     { url = "https://files.pythonhosted.org/packages/97/0d/f1f0cadbf69d5b9ef2e4f744c9466cb0a850741d08350736dfdb4aa89569/nvidia_cublas_cu12-12.6.4.1-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:235f728d6e2a409eddf1df58d5b0921cf80cfa9e72b9f2775ccb7b4a87984668", size = 390794615, upload-time = "2024-11-20T17:39:52.715Z" },
-    { url = "https://files.pythonhosted.org/packages/84/f7/985e9bdbe3e0ac9298fcc8cfa51a392862a46a0ffaccbbd56939b62a9c83/nvidia_cublas_cu12-12.6.4.1-py3-none-win_amd64.whl", hash = "sha256:9e4fa264f4d8a4eb0cdbd34beadc029f453b3bafae02401e999cf3d5a5af75f8", size = 434535301, upload-time = "2024-11-20T17:50:41.681Z" },
 ]
 
 [[package]]
@@ -2047,7 +2005,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/25/0f/acb326ac8fd26e13c799e0b4f3b2751543e1834f04d62e729485872198d4/nvidia_cuda_cupti_cu12-12.6.80-py3-none-manylinux2014_aarch64.whl", hash = "sha256:358b4a1d35370353d52e12f0a7d1769fc01ff74a191689d3870b2123156184c4", size = 8236756, upload-time = "2024-10-01T16:57:45.507Z" },
     { url = "https://files.pythonhosted.org/packages/49/60/7b6497946d74bcf1de852a21824d63baad12cd417db4195fc1bfe59db953/nvidia_cuda_cupti_cu12-12.6.80-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:6768bad6cab4f19e8292125e5f1ac8aa7d1718704012a0e3272a6f61c4bce132", size = 8917980, upload-time = "2024-11-20T17:36:04.019Z" },
     { url = "https://files.pythonhosted.org/packages/a5/24/120ee57b218d9952c379d1e026c4479c9ece9997a4fb46303611ee48f038/nvidia_cuda_cupti_cu12-12.6.80-py3-none-manylinux2014_x86_64.whl", hash = "sha256:a3eff6cdfcc6a4c35db968a06fcadb061cbc7d6dde548609a941ff8701b98b73", size = 8917972, upload-time = "2024-10-01T16:58:06.036Z" },
-    { url = "https://files.pythonhosted.org/packages/1c/81/7796f096afaf726796b1b648f3bc80cafc61fe7f77f44a483c89e6c5ef34/nvidia_cuda_cupti_cu12-12.6.80-py3-none-win_amd64.whl", hash = "sha256:bbe6ae76e83ce5251b56e8c8e61a964f757175682bbad058b170b136266ab00a", size = 5724175, upload-time = "2024-10-01T17:09:47.955Z" },
 ]
 
 [[package]]
@@ -2057,7 +2014,6 @@ source = { registry = "https://pypi.org/simple" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f5/31/ffb400c5ae99daf09687aa6c42831c5d824f71c4851363ed2a4a1ac52bab/nvidia_cuda_nvrtc_cu12-12.6.85-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl", hash = "sha256:800927308ccc5dd6246d3f61f7fcef2ed7ec4e59e199090d360d3293f78bd5a2", size = 23649944, upload-time = "2024-11-20T17:38:06.511Z" },
     { url = "https://files.pythonhosted.org/packages/48/ab/476146f59ff5ef5bd6e62c187097d859ea78b5752d19c6c3f9be5f90dafc/nvidia_cuda_nvrtc_cu12-12.6.85-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:3f3134f50963882373063901657554f230bedf6039d30b09f6be55c64c993a37", size = 23162872, upload-time = "2024-11-20T17:37:42.967Z" },
-    { url = "https://files.pythonhosted.org/packages/0c/f7/472414aee887d626373d0b2140a59ac4308e3eaed815060e5410fc83305a/nvidia_cuda_nvrtc_cu12-12.6.85-py3-none-win_amd64.whl", hash = "sha256:a419e2c95e75b88b602f8bb66f82a6c5651e8475a509841c958486b1b71510bf", size = 39026436, upload-time = "2024-11-20T17:49:13.633Z" },
 ]
 
 [[package]]
@@ -2069,7 +2025,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/3d/159023799677126e20c8fd580cca09eeb28d5c5a624adc7f793b9aa8bbfa/nvidia_cuda_runtime_cu12-12.6.77-py3-none-manylinux2014_aarch64.whl", hash = "sha256:d461264ecb429c84c8879a7153499ddc7b19b5f8d84c204307491989a365588e", size = 908040, upload-time = "2024-10-01T16:57:22.221Z" },
     { url = "https://files.pythonhosted.org/packages/e1/23/e717c5ac26d26cf39a27fbc076240fad2e3b817e5889d671b67f4f9f49c5/nvidia_cuda_runtime_cu12-12.6.77-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:ba3b56a4f896141e25e19ab287cd71e52a6a0f4b29d0d31609f60e3b4d5219b7", size = 897690, upload-time = "2024-11-20T17:35:30.697Z" },
     { url = "https://files.pythonhosted.org/packages/f0/62/65c05e161eeddbafeca24dc461f47de550d9fa8a7e04eb213e32b55cfd99/nvidia_cuda_runtime_cu12-12.6.77-py3-none-manylinux2014_x86_64.whl", hash = "sha256:a84d15d5e1da416dd4774cb42edf5e954a3e60cc945698dc1d5be02321c44dc8", size = 897678, upload-time = "2024-10-01T16:57:33.821Z" },
-    { url = "https://files.pythonhosted.org/packages/fa/76/4c80fa138333cc975743fd0687a745fccb30d167f906f13c1c7f9a85e5ea/nvidia_cuda_runtime_cu12-12.6.77-py3-none-win_amd64.whl", hash = "sha256:86c58044c824bf3c173c49a2dbc7a6c8b53cb4e4dca50068be0bf64e9dab3f7f", size = 891773, upload-time = "2024-10-01T17:09:26.362Z" },
 ]
 
 [[package]]
@@ -2077,12 +2032,11 @@ name = "nvidia-cudnn-cu12"
 version = "9.10.2.21"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-cublas-cu12" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fa/41/e79269ce215c857c935fd86bcfe91a451a584dfc27f1e068f568b9ad1ab7/nvidia_cudnn_cu12-9.10.2.21-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:c9132cc3f8958447b4910a1720036d9eff5928cc3179b0a51fb6d167c6cc87d8", size = 705026878, upload-time = "2025-06-06T21:52:51.348Z" },
     { url = "https://files.pythonhosted.org/packages/ba/51/e123d997aa098c61d029f76663dedbfb9bc8dcf8c60cbd6adbe42f76d049/nvidia_cudnn_cu12-9.10.2.21-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:949452be657fa16687d0930933f032835951ef0892b37d2d53824d1a84dc97a8", size = 706758467, upload-time = "2025-06-06T21:54:08.597Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/90/0bd6e586701b3a890fd38aa71c387dab4883d619d6e5ad912ccbd05bfd67/nvidia_cudnn_cu12-9.10.2.21-py3-none-win_amd64.whl", hash = "sha256:c6288de7d63e6cf62988f0923f96dc339cea362decb1bf5b3141883392a7d65e", size = 692992268, upload-time = "2025-06-06T21:55:18.114Z" },
 ]
 
 [[package]]
@@ -2090,14 +2044,13 @@ name = "nvidia-cufft-cu12"
 version = "11.3.0.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-nvjitlink-cu12" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1f/37/c50d2b2f2c07e146776389e3080f4faf70bcc4fa6e19d65bb54ca174ebc3/nvidia_cufft_cu12-11.3.0.4-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:d16079550df460376455cba121db6564089176d9bac9e4f360493ca4741b22a6", size = 200164144, upload-time = "2024-11-20T17:40:58.288Z" },
     { url = "https://files.pythonhosted.org/packages/ce/f5/188566814b7339e893f8d210d3a5332352b1409815908dad6a363dcceac1/nvidia_cufft_cu12-11.3.0.4-py3-none-manylinux2014_aarch64.whl", hash = "sha256:8510990de9f96c803a051822618d42bf6cb8f069ff3f48d93a8486efdacb48fb", size = 200164135, upload-time = "2024-10-01T17:03:24.212Z" },
     { url = "https://files.pythonhosted.org/packages/8f/16/73727675941ab8e6ffd86ca3a4b7b47065edcca7a997920b831f8147c99d/nvidia_cufft_cu12-11.3.0.4-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:ccba62eb9cef5559abd5e0d54ceed2d9934030f51163df018532142a8ec533e5", size = 200221632, upload-time = "2024-11-20T17:41:32.357Z" },
     { url = "https://files.pythonhosted.org/packages/60/de/99ec247a07ea40c969d904fc14f3a356b3e2a704121675b75c366b694ee1/nvidia_cufft_cu12-11.3.0.4-py3-none-manylinux2014_x86_64.whl", hash = "sha256:768160ac89f6f7b459bee747e8d175dbf53619cfe74b2a5636264163138013ca", size = 200221622, upload-time = "2024-10-01T17:03:58.79Z" },
-    { url = "https://files.pythonhosted.org/packages/b4/38/36fd800cec8f6e89b7c1576edaaf8076e69ec631644cdbc1b5f2e2b5a9df/nvidia_cufft_cu12-11.3.0.4-py3-none-win_amd64.whl", hash = "sha256:6048ebddfb90d09d2707efb1fd78d4e3a77cb3ae4dc60e19aab6be0ece2ae464", size = 199356881, upload-time = "2024-10-01T17:13:01.861Z" },
 ]
 
 [[package]]
@@ -2118,7 +2071,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/73/1b/44a01c4e70933637c93e6e1a8063d1e998b50213a6b65ac5a9169c47e98e/nvidia_curand_cu12-10.3.7.77-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:a42cd1344297f70b9e39a1e4f467a4e1c10f1da54ff7a85c12197f6c652c8bdf", size = 56279010, upload-time = "2024-11-20T17:42:50.958Z" },
     { url = "https://files.pythonhosted.org/packages/4a/aa/2c7ff0b5ee02eaef890c0ce7d4f74bc30901871c5e45dee1ae6d0083cd80/nvidia_curand_cu12-10.3.7.77-py3-none-manylinux2014_x86_64.whl", hash = "sha256:99f1a32f1ac2bd134897fc7a203f779303261268a65762a623bf30cc9fe79117", size = 56279000, upload-time = "2024-10-01T17:04:45.274Z" },
     { url = "https://files.pythonhosted.org/packages/a6/02/5362a9396f23f7de1dd8a64369e87c85ffff8216fc8194ace0fa45ba27a5/nvidia_curand_cu12-10.3.7.77-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:7b2ed8e95595c3591d984ea3603dd66fe6ce6812b886d59049988a712ed06b6e", size = 56289882, upload-time = "2024-11-20T17:42:25.222Z" },
-    { url = "https://files.pythonhosted.org/packages/a9/a8/0cd0cec757bd4b4b4ef150fca62ec064db7d08a291dced835a0be7d2c147/nvidia_curand_cu12-10.3.7.77-py3-none-win_amd64.whl", hash = "sha256:6d6d935ffba0f3d439b7cd968192ff068fafd9018dbf1b85b37261b13cfc9905", size = 55783873, upload-time = "2024-10-01T17:13:30.377Z" },
 ]
 
 [[package]]
@@ -2126,16 +2078,15 @@ name = "nvidia-cusolver-cu12"
 version = "11.7.1.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "nvidia-cusparse-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-cublas-cu12" },
+    { name = "nvidia-cusparse-cu12" },
+    { name = "nvidia-nvjitlink-cu12" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/93/17/dbe1aa865e4fdc7b6d4d0dd308fdd5aaab60f939abfc0ea1954eac4fb113/nvidia_cusolver_cu12-11.7.1.2-py3-none-manylinux2014_aarch64.whl", hash = "sha256:0ce237ef60acde1efc457335a2ddadfd7610b892d94efee7b776c64bb1cac9e0", size = 157833628, upload-time = "2024-10-01T17:05:05.591Z" },
     { url = "https://files.pythonhosted.org/packages/f0/6e/c2cf12c9ff8b872e92b4a5740701e51ff17689c4d726fca91875b07f655d/nvidia_cusolver_cu12-11.7.1.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:e9e49843a7707e42022babb9bcfa33c29857a93b88020c4e4434656a655b698c", size = 158229790, upload-time = "2024-11-20T17:43:43.211Z" },
     { url = "https://files.pythonhosted.org/packages/9f/81/baba53585da791d043c10084cf9553e074548408e04ae884cfe9193bd484/nvidia_cusolver_cu12-11.7.1.2-py3-none-manylinux2014_x86_64.whl", hash = "sha256:6cf28f17f64107a0c4d7802be5ff5537b2130bfc112f25d5a30df227058ca0e6", size = 158229780, upload-time = "2024-10-01T17:05:39.875Z" },
     { url = "https://files.pythonhosted.org/packages/7c/5f/07d0ba3b7f19be5a5ec32a8679fc9384cfd9fc6c869825e93be9f28d6690/nvidia_cusolver_cu12-11.7.1.2-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:dbbe4fc38ec1289c7e5230e16248365e375c3673c9c8bac5796e2e20db07f56e", size = 157833630, upload-time = "2024-11-20T17:43:16.77Z" },
-    { url = "https://files.pythonhosted.org/packages/d4/53/fff50a0808df7113d77e3bbc7c2b7eaed6f57d5eb80fbe93ead2aea1e09a/nvidia_cusolver_cu12-11.7.1.2-py3-none-win_amd64.whl", hash = "sha256:6813f9d8073f555444a8705f3ab0296d3e1cb37a16d694c5fc8b862a0d8706d7", size = 149287877, upload-time = "2024-10-01T17:13:49.804Z" },
 ]
 
 [[package]]
@@ -2143,14 +2094,13 @@ name = "nvidia-cusparse-cu12"
 version = "12.5.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "nvidia-nvjitlink-cu12" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/eb/eb/6681efd0aa7df96b4f8067b3ce7246833dd36830bb4cec8896182773db7d/nvidia_cusparse_cu12-12.5.4.2-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:d25b62fb18751758fe3c93a4a08eff08effedfe4edf1c6bb5afd0890fe88f887", size = 216451147, upload-time = "2024-11-20T17:44:18.055Z" },
     { url = "https://files.pythonhosted.org/packages/d3/56/3af21e43014eb40134dea004e8d0f1ef19d9596a39e4d497d5a7de01669f/nvidia_cusparse_cu12-12.5.4.2-py3-none-manylinux2014_aarch64.whl", hash = "sha256:7aa32fa5470cf754f72d1116c7cbc300b4e638d3ae5304cfa4a638a5b87161b1", size = 216451135, upload-time = "2024-10-01T17:06:03.826Z" },
     { url = "https://files.pythonhosted.org/packages/06/1e/b8b7c2f4099a37b96af5c9bb158632ea9e5d9d27d7391d7eb8fc45236674/nvidia_cusparse_cu12-12.5.4.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:7556d9eca156e18184b94947ade0fba5bb47d69cec46bf8660fd2c71a4b48b73", size = 216561367, upload-time = "2024-11-20T17:44:54.824Z" },
     { url = "https://files.pythonhosted.org/packages/43/ac/64c4316ba163e8217a99680c7605f779accffc6a4bcd0c778c12948d3707/nvidia_cusparse_cu12-12.5.4.2-py3-none-manylinux2014_x86_64.whl", hash = "sha256:23749a6571191a215cb74d1cdbff4a86e7b19f1200c071b3fcf844a5bea23a2f", size = 216561357, upload-time = "2024-10-01T17:06:29.861Z" },
-    { url = "https://files.pythonhosted.org/packages/45/ef/876ad8e4260e1128e6d4aac803d9d51baf3791ebdb4a9b8d9b8db032b4b0/nvidia_cusparse_cu12-12.5.4.2-py3-none-win_amd64.whl", hash = "sha256:4acb8c08855a26d737398cba8fb6f8f5045d93f82612b4cfd84645a2332ccf20", size = 213712630, upload-time = "2024-10-01T17:14:23.779Z" },
 ]
 
 [[package]]
@@ -2160,7 +2110,6 @@ source = { registry = "https://pypi.org/simple" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/73/b9/598f6ff36faaece4b3c50d26f50e38661499ff34346f00e057760b35cc9d/nvidia_cusparselt_cu12-0.7.1-py3-none-manylinux2014_aarch64.whl", hash = "sha256:8878dce784d0fac90131b6817b607e803c36e629ba34dc5b433471382196b6a5", size = 283835557, upload-time = "2025-02-26T00:16:54.265Z" },
     { url = "https://files.pythonhosted.org/packages/56/79/12978b96bd44274fe38b5dde5cfb660b1d114f70a65ef962bcbbed99b549/nvidia_cusparselt_cu12-0.7.1-py3-none-manylinux2014_x86_64.whl", hash = "sha256:f1bb701d6b930d5a7cea44c19ceb973311500847f81b634d802b7b539dc55623", size = 287193691, upload-time = "2025-02-26T00:15:44.104Z" },
-    { url = "https://files.pythonhosted.org/packages/2f/d8/a6b0d0d0c2435e9310f3e2bb0d9c9dd4c33daef86aa5f30b3681defd37ea/nvidia_cusparselt_cu12-0.7.1-py3-none-win_amd64.whl", hash = "sha256:f67fbb5831940ec829c9117b7f33807db9f9678dc2a617fbe781cac17b4e1075", size = 271020911, upload-time = "2025-02-26T00:14:47.204Z" },
 ]
 
 [[package]]
@@ -2179,7 +2128,6 @@ source = { registry = "https://pypi.org/simple" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/46/0c/c75bbfb967457a0b7670b8ad267bfc4fffdf341c074e0a80db06c24ccfd4/nvidia_nvjitlink_cu12-12.9.86-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl", hash = "sha256:e3f1171dbdc83c5932a45f0f4c99180a70de9bd2718c1ab77d14104f6d7147f9", size = 39748338, upload-time = "2025-06-05T20:10:25.613Z" },
     { url = "https://files.pythonhosted.org/packages/97/bc/2dcba8e70cf3115b400fef54f213bcd6715a3195eba000f8330f11e40c45/nvidia_nvjitlink_cu12-12.9.86-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:994a05ef08ef4b0b299829cde613a424382aff7efb08a7172c1fa616cc3af2ca", size = 39514880, upload-time = "2025-06-05T20:10:04.89Z" },
-    { url = "https://files.pythonhosted.org/packages/dd/7e/2eecb277d8a98184d881fb98a738363fd4f14577a4d2d7f8264266e82623/nvidia_nvjitlink_cu12-12.9.86-py3-none-win_amd64.whl", hash = "sha256:cc6fcec260ca843c10e34c936921a1c426b351753587fdd638e8cff7b16bb9db", size = 35584936, upload-time = "2025-06-05T20:16:08.525Z" },
 ]
 
 [[package]]
@@ -2200,7 +2148,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/2b/53/36e2fd6c7068997169b49ffc8c12d5af5e5ff209df6e1a2c4d373b3a638f/nvidia_nvtx_cu12-12.6.77-py3-none-manylinux2014_aarch64.whl", hash = "sha256:adcaabb9d436c9761fca2b13959a2d237c5f9fd406c8e4b723c695409ff88059", size = 90539, upload-time = "2024-10-01T17:00:27.179Z" },
     { url = "https://files.pythonhosted.org/packages/56/9a/fff8376f8e3d084cd1530e1ef7b879bb7d6d265620c95c1b322725c694f4/nvidia_nvtx_cu12-12.6.77-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:b90bed3df379fa79afbd21be8e04a0314336b8ae16768b58f2d34cb1d04cd7d2", size = 89276, upload-time = "2024-11-20T17:38:27.621Z" },
     { url = "https://files.pythonhosted.org/packages/9e/4e/0d0c945463719429b7bd21dece907ad0bde437a2ff12b9b12fee94722ab0/nvidia_nvtx_cu12-12.6.77-py3-none-manylinux2014_x86_64.whl", hash = "sha256:6574241a3ec5fdc9334353ab8c479fe75841dbe8f4532a8fc97ce63503330ba1", size = 89265, upload-time = "2024-10-01T17:00:38.172Z" },
-    { url = "https://files.pythonhosted.org/packages/f7/cd/98a447919d4ed14d407ac82b14b0a0c9c1dbfe81099934b1fc3bfd1e6316/nvidia_nvtx_cu12-12.6.77-py3-none-win_amd64.whl", hash = "sha256:2fb11a4af04a5e6c84073e6404d26588a34afd35379f0855a99797897efa75c0", size = 56434, upload-time = "2024-10-01T17:11:13.124Z" },
 ]
 
 [[package]]
@@ -2316,6 +2263,34 @@ wheels = [
 ]
 
 [[package]]
+name = "orjson"
+version = "3.13.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f2/72/380b97dc45bd162d23afe5194721ef678d9eac7cfaa549fe2873f7f0a518/orjson-3.13.0.tar.gz", hash = "sha256:d1de5eb04485110c5da4c657e49168995d55e076b1ce60f1a042e254f4186c4f", size = 2732604, upload-time = "2026-10-07T14:09:25.719Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ce/a3/0be3b115907fea61ed340639fb0e1562cd18969bad5b3f486f808197aaff/orjson-3.13.0-cp311-cp311-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl", hash = "sha256:948bad47f2e2e43527f14248364a0e5dee26dd3184691010ec4a1ebeb0fd6771", size = 223146, upload-time = "2026-10-07T14:08:06.474Z" },
+    { url = "https://files.pythonhosted.org/packages/9e/f7/665935edb16163f8b764182e29a30cf056947a66893ed032191e5f01eb3d/orjson-3.13.0-cp311-cp311-macosx_15_0_arm64.whl", hash = "sha256:1807c2fa49d393c7ee95fd1ef1b39cbb24aa3ccd81f30b84503ba59407666960", size = 123546, upload-time = "2026-10-07T14:08:08.324Z" },
+    { url = "https://files.pythonhosted.org/packages/67/ec/e7cde480c0e212594d17ba2b2bd210c002052e9147fc1a1aeafaabe722fb/orjson-3.13.0-cp311-cp311-manylinux2014_armv7l.manylinux_2_17_armv7l.whl", hash = "sha256:637dbca1fccffe83780e806fbc0f17427c0c59bf822528eb0acc8f0aa9f19acb", size = 113290, upload-time = "2026-10-07T14:08:09.816Z" },
+    { url = "https://files.pythonhosted.org/packages/36/59/4455fb11a297af73611dfc437f0f89456220227ed1cb1544a5a0ee9d6c03/orjson-3.13.0-cp311-cp311-manylinux2014_i686.manylinux_2_17_i686.whl", hash = "sha256:554948becd1110123ef9f6a6e1310fd92b2d07d2cbac6dbf65df3de75702e736", size = 130342, upload-time = "2026-10-07T14:08:11.253Z" },
+    { url = "https://files.pythonhosted.org/packages/ca/80/0eec5fbde2e52407646b4cb3118f63175bdcee1e2390c2759dc96e0bc62a/orjson-3.13.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:dd9d9a101bd8dbfad112170f009cd155e52bb8c936468821a0d03cbb96c0e426", size = 129138, upload-time = "2026-10-07T14:08:12.814Z" },
+    { url = "https://files.pythonhosted.org/packages/cd/cc/c0874f13819ae346d69ca00d074d464710b494abd4442bdebf75ac404a98/orjson-3.13.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:89bcf2d4bc6c9a7e1763c8cf534f38712e66b76a0fefda7fb7785462f0d635e4", size = 130518, upload-time = "2026-10-07T14:08:14.392Z" },
+    { url = "https://files.pythonhosted.org/packages/25/ab/140dd9adff84bf64b862c4fcfe2d055af6014d5ba03a075f95c9addb2ec7/orjson-3.13.0-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:a79cdc4934fe81f593072c94e13da3095e9d41c2deef8f6ff2901794ca1c5042", size = 134924, upload-time = "2026-10-07T14:08:16.09Z" },
+    { url = "https://files.pythonhosted.org/packages/08/0a/e8f6deb032b1d98a39043cf99b863d8b9e842e2ffc2d2067d2e2a88c18e4/orjson-3.13.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:50a5202ba388b3850ba24437951727d3aa6d79a21964a30ae8dc6a059a5fd34c", size = 126704, upload-time = "2026-10-07T14:08:17.439Z" },
+    { url = "https://files.pythonhosted.org/packages/af/cf/be64b99ff75f7983488390d4ef5df72115119770eed295691c0a715d492a/orjson-3.13.0-cp311-cp311-win_amd64.whl", hash = "sha256:a0377d6962fa431c93ecd78fdea771bb62ec545b24ee0c5d4e32acf2260af259", size = 121287, upload-time = "2026-10-07T14:08:18.843Z" },
+    { url = "https://files.pythonhosted.org/packages/ca/ab/1b8ca186baf3420f12db1f2819fcc5f2cae69e4cf051168501726a64c0fa/orjson-3.13.0-cp311-cp311-win_arm64.whl", hash = "sha256:1d84820b2ec4ac975cba482214032de5b0dbdd17046170c98e642ef9c4a4ee4b", size = 126314, upload-time = "2026-10-07T14:08:20.452Z" },
+    { url = "https://files.pythonhosted.org/packages/98/17/ed65f84ed5ed6a1e06eb628611b4172e7480fc4ad92594856751a6363cac/orjson-3.13.0-cp312-cp312-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl", hash = "sha256:fb8644dc6d705e1269ed2842bf4dbe2b4e50d670de503bf79d5cef3a5148a4c7", size = 223063, upload-time = "2026-10-07T14:08:21.979Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/4d/9332eb96d2e379384be0f211f543835eebc81f460c9403b84abe1294c431/orjson-3.13.0-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:6ff2a2c67f35202f7d823753d38ad371a9b7fc297567cdfff4420e763cb9f6f8", size = 123364, upload-time = "2026-10-07T14:08:24.026Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/06/558456b7da27e974a8c9ea09117b07119f6fa131cd62b8b9ecad9eea94e1/orjson-3.13.0-cp312-cp312-manylinux2014_armv7l.manylinux_2_17_armv7l.whl", hash = "sha256:65c4e0e106ccc7265b488385659117a6805c37d042f737558ecd68aa0c67ad8f", size = 113199, upload-time = "2026-10-07T14:08:25.476Z" },
+    { url = "https://files.pythonhosted.org/packages/b7/f2/1187a9c09965620348262ec0f406868f6d7c234b2e9b5ee51020bdde5748/orjson-3.13.0-cp312-cp312-manylinux2014_i686.manylinux_2_17_i686.whl", hash = "sha256:fbbad6b9b1da43f25c1f5b20cd5a268e028a2fc95d5a8d1ade6059973bc71584", size = 130329, upload-time = "2026-10-07T14:08:26.877Z" },
+    { url = "https://files.pythonhosted.org/packages/46/07/5d1a151bc11600434fe799e73abfc6a4d463d02e149a20e47c59d3a985ae/orjson-3.13.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ae1d895cf7bbfd50ef34bb63bb727b14514f259f3e3f8dd010783bd38e864c6e", size = 129072, upload-time = "2026-10-07T14:08:28.355Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/8c/bb07c368abbf4021c4cd01c12edb526e00090f7f750ff1b88da6e6b6c7a6/orjson-3.13.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bceadfd314bd238f584fc229a4bbaf0e573597e7a026dec5429fbf29fd66c641", size = 130612, upload-time = "2026-10-07T14:08:30.041Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/8d/4b66d19619ed344ac000ffea7c006477d0061d580646e736ef0e203759e8/orjson-3.13.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:b74c30e56346aad067937d766846ee74c231d1d18aad3f324e9b9261de3b2d5e", size = 134632, upload-time = "2026-10-07T14:08:31.474Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/88/f8221f6593e37eb26ec4706e185b9ac6f38ff0c8f7bad5459844031ffd2d/orjson-3.13.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:4329c19b8a25693f60a77b867c9d2a3ab637b20e36f5b7bea7f5acb492b44b15", size = 126807, upload-time = "2026-10-07T14:08:32.914Z" },
+    { url = "https://files.pythonhosted.org/packages/58/9d/a1ca7321eeafd7d72e174cdc388cc96301f41516d863e7b1f64f0a1735be/orjson-3.13.0-cp312-cp312-win_amd64.whl", hash = "sha256:b571236d8393edcd3236e07423f762bfcf571f852aad667a3bce9e7b755e0790", size = 121538, upload-time = "2026-10-07T14:08:34.325Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/a0/1f19b4779c910104370932fceb9ed436b47ac077f297db74008062525c04/orjson-3.13.0-cp312-cp312-win_arm64.whl", hash = "sha256:8594956a75223f657e1e68c568c0eeb3dd145f02cd6b78a47fd9a8095dbc4eae", size = 126259, upload-time = "2026-10-07T14:08:35.765Z" },
+]
+
+[[package]]
 name = "overrides"
 version = "7.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2338,8 +2313,8 @@ name = "pandas"
 version = "3.0.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-cpu') or (python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-demo') or (python_full_version < '3.12' and extra != 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-cpu') or (python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-demo') or (python_full_version >= '3.12' and extra != 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "python-dateutil" },
     { name = "tzdata", marker = "sys_platform == 'emscripten' or sys_platform == 'win32'" },
 ]
@@ -2396,7 +2371,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32') or (sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "ptyprocess" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
@@ -2675,8 +2650,8 @@ version = "0.9.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jinja2" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-cpu') or (python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-demo') or (python_full_version < '3.12' and extra != 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-cpu') or (python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-demo') or (python_full_version >= '3.12' and extra != 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f4/c9/f71032fca47ecc09d30904d9a610234b07139f89eabc2f054b141edcc30f/pydeck-0.9.3.tar.gz", hash = "sha256:695775cbfe51f5fdffbd9735ba469987fdc5efc96bc40a0ee4808170509c78b2", size = 5900912, upload-time = "2026-07-02T23:27:08.704Z" }
 wheels = [
@@ -2693,6 +2668,29 @@ wheels = [
 ]
 
 [[package]]
+name = "pymilvus"
+version = "3.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cachetools" },
+    { name = "grpcio" },
+    { name = "orjson" },
+    { name = "pandas" },
+    { name = "protobuf" },
+    { name = "python-dotenv" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bb/27/2707d1dba764495f3d54ae75a28e07f9e6090da224598df3551153ce07f2/pymilvus-3.0.2.tar.gz", hash = "sha256:607ac1bcc96719c1716e0027d4a59c6411ad783fb934cbe0618b6d6c0831550d", size = 376724, upload-time = "2026-09-18T08:54:14.014Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/88/76/7155ce419d3a4525571b27e317c80b2f69b874ce75bdecfb9ffe3fe3b6ab/pymilvus-3.0.2-py3-none-any.whl", hash = "sha256:0ec7ca3a7d24d2ce13b2610c577f0978b08f461176222ea4dc1440375efc1cea", size = 417694, upload-time = "2026-09-18T08:54:12.848Z" },
+]
+
+[package.optional-dependencies]
+milvus-lite = [
+    { name = "milvus-lite", marker = "sys_platform != 'win32'" },
+]
+
+[[package]]
 name = "pyparsing"
 version = "3.3.3"
 source = { registry = "https://pypi.org/simple" }
@@ -2706,7 +2704,7 @@ name = "pytest"
 version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
     { name = "iniconfig" },
     { name = "packaging" },
     { name = "pluggy" },
@@ -2753,6 +2751,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/fc/54/fad125f5c48f7821644ee6f223ebfcedc4e23597c1a16eeb13d33aa4a91a/python_discovery-1.6.3.tar.gz", hash = "sha256:a62b301d96cf5489cb96ab023b32e068421867fdd5df2e42eece877869047fa2", size = 88998, upload-time = "2026-10-16T03:54:29.507Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/de/ec/643826e4d69b7bdce4213f221e8f5ed06d0a9dd69fa9b33342578d2cc8c8/python_discovery-1.6.3-py3-none-any.whl", hash = "sha256:cb7654125e3dcb594269a6feb56ac693f1f13b7c654493a93eba72dc22d18034", size = 39386, upload-time = "2026-10-16T03:54:28.237Z" },
+]
+
+[[package]]
+name = "python-dotenv"
+version = "1.2.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/74/26/2fbeedb218a787a5eea551c7532cac4e009f83d689dd2faa0d0353473f86/python_dotenv-1.2.4.tar.gz", hash = "sha256:f0d53e69935a851c0dcc78f3ab7aaccd8cabef0b92382b576b824212902873c0", size = 60824, upload-time = "2026-10-01T05:36:10Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/60/d1/38f3a3405989a89ac18390803e70c6ad7c7760da4f9b83cbeca0c44a0c72/python_dotenv-1.2.4-py3-none-any.whl", hash = "sha256:42269a8a5b3fd54ffa6f3d84b18abed50064717576b4ecf03dc4a55d8aa04fdc", size = 23266, upload-time = "2026-10-01T05:36:08.633Z" },
 ]
 
 [[package]]
@@ -2817,7 +2824,7 @@ name = "pyzmq"
 version = "27.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "implementation_name == 'pypy' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "cffi", marker = "implementation_name == 'pypy'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e7/8d/5b3d5631c2f4b4b8862f64cd0c9eb777b5710eeb5125b4be8dd0a200a4c0/pyzmq-27.2.0.tar.gz", hash = "sha256:54d4259d1bfae24ecdb5ca79f7acc2eac6c286a02d6a0ae617797cb45f0726d3", size = 292316, upload-time = "2026-08-20T19:08:21.19Z" }
 wheels = [
@@ -2848,19 +2855,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/97/64/e22094c5555e550b6450ecfcceb6a1205d893d9a18ae27764c8c45acfb16/pyzmq-27.2.0-pp311-pypy311_pp73-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:679b5b1dde326a921ea2c9ec1f9ea3115bfe1b4735779bbc6eb0473a0ed93f71", size = 614492, upload-time = "2026-08-20T19:08:06.487Z" },
     { url = "https://files.pythonhosted.org/packages/d2/28/5b1042899caed18278c56d54a502f5254d463afe8aea1acbecc98e053391/pyzmq-27.2.0-pp311-pypy311_pp73-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f5c6d8744d10b5e1eadd90a7c58f8546acf6bf680ee463f7e6ada09ad6c9f802", size = 780574, upload-time = "2026-08-20T19:08:07.987Z" },
     { url = "https://files.pythonhosted.org/packages/77/a3/f134603a671c114c6b56eb912bba890f09e2d43b8a28d243be5a5507cf2f/pyzmq-27.2.0-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:3ee8dd7031d5e23f632e0e7eee67183ca7d2536e0de35dc1e5d69f3471a791e8", size = 553961, upload-time = "2026-08-20T19:08:09.651Z" },
-]
-
-[[package]]
-name = "rank-bm25"
-version = "0.2.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/0a/f9579384aa017d8b4c15613f86954b92a95a93d641cc849182467cf0bb3b/rank_bm25-0.2.2.tar.gz", hash = "sha256:096ccef76f8188563419aaf384a02f0ea459503fdf77901378d4fd9d87e5e51d", size = 8347, upload-time = "2022-02-16T12:10:52.196Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/21/f691fb2613100a62b3fa91e9988c991e9ca5b89ea31c0d3152a3210344f9/rank_bm25-0.2.2-py3-none-any.whl", hash = "sha256:7bd4a95571adadfc271746fa146a4bcfd89c0cf731e49c3d1ad863290adbe8ae", size = 8584, upload-time = "2022-02-16T12:10:50.626Z" },
 ]
 
 [[package]]
@@ -3096,10 +3090,10 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "joblib" },
     { name = "narwhals" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "threadpoolctl" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d2/eb/eaf5e07fcc0da7149b0e084f24e54edd7441b9a89ce7e034032ae97fe3a0/scikit_learn-1.9.1.tar.gz", hash = "sha256:629cada3e33e2b9bf376cdc7614a47a4140b8aedc1d836579e359736fbd82977", size = 7786908, upload-time = "2026-09-10T18:34:04.679Z" }
@@ -3123,29 +3117,17 @@ name = "scipy"
 version = "1.17.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
+    "python_full_version < '3.11.5' and sys_platform == 'linux'",
+    "python_full_version < '3.11.5' and sys_platform == 'win32'",
+    "python_full_version < '3.11.5' and sys_platform == 'emscripten'",
+    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7a/97/5a3609c4f8d58b039179648e62dd220f89864f56f7357f5d4f45c29eb2cc/scipy-1.17.1.tar.gz", hash = "sha256:95d8e012d8cb8816c226aef832200b1d45109ed4464303e997c5b13122b297c0", size = 30573822, upload-time = "2026-02-23T00:26:24.851Z" }
 wheels = [
@@ -3176,19 +3158,13 @@ name = "scipy"
 version = "1.18.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'linux'",
+    "python_full_version >= '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7e/74/66de6258867beb2ef08f35f9f2ac017a52cacd5081714d239ff1a442d458/scipy-1.18.1.tar.gz", hash = "sha256:52c4b7422442aba924d03ad4019852b08a92e64ea187b933135687bfe2747307", size = 30781235, upload-time = "2026-08-21T23:28:50.599Z" }
 wheels = [
@@ -3219,14 +3195,14 @@ version = "6.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "huggingface-hub" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "scikit-learn" },
-    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "tokenizers" },
-    { name = "torch", version = "2.14.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "torch", version = "2.14.1+cu126", source = { registry = "https://download.pytorch.org/whl/cu126" }, marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "torch", version = "2.14.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux'" },
+    { name = "torch", version = "2.14.1+cu126", source = { registry = "https://download.pytorch.org/whl/cu126" }, marker = "sys_platform == 'linux'" },
     { name = "tqdm" },
     { name = "transformers" },
     { name = "typing-extensions" },
@@ -3260,26 +3236,23 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "duckdb" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "polars" },
     { name = "pyarrow" },
     { name = "pydantic" },
     { name = "pyyaml" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "typer" },
 ]
 
 [package.optional-dependencies]
-cpu = [
-    { name = "faiss-cpu" },
-]
 demo = [
     { name = "anthropic" },
-    { name = "faiss-cpu" },
     { name = "lightgbm" },
-    { name = "rank-bm25" },
-    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-cpu') or (python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-demo') or (python_full_version < '3.12' and extra != 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-cpu') or (python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-demo') or (python_full_version >= '3.12' and extra != 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "milvus-lite" },
+    { name = "pymilvus", extra = ["milvus-lite"] },
     { name = "streamlit" },
 ]
 dev = [
@@ -3287,11 +3260,13 @@ dev = [
     { name = "ipykernel" },
     { name = "jupyter" },
     { name = "matplotlib" },
+    { name = "milvus-lite" },
     { name = "mypy" },
     { name = "nbclient" },
     { name = "nbconvert" },
     { name = "nbformat" },
     { name = "pre-commit" },
+    { name = "pymilvus", extra = ["milvus-lite"] },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -3305,21 +3280,15 @@ eda = [
     { name = "nbconvert" },
     { name = "nbformat" },
 ]
-gpu = [
-    { name = "faiss-gpu", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
-]
 llm = [
     { name = "anthropic" },
 ]
 train = [
     { name = "lightgbm" },
-    { name = "rank-bm25" },
     { name = "scikit-learn" },
-    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
     { name = "sentence-transformers" },
-    { name = "torch", version = "2.14.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "torch", version = "2.14.1+cu126", source = { registry = "https://download.pytorch.org/whl/cu126" }, marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "torch", version = "2.14.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux'" },
+    { name = "torch", version = "2.14.1+cu126", source = { registry = "https://download.pytorch.org/whl/cu126" }, marker = "sys_platform == 'linux'" },
     { name = "tqdm" },
     { name = "wandb" },
 ]
@@ -3329,15 +3298,14 @@ requires-dist = [
     { name = "anthropic", marker = "extra == 'demo'", specifier = ">=1.0,<2" },
     { name = "anthropic", marker = "extra == 'llm'", specifier = ">=1.0,<2" },
     { name = "duckdb", specifier = ">=1.0" },
-    { name = "faiss-cpu", marker = "extra == 'cpu'", specifier = ">=1.15,<1.16" },
-    { name = "faiss-cpu", marker = "extra == 'demo'", specifier = ">=1.15,<1.16" },
-    { name = "faiss-gpu", marker = "platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'gpu'", specifier = ">=1.15,<1.16" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.100" },
     { name = "ipykernel", marker = "extra == 'eda'", specifier = ">=6.29" },
     { name = "jupyter", marker = "extra == 'eda'", specifier = ">=1.0" },
     { name = "lightgbm", marker = "extra == 'demo'", specifier = ">=4.3" },
     { name = "lightgbm", marker = "extra == 'train'", specifier = ">=4.3" },
     { name = "matplotlib", marker = "extra == 'eda'", specifier = ">=3.8" },
+    { name = "milvus-lite", marker = "extra == 'demo'", specifier = ">=3.2" },
+    { name = "milvus-lite", marker = "extra == 'dev'", specifier = ">=3.2" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=2.0" },
     { name = "nbclient", marker = "extra == 'eda'", specifier = ">=0.10" },
     { name = "nbconvert", marker = "extra == 'eda'", specifier = ">=7.16" },
@@ -3347,15 +3315,14 @@ requires-dist = [
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.7" },
     { name = "pyarrow", specifier = ">=15.0" },
     { name = "pydantic", specifier = ">=2.7" },
+    { name = "pymilvus", extras = ["milvus-lite"], marker = "extra == 'demo'", specifier = ">=3.0" },
+    { name = "pymilvus", extras = ["milvus-lite"], marker = "extra == 'dev'", specifier = ">=3.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
     { name = "pyyaml", specifier = ">=6.0" },
-    { name = "rank-bm25", marker = "extra == 'demo'", specifier = ">=0.2.2" },
-    { name = "rank-bm25", marker = "extra == 'train'", specifier = ">=0.2.2" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15" },
     { name = "scikit-learn", marker = "extra == 'train'", specifier = ">=1.4" },
-    { name = "scipy", marker = "extra == 'demo'", specifier = ">=1.12" },
-    { name = "scipy", marker = "extra == 'train'", specifier = ">=1.12" },
+    { name = "scipy", specifier = ">=1.12" },
     { name = "sentence-transformers", marker = "extra == 'train'", specifier = ">=5.0" },
     { name = "shopsage-rec", extras = ["eda"], marker = "extra == 'dev'" },
     { name = "streamlit", marker = "extra == 'demo'", specifier = ">=1.41" },
@@ -3366,7 +3333,7 @@ requires-dist = [
     { name = "types-pyyaml", marker = "extra == 'dev'" },
     { name = "wandb", marker = "extra == 'train'", specifier = ">=0.17" },
 ]
-provides-extras = ["train", "cpu", "gpu", "llm", "demo", "eda", "dev"]
+provides-extras = ["train", "llm", "demo", "eda", "dev"]
 
 [[package]]
 name = "six"
@@ -3400,16 +3367,10 @@ name = "soupsieve"
 version = "2.10"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
+    "python_full_version < '3.11.5' and sys_platform == 'linux'",
+    "python_full_version < '3.11.5' and sys_platform == 'win32'",
+    "python_full_version < '3.11.5' and sys_platform == 'emscripten'",
+    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/71/c3/1b817965ac12dc002d7c9cd7dfffdd7d4fbf9b45763ef2ffe7b86ee94670/soupsieve-2.10.tar.gz", hash = "sha256:49e9380d7d2905463583bafe285e818c7366a9ed7b3aee221c1ac79c905d8bc0", size = 124337, upload-time = "2026-09-24T02:36:35.048Z" }
 wheels = [
@@ -3421,26 +3382,14 @@ name = "soupsieve"
 version = "3.0.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'linux'",
+    "python_full_version >= '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/5e/77/2dcfa996b01702ab8fd0763d84098f6a640d6162a328f1c04c2697579a1a/soupsieve-3.0.3.tar.gz", hash = "sha256:7dcf6022eed0399eb9934a75e020148f7a2024c37b7dfcd3cf2c5505d69c364e", size = 115923, upload-time = "2026-10-12T13:21:17.696Z" }
 wheels = [
@@ -3483,8 +3432,8 @@ dependencies = [
     { name = "anyio" },
     { name = "click" },
     { name = "itsdangerous" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-cpu') or (python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-demo') or (python_full_version < '3.12' and extra != 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-cpu') or (python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-demo') or (python_full_version >= '3.12' and extra != 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "packaging" },
     { name = "pandas" },
     { name = "pillow" },
@@ -3521,8 +3470,8 @@ name = "terminado"
 version = "0.18.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess", marker = "os_name != 'nt' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "pywinpty", marker = "(os_name == 'nt' and sys_platform != 'linux') or (os_name != 'nt' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (os_name != 'nt' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "ptyprocess", marker = "os_name != 'nt'" },
+    { name = "pywinpty", marker = "os_name == 'nt' and sys_platform != 'linux'" },
     { name = "tornado" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/8a/11/965c6fd8e5cc254f1fe142d547387da17a8ebfd75a3455f637c663fb38a0/terminado-0.18.1.tar.gz", hash = "sha256:de09f2c4b85de4765f7714688fff57d3e75bad1f909b589fde880460c753fd2e", size = 32701, upload-time = "2024-03-12T14:34:39.026Z" }
@@ -3610,46 +3559,30 @@ name = "torch"
 version = "2.14.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'linux' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform == 'emscripten' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
-    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-shopsage-rec-cpu' and extra != 'extra-12-shopsage-rec-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
+    "python_full_version < '3.11.5' and sys_platform == 'win32'",
+    "python_full_version < '3.11.5' and sys_platform == 'emscripten'",
+    "python_full_version < '3.11.5' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "filelock", marker = "sys_platform != 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "fsspec", marker = "sys_platform != 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "jinja2", marker = "sys_platform != 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and sys_platform != 'linux') or (python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "networkx", version = "3.7", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and sys_platform != 'linux') or (python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform == 'linux' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "setuptools", marker = "sys_platform != 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "sympy", marker = "sys_platform != 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "typing-extensions", marker = "sys_platform != 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "filelock" },
+    { name = "fsspec" },
+    { name = "jinja2" },
+    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "networkx", version = "3.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "setuptools" },
+    { name = "sympy" },
+    { name = "typing-extensions" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5d/9b/fd1cd143a7bda5abc1fc352ed7b431f6f52aa3c454293211a33656db2cb5/torch-2.14.1-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:b6074b130fd26bc50f5d171f07dfed70db22dd0c354ab34767729249f9e0f042", size = 127281154, upload-time = "2026-09-30T17:43:58.328Z" },
-    { url = "https://files.pythonhosted.org/packages/8d/0e/21281ff4015779255229f487f4481c5bfba53b8c83e01eaa4a8a8f1180c9/torch-2.14.1-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:ef1276fd07adb8d463ac402a24ea7482e45c9a42df8ebdac211aa757779200ba", size = 453982557, upload-time = "2026-09-30T17:44:52.656Z" },
-    { url = "https://files.pythonhosted.org/packages/aa/4f/7af6fbada912b3023cc79b6ab30f89234b258a9a373880ea52ed914a2ae9/torch-2.14.1-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:305a61f61f35f128579f299c5bd33d475f6a01c6307336139632e30856c4854d", size = 554581699, upload-time = "2026-09-30T17:49:10.777Z" },
     { url = "https://files.pythonhosted.org/packages/fe/54/4e0a71376b2fb15aaf65ed9e6a4c8043d36f554338c6daabc63059a5e157/torch-2.14.1-cp311-cp311-win_amd64.whl", hash = "sha256:0bd2fb0c4098856bc5af59fe5988bf38bdbcdb6550b44273c12ae425cb8ec17e", size = 124096268, upload-time = "2026-09-30T17:44:04.362Z" },
     { url = "https://files.pythonhosted.org/packages/4b/3c/379349820e9a6e713826de3d0b88f07728541bdcabe2a3afd128871cdc4b/torch-2.14.1-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:420dbf314c180ee4b86e9bc00aee5746a7d6e5bacdd7df925af671ed393f0b2e", size = 127307099, upload-time = "2026-09-30T17:44:10.421Z" },
-    { url = "https://files.pythonhosted.org/packages/a4/3e/474930ab971e306957ec763b7df695d659179e15ccab9e7073d47ae14ce8/torch-2.14.1-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:0b13acde294b401509830d85a8906cbf2fc97425a12a66cce1d9fa13c5106a2a", size = 453998918, upload-time = "2026-09-30T17:52:45.134Z" },
-    { url = "https://files.pythonhosted.org/packages/ba/fd/c470857d0dfc5d4c94430658b3eed60fd5292b0bf596a8aae7b9fd66d674/torch-2.14.1-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:23011fe29a99b591eabb3a31a25080c62e2c2f0690a3c798744e5489dae50451", size = 554618695, upload-time = "2026-09-30T17:53:06.8Z" },
     { url = "https://files.pythonhosted.org/packages/ad/1a/b9648b0d228e513f69f8453ec3f90a8d436d78ff6d85a2773e539f0c07cf/torch-2.14.1-cp312-cp312-win_amd64.whl", hash = "sha256:38bee9f2a2ccfc6898172a5075e4ba52522fbe143eeb099674fc67ab390e858d", size = 124113906, upload-time = "2026-09-30T17:52:21.377Z" },
 ]
 
@@ -3663,30 +3596,28 @@ resolution-markers = [
     "python_full_version < '3.11.5' and sys_platform == 'linux'",
 ]
 dependencies = [
-    { name = "cuda-bindings", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "cuda-toolkit", extra = ["cublas", "cudart", "cufft", "cufile", "cupti", "curand", "cusolver", "cusparse", "nvrtc", "nvtx"], marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "filelock", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "fsspec", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "jinja2", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and sys_platform == 'linux') or (python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (python_full_version >= '3.12' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform != 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform != 'linux' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "networkx", version = "3.7", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and sys_platform == 'linux') or (python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (python_full_version < '3.12' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform != 'linux' and extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (sys_platform != 'linux' and extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "nvidia-cudnn-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "nvidia-cusparselt-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "nvidia-nccl-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "nvidia-nvshmem-cu12", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "setuptools", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "sympy", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "triton", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "typing-extensions", marker = "sys_platform == 'linux' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "cuda-bindings" },
+    { name = "cuda-toolkit", extra = ["cublas", "cudart", "cufft", "cufile", "cupti", "curand", "cusolver", "cusparse", "nvrtc", "nvtx"] },
+    { name = "filelock" },
+    { name = "fsspec" },
+    { name = "jinja2" },
+    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "networkx", version = "3.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "nvidia-cudnn-cu12" },
+    { name = "nvidia-cusparselt-cu12" },
+    { name = "nvidia-nccl-cu12" },
+    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-nvshmem-cu12" },
+    { name = "setuptools" },
+    { name = "sympy" },
+    { name = "triton" },
+    { name = "typing-extensions" },
 ]
 wheels = [
     { url = "https://download-r2.pytorch.org/whl/cu126/torch-2.14.1%2Bcu126-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:4e3d23d194dac91c6a1f6f55c77b9171007908ede0ea3ae87b9ea64994e6a548", upload-time = "2026-09-30T19:54:24Z" },
     { url = "https://download-r2.pytorch.org/whl/cu126/torch-2.14.1%2Bcu126-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:acffcaa38f734dc04ba243d6192875a6ca185a2d2f19aac07fd16dc1aa7c926f", upload-time = "2026-09-30T19:54:50Z" },
-    { url = "https://download-r2.pytorch.org/whl/cu126/torch-2.14.1%2Bcu126-cp311-cp311-win_amd64.whl", hash = "sha256:4cff57ddd28c8bdf8bf2fc473f149c1b5f0063b1a6bd57593288e0bf18459adb", upload-time = "2026-09-30T19:56:10Z" },
     { url = "https://download-r2.pytorch.org/whl/cu126/torch-2.14.1%2Bcu126-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:d5ec05cc53a2e756f12d938a029d88e54e761a4bc0e2cdd56ccf51475625fd24", upload-time = "2026-09-30T19:57:19Z" },
     { url = "https://download-r2.pytorch.org/whl/cu126/torch-2.14.1%2Bcu126-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:75727245346d8f92224a860bf40c56bd681edcfa0456d01d7dfcb0bf6f0cf86c", upload-time = "2026-09-30T19:57:48Z" },
-    { url = "https://download-r2.pytorch.org/whl/cu126/torch-2.14.1%2Bcu126-cp312-cp312-win_amd64.whl", hash = "sha256:97e3bc87ea74367518b740d912a7f5259c25a3c8115bf5916abee1d53ff115a4", upload-time = "2026-09-30T19:59:05Z" },
 ]
 
 [[package]]
@@ -3711,7 +3642,7 @@ name = "tqdm"
 version = "4.70.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0d/ea/b2a5bd54b28a324dae8211928b2d730b6547500342c7e6c6dea08bd0a485/tqdm-4.70.1.tar.gz", hash = "sha256:cefd0eca11b2a37a3aee776544d4f4ae913f02688135b5556b8788dfa474afc4", size = 171846, upload-time = "2026-09-11T07:25:16.601Z" }
 wheels = [
@@ -3733,8 +3664,8 @@ version = "5.20.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "huggingface-hub" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "packaging" },
     { name = "pyyaml" },
     { name = "regex" },
@@ -3774,7 +3705,7 @@ version = "0.27.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "annotated-doc" },
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-12-shopsage-rec-cpu' and extra == 'extra-12-shopsage-rec-gpu') or (extra == 'extra-12-shopsage-rec-demo' and extra == 'extra-12-shopsage-rec-gpu')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
     { name = "rich" },
     { name = "shellingham" },
 ]
@@ -3906,12 +3837,6 @@ version = "6.0.0"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/db/7d/7f3d619e951c88ed75c6037b246ddcf2d322812ee8ea189be89511721d54/watchdog-6.0.0.tar.gz", hash = "sha256:9ddf7c82fda3ae8e24decda1338ede66e1c99883db93711d8fb941eaa2d8c282", size = 131220, upload-time = "2024-11-01T14:07:13.037Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e0/24/d9be5cd6642a6aa68352ded4b4b10fb0d7889cb7f45814fb92cecd35f101/watchdog-6.0.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:6eb11feb5a0d452ee41f824e271ca311a09e250441c262ca2fd7ebcf2461a06c", size = 96393, upload-time = "2024-11-01T14:06:31.756Z" },
-    { url = "https://files.pythonhosted.org/packages/63/7a/6013b0d8dbc56adca7fdd4f0beed381c59f6752341b12fa0886fa7afc78b/watchdog-6.0.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:ef810fbf7b781a5a593894e4f439773830bdecb885e6880d957d5b9382a960d2", size = 88392, upload-time = "2024-11-01T14:06:32.99Z" },
-    { url = "https://files.pythonhosted.org/packages/d1/40/b75381494851556de56281e053700e46bff5b37bf4c7267e858640af5a7f/watchdog-6.0.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:afd0fe1b2270917c5e23c2a65ce50c2a4abb63daafb0d419fde368e272a76b7c", size = 89019, upload-time = "2024-11-01T14:06:34.963Z" },
-    { url = "https://files.pythonhosted.org/packages/39/ea/3930d07dafc9e286ed356a679aa02d777c06e9bfd1164fa7c19c288a5483/watchdog-6.0.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:bdd4e6f14b8b18c334febb9c4425a878a2ac20efd1e0b231978e7b150f92a948", size = 96471, upload-time = "2024-11-01T14:06:37.745Z" },
-    { url = "https://files.pythonhosted.org/packages/12/87/48361531f70b1f87928b045df868a9fd4e253d9ae087fa4cf3f7113be363/watchdog-6.0.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:c7c15dda13c4eb00d6fb6fc508b3c0ed88b9d5d374056b239c4ad1611125c860", size = 88449, upload-time = "2024-11-01T14:06:39.748Z" },
-    { url = "https://files.pythonhosted.org/packages/5b/7e/8f322f5e600812e6f9a31b75d242631068ca8f4ef0582dd3ae6e72daecc8/watchdog-6.0.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:6f10cb2d5902447c7d0da897e2c6768bca89174d0c6e1e30abec5421af97a5b0", size = 89054, upload-time = "2024-11-01T14:06:41.009Z" },
     { url = "https://files.pythonhosted.org/packages/a9/c7/ca4bf3e518cb57a686b2feb4f55a1892fd9a3dd13f470fca14e00f80ea36/watchdog-6.0.0-py3-none-manylinux2014_aarch64.whl", hash = "sha256:7607498efa04a3542ae3e05e64da8202e58159aa1fa4acddf7678d34a35d4f13", size = 79079, upload-time = "2024-11-01T14:06:59.472Z" },
     { url = "https://files.pythonhosted.org/packages/5c/51/d46dc9332f9a647593c947b4b88e2381c8dfc0942d15b8edc0310fa4abb1/watchdog-6.0.0-py3-none-manylinux2014_armv7l.whl", hash = "sha256:9041567ee8953024c83343288ccc458fd0a2d811d6a0fd68c4c22609e3490379", size = 79078, upload-time = "2024-11-01T14:07:01.431Z" },
     { url = "https://files.pythonhosted.org/packages/d4/57/04edbf5e169cd318d5f07b4766fee38e825d64b6913ca157ca32d1a42267/watchdog-6.0.0-py3-none-manylinux2014_i686.whl", hash = "sha256:82dc3e3143c7e38ec49d61af98d6558288c415eac98486a5c581726e0737c00e", size = 79076, upload-time = "2024-11-01T14:07:02.568Z" },

@@ -1,6 +1,8 @@
 # Artifact and CLI Specification
 
-**Status:** v0.3, Day 1 (2026-10-18) · **Scope:** on-disk artifacts, configuration, Python API, CLI, metric definitions and environment of `shopsage_rec`
+> **Re-planned on 2026-10-23 (efficiency first).** The headline protocol is now the Liang split (§2.7), evaluated by `shopsage evaluate` (§6.1). §5.6 (the as-of accessor), §6.2 and §7 (planned commands and artifacts) still describe the Day-1 design and are superseded by [plan.md](plan.md) and [memory.md](memory.md) §6 until the S7 rewrite; where they disagree, those win.
+
+**Status:** v0.4, S1 (2026-10-23) · **Scope:** on-disk artifacts, configuration, Python API, CLI, metric definitions and environment of `shopsage_rec`
 
 There is no HTTP API. Online serving (FastAPI/gRPC) is out of scope and the Streamlit demo reads artifacts directly, so these contracts are the interfaces between pipeline stages. Names below are the Day 1 contract. Where the contract does not fix a detail (exact type annotations, error behaviour), the code in `src/shopsage_rec/` is authoritative and this document is updated to match. Design rationale is in [design.md](design.md); decisions D-001 to D-012 are in [experiment_log.md](experiment_log.md).
 
@@ -109,7 +111,7 @@ The maps cover exactly the users and items that survive filtering (the union of 
 
 ### 2.6 Invariants
 
-Consumers may rely on these:
+Consumers may rely on these (Day-1 leave-one-out split):
 
 1. `ratings.parquet`, `movies.parquet` and `tags.parquet` have 20,000,263, 27,278 and 465,564 rows.
 2. Every split row has `rating ≥ min_rating`.
@@ -120,6 +122,20 @@ Consumers may rely on these:
 7. Every val/test `item_idx` is in `item_map` but may have no train rows; `cold_val_items` and `cold_test_items` count such items.
 8. The split files carry exactly the four §2.5 columns and dtypes; `tie_key` is never written.
 9. Re-running with the same config reproduces identical split contents and the same `split_sha256`, independently of the Polars version: the hash is computed in numpy, never with `Expr.hash`. A different `split.seed` can change split membership only for users counted in `users_with_any_boundary_tie`, and every count except `cold_val_items` and `cold_test_items` stays the same.
+
+### 2.7 The Liang split: `data/processed/liang/`
+
+Written by `shopsage prepare` with `configs/data/movielens_20m_liang.yaml` (`split.strategy: liang`; `data/liang.py`), the default config since S1. Same layout as §2, with five split files:
+
+| File | Rows (ML-20M) | Content |
+|---|---|---|
+| `splits/train.parquet` | 8,538,846 | every positive of the 116,677 training users |
+| `splits/val_tr.parquet`, `splits/val_te.parquet` | 589,887 / 142,514 | validation users' fold-in items (model input) and targets |
+| `splits/test_tr.parquet`, `splits/test_te.parquet` | 579,008 / 139,775 | test users' fold-in items and targets |
+| `mappings/user_map.parquet` | 136,677 | `user_idx` (Int32, ascending `userId`), `userId`, `role` (`train`, `val` or `test`) |
+| `mappings/item_map.parquet` | 20,108 | `item_idx` (Int32, ascending `movieId`) over the training catalogue |
+
+Split files carry `user_idx`, `item_idx`, `rating` and `timestamp`, sorted by `user_idx` then `item_idx`. `meta.json` holds `strategy` (`liang`), `seed`, `n_heldout_users`, `test_prop`, the user, item and row counts, `val_users_with_targets` / `test_users_with_targets` (and `..._without_targets`), and `split_sha256`, a sha256 over the five files' sorted (`userId`, `movieId`) pairs, plus the provenance keys of §3. Invariants: the three user groups are disjoint; held-out rows only use training-catalogue items; for a held-out user with n ≥ 5 catalogue items, exactly `int(test_prop × n)` are targets; the same seed reproduces `split_sha256`. `load_liang(processed_dir)` returns the split as binary CSR matrices over `item_idx` (rows: training users; validation and test users with at least one target).
 
 ## 3. `splits/meta.json`
 
@@ -320,14 +336,15 @@ history(stage: Literal["val", "test"], ...)
 
 Typer application, installed as the `shopsage` entry point by `uv sync`. Invoke it as `uv run shopsage …`, or as plain `shopsage` with `.venv` activated. Global options: `--verbose` / `-v` (debug logging) and `--version`, an eager option: `shopsage --version` prints the version and exits 0.
 
-### 6.1 Available (Day 1)
+### 6.1 Available (S1)
 
 | Command | Reads | Writes |
 |---|---|---|
-| `shopsage prepare --config configs/data/movielens_20m.yaml` | CSVs in `raw_dir` | everything in §2, including `splits/meta.json` (wraps `run_prepare`); prints the `PrepareReport` summary |
-| `shopsage stats --processed-dir data/processed` | `data/processed/splits/meta.json` | that file, pretty-printed to stdout |
+| `shopsage prepare --config configs/data/movielens_20m_liang.yaml` | CSVs in `raw_dir` | the Liang split of §2.7, including `splits/meta.json` (wraps `run_prepare`); prints the `LiangReport` summary. With `--config configs/data/movielens_20m.yaml` it writes the Day-1 split of §2 and prints a `PrepareReport` |
+| `shopsage stats --processed-dir data/processed/liang` | `<processed-dir>/splits/meta.json` | that file, pretty-printed to stdout |
+| `shopsage evaluate --processed-dir data/processed/liang --out-dir artifacts/eval` | the Liang split (`load_liang`) | `<out-dir>/<run-id>/per_user.parquet` (one row per test user with targets, one `model/metric` column each) and `summary.json` (test metrics with bootstrap CIs, EASE's λ selection on V_A, the paired EASE − MostPop differences, timings, peak RSS); options `--models mostpop,ease`, `--ease-lambdas 250,500,1000`, `--run-id` (default `local-YYYYMMDD-HHMM`) |
 
-The flag values shown are also the defaults, resolved against the repository root found from the current working directory (the nearest directory at or above it that holds `pyproject.toml`, else the current working directory), so both commands work from any subdirectory of the repository. `prepare` also takes `--root DIR`, which must be an existing directory; it is resolved to an absolute path and anchors the config's relative paths (§5.1). When a raw CSV is missing, `prepare` exits 1 with a one-line `Error: ...` message (the loader's hint to run `scripts/download_data.sh`) instead of a traceback, and it creates no output directory before the raw files are loaded.
+The flag values shown are also the defaults (since S1 they follow the Liang split), resolved against the repository root found from the current working directory (the nearest directory at or above it that holds `pyproject.toml`, else the current working directory), so both commands work from any subdirectory of the repository. `prepare` also takes `--root DIR`, which must be an existing directory; it is resolved to an absolute path and anchors the config's relative paths (§5.1). When a raw CSV is missing, `prepare` exits 1 with a one-line `Error: ...` message (the loader's hint to run `scripts/download_data.sh`) instead of a traceback, and it creates no output directory before the raw files are loaded.
 
 ### 6.2 PLANNED
 
@@ -337,7 +354,6 @@ Flags are fixed on the day each command lands.
 |---|---|---|---|---|
 | `shopsage train` | 3 (round 2: 5) | train the two-tower | `configs/train/`, splits, as-of features (§5.6) | `artifacts/checkpoints/`, `artifacts/embeddings/` |
 | `shopsage build-index` | 4 | FAISS IVF and HNSW indexes for the ANN study; exact search needs none (D-008) | `item_embeddings.npy` | `artifacts/index/` |
-| `shopsage evaluate` | 2 (MostPop and EASE); embedding, index and ranker inputs from Days 3, 4 and 6 | full-corpus metrics, per-user vectors and bootstrap CIs (§8); the metric functions land on Day 2 with MostPop and EASE (D-012) | splits, embeddings or index, ranker | `artifacts/eval/` |
 | `shopsage rank` | 6 | train and apply the LightGBM ranker (D-006) | candidates, as-of features | `artifacts/ranker/` |
 | `shopsage expand` | 8 (swapped with BM25, D-012) | LLM query expansion through the response cache (D-010) | queries, `ANTHROPIC_API_KEY` | `artifacts/llm_cache/` |
 | `shopsage demo` | 9 | run the Streamlit app (`src/shopsage_rec/serving/app.py`) locally | the demo bundle (§7) | — |
@@ -347,8 +363,8 @@ Flags are fixed on the day each command lands.
 | Script | Day | Purpose |
 |---|---|---|
 | `scripts/download_data.sh` | 1 | fetch, md5-verify and unpack ML-20M into `data/raw/` (archive md5 `cd245b17a1ae2cc31bb14903e1204af3`) |
-| `scripts/prepare_data.sh` | 1 | `uv run shopsage prepare --config CONFIG` (default `configs/data/movielens_20m.yaml`); downloads first if the raw CSVs are missing |
-| `scripts/bootstrap_cloud.sh` | 1 | fresh Linux GPU box: install uv → `uv sync --python 3.12 --extra train --extra gpu --extra llm` (with `--no-gpu`, no visible GPU, a GPU 0 outside sm_70..sm_90 or a host other than Linux x86_64, `--extra cpu` replaces `--extra gpu`) → torch and FAISS sanity check → download → prepare; prints the next command, since `train.sh` lands on Day 3 |
+| `scripts/prepare_data.sh` | 1 | `uv run shopsage prepare --config CONFIG` (default `configs/data/movielens_20m_liang.yaml` since S1); downloads first if the raw CSVs are missing |
+| `scripts/bootstrap_cloud.sh` | 1 (S1) | fresh Linux GPU box: install uv → `uv sync --python 3.12 --extra train --extra llm` → torch and LightGBM sanity check → download → the Liang split; prints the VRAM guidance and the next command (`train.sh` lands in S2). `--skip-data` stops after the environment |
 | `scripts/bench_two_tower_step.py` | 1 | one Two-Tower training step on synthetic tensors of the ML-20M shapes: ms/step, s/epoch, peak memory (E002 in experiment_log.md) |
 | `scripts/train.sh` | 3 | training entry point on the GPU box |
 | `scripts/eval.sh` | 4 | evaluation entry point |
@@ -437,24 +453,22 @@ MRR@K           = 1 / r if r <= K, else 0, where r = min over i in R_u of rank_u
 ### 9.1 Python and dependencies
 
 - Python `>=3.11,<3.13`.
-- Core, installed by every `uv sync`: `polars>=2.0,<3` (2.0.0 shipped on 2026-10-06; the eager API used here is unchanged), `pyarrow`, `duckdb`, `numpy>=2.0`, `typer`, `pydantic`, `pyyaml`. Typer has vendored Click since 0.26, so code never imports `click`.
+- Core, installed by every `uv sync`: `polars>=2.0,<3` (2.0.0 shipped on 2026-10-06; the eager API used here is unchanged), `pyarrow`, `duckdb`, `numpy>=2.0`, `scipy>=1.12` (sparse matrices: evaluation, EASE, BM25), `typer`, `pydantic`, `pyyaml`. Typer has vendored Click since 0.26, so code never imports `click`.
 
 | Extra | Contents | Use |
 |---|---|---|
-| `train` | `torch>=2.6`, `wandb`, `lightgbm`, `scikit-learn`, `scipy`, `sentence-transformers>=5.0`, `rank-bm25`, `tqdm`; no FAISS | training, ranker, BM25, BGE-M3 |
-| `cpu` | `faiss-cpu>=1.15,<1.16` | FAISS on the laptop or a CPU host |
-| `gpu` | `faiss-gpu>=1.15,<1.16`, Linux x86_64 only (Meta's official CUDA 12.6 wheel) | FAISS on the CUDA box |
+| `train` | `torch>=2.6`, `wandb`, `lightgbm`, `scikit-learn`, `sentence-transformers>=5.0`, `tqdm`; no vector index | training and the ranker |
 | `llm` | `anthropic>=1.0,<2` (1.x is a breaking major); Haiku's model id is `claude-haiku-5-5` | query expansion |
-| `demo` | `streamlit>=1.41`, `faiss-cpu`, `lightgbm`, `anthropic>=1.0,<2`, `rank-bm25` | the Streamlit app |
+| `demo` | `streamlit>=1.41`, `pymilvus[milvus-lite]>=3.0`, `milvus-lite>=3.2`, `lightgbm`, `anthropic>=1.0,<2` | the Streamlit app |
 | `eda` | notebook and plotting tools | `notebooks/01_eda.ipynb` |
-| `dev` | `eda` plus the test, lint and type-check tools | tests and CI |
+| `dev` | `eda`, `pymilvus[milvus-lite]`, and the test, lint and type-check tools | tests and CI |
 
-- Dropped: the unofficial `faiss-gpu-cu12` wheel, and `bitsandbytes`, because the ~78 MB model never needs quantisation.
-- `[tool.uv]` conflicts: `cpu` with `gpu`, and `demo` with `gpu`. Both FAISS wheels install the same top-level `faiss` package, so an environment holds exactly one of them.
+- Milvus Lite 3.x is pure Python over `faiss-cpu`, which it installs; pymilvus 3.x imports pandas. The project itself no longer depends on FAISS, and the `cpu` / `gpu` FAISS extras and their conflicts are gone (2026-10-23).
+- Dropped: `bitsandbytes`, because the ~78 MB model never needs quantisation, and `rank-bm25`, since BM25 is a scipy.sparse matrix (D-010).
 
 ### 9.2 torch builds
 
-- **Linux:** torch comes from the explicit index `https://download.pytorch.org/whl/cu126` (torch 2.14.1+cu126), so its CUDA runtime matches `faiss-gpu` and it runs on NVIDIA drivers ≥ 525 (CUDA 12 minor-version compatibility; ≥ 560 natively), which covers Colab, Kaggle and RunPod T4 hosts. PyPI's default Linux wheel links CUDA 13 and needs driver ≥ 580.
+- **Linux:** torch comes from the explicit index `https://download.pytorch.org/whl/cu126` (torch 2.14.1+cu126), which runs on NVIDIA drivers ≥ 525 (CUDA 12 minor-version compatibility; ≥ 560 natively) and covers Colab, Kaggle, RunPod and Modal hosts. PyPI's default Linux wheel links CUDA 13 and needs driver ≥ 580.
 - **Blackwell GPUs** (RTX 50xx, B200) need the cu130 index instead: switch the index URL in `pyproject.toml`, run `uv lock`, and sync again.
 - **macOS:** the PyPI wheel, with MPS on Apple Silicon.
 
@@ -462,9 +476,9 @@ MRR@K           = 1 / r if r <= K, else 0, where r = min over i in R_u of rank_u
 
 | Where | Command |
 |---|---|
-| Laptop, Day 1 (data, EDA, tests) | `uv sync --extra dev` |
-| Laptop, training on MPS | `uv sync --extra dev --extra train --extra cpu` |
-| Cloud GPU box | `bash scripts/bootstrap_cloud.sh`, which runs `uv sync --python 3.12 --extra train --extra gpu --extra llm` and then download and prepare (§6.3) |
+| Laptop (data, evaluation, tests) | `uv sync --extra dev` |
+| Laptop, training on MPS | `uv sync --extra dev --extra train` |
+| Cloud GPU box | `bash scripts/bootstrap_cloud.sh`, which runs `uv sync --python 3.12 --extra train --extra llm` and then download and the Liang split (§6.3) |
 
 `uv sync` is exact: it removes packages of extras not named on the command line, so name every extra each time (`uv run --extra X` adds missing packages instead).
 
@@ -495,4 +509,5 @@ MRR@K           = 1 / r if r <= K, else 0, where r = min over i in R_u of rank_u
 | 2026-10-18 | v0 | Day 1 contract: processed data, `meta.json`, data config, Python API, CLI; planned artifacts listed |
 | 2026-10-18 | v0.1 | Review against the code: config bounds and `dataset` value, `write_splits` also writes `meta.json`, extra `meta.json` keys allowed, CLI defaults and `--root`, demo entry point, `min_item_interactions: 1` for the Liang filter |
 | 2026-10-18 | v0.2 | splitmix64 `tie_key` over raw ids replaces the affine hash (`compute_tie_key`, `splitmix64`, `tie_key_col`); `meta.json` gains `tie_break`, `users_with_val_train_tie`, `users_with_any_boundary_tie`, `any_boundary_tie_fraction`, `cold_val_items`, `split_sha256`, and `users_with_boundary_tie` becomes an int count (test/val tie only) beside `boundary_tie_fraction`; invariants updated; `remap_ids` passes extra columns through; `parse_movies` year rules for ranges and stray parentheses; raw-table warning and the planned as-of accessor; metric definitions and bootstrap (§8); environment (§9); planned artifacts follow D-003, D-004, D-008 and D-010 |
+| 2026-10-23 | v0.4 | S1, efficiency-first re-plan: the Liang split (§2.7, `split.strategy: liang`, `load_liang`), the default config and processed dir follow it; `shopsage evaluate` for MostPop and EASE (§6.1); the `cpu` and `gpu` FAISS extras removed, scipy in the core dependencies, `pymilvus[milvus-lite]` in the demo and dev extras (§9); banner on the sections the re-plan supersedes |
 | 2026-10-18 | v0.3 | Final review: `Liang-SG-strict` / `Liang-SG-fit` labels (§4, §8); `split.seed` in [0, 2^64); planned train-config keys (`checkpoint_metric`, `candidates_per_group`, `val_partition`) and deploy-config keys (`bundle`, `llm_expansion`); `load_data_config(root=)` and `--root` resolve to absolute paths and `--root` must exist; eager `--version`; CLI defaults resolve against the repo root; a missing CSV exits 1 with a one-line error; `ValueError` on null ids (`compute_tie_key`, `leave_one_out_split`) and duplicate map keys (`remap_ids`); §5.6 `item_popularity_train` / `item_mean_rating_train` and the missing-value rule; exact-search path and the equivalent over-fetch (§7, §8.1); per-seed paired Δ rule, Liang half-width and cluster bootstrap for ablation (c) (§8.4); GPU-arch fallback and `bench_two_tower_step.py` (§6.3); demo bundle files (§7) |

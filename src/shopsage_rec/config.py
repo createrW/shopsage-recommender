@@ -7,21 +7,41 @@ pattern (a pydantic model per YAML file, validated eagerly, snapshotted into art
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class SplitConfig(BaseModel):
-    """How held-out interactions are chosen per user."""
+    """How held-out interactions are chosen.
+
+    ``leave_one_out`` (the Day-1 split) holds out each user's two most recent positives;
+    ``liang`` is the strong-generalisation split of Liang et al. (2018), the headline protocol
+    (``data/liang.py``). ``n_heldout_users`` and ``test_prop`` apply to ``liang`` only.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
-    strategy: Literal["leave_one_out"] = "leave_one_out"
+    strategy: Literal["leave_one_out", "liang"] = "leave_one_out"
     seed: int = Field(
-        42, ge=0, lt=2**64, description="Seed for the deterministic timestamp tie-break (uint64)."
+        42,
+        ge=0,
+        lt=2**64,
+        description="leave_one_out: tie-break hash seed (uint64); liang: RandomState seed.",
     )
+    n_heldout_users: int = Field(
+        10_000, ge=1, description="liang: validation users, and as many test users."
+    )
+    test_prop: float = Field(
+        0.2, gt=0.0, lt=1.0, description="liang: share of a held-out user's items drawn as targets."
+    )
+
+    @model_validator(mode="after")
+    def _liang_seed_fits_randomstate(self) -> Self:
+        if self.strategy == "liang" and self.seed >= 2**32:
+            raise ValueError("the liang split seeds numpy's legacy RandomState: seed < 2**32")
+        return self
 
 
 class DataConfig(BaseModel):
@@ -37,7 +57,10 @@ class DataConfig(BaseModel):
     )
     min_item_interactions: int = Field(5, ge=1)
     min_user_interactions: int = Field(
-        5, ge=3, description="Leave-one-out needs test + val + at least one train interaction."
+        5,
+        ge=3,
+        description="Leave-one-out needs test + val + at least one train interaction; "
+        "the Liang split uses 5.",
     )
     split: SplitConfig = SplitConfig()  # pydantic deep-copies defaults per instance
 

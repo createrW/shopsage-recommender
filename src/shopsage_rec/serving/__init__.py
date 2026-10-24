@@ -1,1 +1,1 @@
-"""Streamlit demo (Day 9): CPU-only inference over precomputed artifacts, no serving stack."""
+"""Streamlit entry point (``app.py``): the S1 deployment probe now, the CPU-only demo in S6."""

@@ -53,7 +53,7 @@ COPY pyproject.toml LICENSE ./
 COPY src/ src/
 ENV PYTHONPATH=/app/src
 
-RUN python -c "import faiss, lightgbm, streamlit, rank_bm25, shopsage_rec; import sys; assert 'torch' not in sys.modules" \
+RUN python -c "import pymilvus, lightgbm, streamlit, shopsage_rec; import sys; assert 'torch' not in sys.modules" \
     && python -c "import importlib.util as u; assert u.find_spec('torch') is None, 'torch is installed'"
 
 COPY configs/ configs/

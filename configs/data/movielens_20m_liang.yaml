@@ -1,0 +1,24 @@
+# Strong-generalisation split of Liang et al. 2018 ("Variational Autoencoders for Collaborative
+# Filtering"): the headline protocol, Liang-SG-strict (D-001, docs/plan.md).
+# Consumed by: `shopsage prepare --config configs/data/movielens_20m_liang.yaml`
+# Every knob here is recorded into data/processed/liang/splits/meta.json for reproducibility.
+
+dataset: movielens-20m
+raw_dir: data/raw/ml-20m          # output of scripts/download_data.sh
+processed_dir: data/processed/liang
+
+# The authors' preprocessing: ratings above 3.5 (>= 4.0 on half stars) are positives, users with
+# at least 5 positives are kept, and no item filter is applied (D-002 as revised on 2026-10-23).
+# Expected on ML-20M: 9,990,682 positives from 136,677 users over 20,720 movies.
+min_rating: 4.0
+min_item_interactions: 1
+min_user_interactions: 5
+
+# Users are permuted with numpy's legacy RandomState(seed); the last 2 x n_heldout_users become
+# validation and test users. Their items are limited to the 20,108 movies seen in training, and
+# each held-out user with >= 5 of them gets int(test_prop x n) targets; the rest is fold-in.
+split:
+  strategy: liang
+  seed: 98765            # the seed in the authors' notebook
+  n_heldout_users: 10000 # validation users, and as many test users
+  test_prop: 0.2         # share of a held-out user's items drawn as targets

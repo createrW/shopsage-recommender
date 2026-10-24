@@ -162,15 +162,16 @@ def test_cli_defaults_resolve_against_the_repo_root_from_a_subdirectory(
     tiny_raw_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     repo = _fake_repo(tmp_path)
-    config_path = repo / "configs" / "data" / "movielens_20m.yaml"
+    config_path = repo / "configs" / "data" / "movielens_20m_liang.yaml"  # the default config
     config_path.parent.mkdir(parents=True)
     config_path.write_text(
         yaml.safe_dump(
             {
                 "raw_dir": str(tiny_raw_dir),
-                "processed_dir": "data/processed",
-                "min_item_interactions": 2,
-                "min_user_interactions": 3,
+                "processed_dir": "data/processed/liang",
+                "min_item_interactions": 1,
+                "min_user_interactions": 5,
+                "split": {"strategy": "liang", "seed": 98765, "n_heldout_users": 1},
             }
         )
     )
@@ -178,7 +179,7 @@ def test_cli_defaults_resolve_against_the_repo_root_from_a_subdirectory(
 
     prepared = CliRunner().invoke(app, ["prepare"])
     assert prepared.exit_code == 0, prepared.output
-    assert (repo / "data" / "processed" / "splits" / "test.parquet").exists()
+    assert (repo / "data" / "processed" / "liang" / "splits" / "test_te.parquet").exists()
 
     stats = CliRunner().invoke(app, ["stats"])
     assert stats.exit_code == 0, stats.output

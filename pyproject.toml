@@ -5,12 +5,12 @@ build-backend = "hatchling.build"
 [project]
 name = "shopsage-rec"
 version = "0.1.0"
-description = "Two-Tower retriever + LightGBM ranker on MovieLens-20M: hard-negative mining, BM25/hybrid baselines, LLM query expansion, Streamlit demo."
+description = "Two-Tower and BM25 retrieval + LightGBM ranker on MovieLens-20M: hard-negative mining, Milvus Lite serving, LLM query expansion, Streamlit demo."
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 license = { text = "MIT" }
 authors = [{ name = "Yi Zhao" }]
-keywords = ["recommender-systems", "two-tower", "faiss", "lightgbm", "movielens", "polars", "pytorch"]
+keywords = ["recommender-systems", "two-tower", "milvus", "lightgbm", "movielens", "polars", "pytorch"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",
@@ -27,6 +27,7 @@ dependencies = [
   "pyarrow>=15.0",
   "duckdb>=1.0",
   "numpy>=2.0",
+  "scipy>=1.12",  # sparse user-item matrices: evaluation, EASE, the BM25 matrix (D-010)
   "typer>=0.12",
   "pydantic>=2.7",
   "pyyaml>=6.0",
@@ -34,24 +35,17 @@ dependencies = [
 
 [project.optional-dependencies]
 # Model training + offline evaluation (run on a cloud GPU box or on the laptop via MPS; see
-# docs/design.md "Compute"). FAISS is NOT here: pick exactly one of the `cpu` / `gpu` extras.
-# torch>=2.6 is the release where torch.load defaults to weights_only=True.
+# docs/plan.md §6). Offline retrieval is exact numpy / scipy, so no vector index is needed here.
+# torch>=2.6 is the release where torch.load defaults to weights_only=True. bitsandbytes is
+# deliberately absent: the model is ~78 MB of embeddings and never needs quantisation.
 train = [
   "torch>=2.6",
   "wandb>=0.17",
   "lightgbm>=4.3",
   "scikit-learn>=1.4",
-  "scipy>=1.12",
   "sentence-transformers>=5.0",
-  "rank-bm25>=0.2.2",
   "tqdm>=4.66",
 ]
-# The two FAISS builds install the same top-level `faiss/` package, so they are declared as
-# conflicting extras below ([tool.uv] conflicts). `faiss-gpu` is Meta's official CUDA 12.6 wheel
-# (Linux x86_64 only, sm_70..sm_90). bitsandbytes is deliberately absent: the model is ~78 MB of
-# embeddings and never needs quantisation.
-cpu = ["faiss-cpu>=1.15,<1.16"]
-gpu = ["faiss-gpu>=1.15,<1.16; sys_platform == 'linux' and platform_machine == 'x86_64'"]
 # LLM query expansion via the Claude API (anthropic 1.x is a breaking major: httpx2, no sampling
 # overrides on current models). Qwen2.5-0.5B via vLLM is documented as a separate venv/container
 # because vllm pins exact torch/transformers versions that would break this lock.
@@ -59,12 +53,13 @@ llm = ["anthropic>=1.0,<2"]
 # Streamlit demo: CPU-only inference over precomputed artifacts; never imports torch. On Streamlit
 # Community Cloud the dependency file next to the app (generated with `uv export --extra demo`)
 # takes precedence over the root uv.lock; the root requirements.txt serves the Dockerfile.
+# Milvus Lite (D-008): milvus-lite 3.x is pure Python over faiss-cpu, which it pulls in; the 3.x
+# floor keeps the platform-independent line (2.x shipped native Ubuntu / macOS wheels only).
 demo = [
   "streamlit>=1.41",
-  "faiss-cpu>=1.15,<1.16",
+  "pymilvus[milvus-lite]>=3.0",
+  "milvus-lite>=3.2",
   "lightgbm>=4.3",
-  "scipy>=1.12",  # the BM25 matrix is scipy.sparse (D-010); explicit, not via lightgbm
-  "rank-bm25>=0.2.2",
   "anthropic>=1.0,<2",
 ]
 # Notebooks + plots.
@@ -78,6 +73,8 @@ eda = [
 ]
 dev = [
   "shopsage-rec[eda]",
+  "pymilvus[milvus-lite]>=3.0",  # the deployment probe and the Milvus parity tests
+  "milvus-lite>=3.2",
   "pytest>=8.0",
   "pytest-cov>=5.0",
   "hypothesis>=6.100",
@@ -91,7 +88,7 @@ dev = [
 shopsage = "shopsage_rec.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/<your-github-handle>/shopsage-recommender"
+Homepage = "https://github.com/createrW/shopsage-recommender"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/shopsage_rec"]
@@ -101,14 +98,9 @@ include = ["src/", "configs/", "README.md", "LICENSE"]
 
 [tool.uv]
 package = true
-# A FAISS build must be chosen explicitly; the demo always runs on CPU.
-conflicts = [
-  [{ extra = "cpu" }, { extra = "gpu" }],
-  [{ extra = "demo" }, { extra = "gpu" }],
-]
 
-# On Linux, torch comes from the CUDA 12.6 index so its runtime matches faiss-gpu and works on
-# NVIDIA drivers >= 525 (Colab / Kaggle / RunPod T4 hosts). PyPI's default Linux wheel links
+# On Linux, torch comes from the CUDA 12.6 index, which works on NVIDIA drivers >= 525
+# (Colab / Kaggle / RunPod / Modal hosts). PyPI's default Linux wheel links
 # CUDA 13 and needs driver >= 580. Blackwell GPUs (RTX 50xx, B200): switch the URL to .../whl/cu130.
 # macOS keeps the PyPI wheel (MPS).
 [[tool.uv.index]]

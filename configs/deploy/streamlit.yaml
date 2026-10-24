@@ -1,8 +1,9 @@
-# Streamlit demo configuration (Day 9). Target: Streamlit Community Cloud (690 MB guaranteed RAM,
-# 2.7 GB max, 2 CPU cores, no GPU). The app imports numpy, scipy (BM25 matrix), pyarrow / polars
-# (parquet maps), lightgbm, streamlit and anthropic, plus faiss-cpu for IndexFlatIP or the ANN study;
-# never torch. Dependencies: src/shopsage_rec/serving/requirements.txt (uv export, from the Day-2
-# hello-world deploy) + packages.txt.
+# Streamlit demo configuration (S6; docs/plan.md). Target: Streamlit Community Cloud (690 MB
+# guaranteed RAM, 2.7 GB max, 2 CPU cores, no GPU). The app imports numpy, scipy (sparse EASE, BM25
+# matrix), pyarrow / polars (parquet maps), lightgbm, streamlit, anthropic and pymilvus (Milvus Lite,
+# which brings faiss-cpu and pandas); never torch. Dependencies:
+# src/shopsage_rec/serving/requirements.txt (uv export --extra demo) + packages.txt. The S1 probe
+# measured the Milvus Lite stack at 451 MB peak RSS with Streamlit on the laptop (E004 notes).
 
 artifacts_dir: artifacts/demo              # git-ignored; fetched at app start from a sha256-pinned GitHub Release asset
 bundle:
@@ -11,8 +12,7 @@ bundle:
 artifacts:
   item_embeddings: item_embeddings.npy     # (n_items, 128) float32, L2-normalised
   user_tower_weights: user_tower.npz        # MLP weights for the numpy re-implementation (D-004); no 70 MB user table
-  faiss_index: null                        # D-008: exact top-k over item_embeddings (numpy / IndexFlatIP);
-                                           # an IVF/HNSW index is an optional ANN study, not the default
+  ease_topk: ease_topk100.npz              # sparse EASE (top-100 neighbours per item), a ranker feature (D-006)
   ranker: lgbm_ranker.txt                  # LightGBM model file
   item_map: item_map.parquet
   bm25_matrix: bm25_matrix.npz             # scipy.sparse, rows = item_idx (D-010); its vocabulary comes from
@@ -25,10 +25,14 @@ artifacts:
                                            # user table (D-004)
 
 retrieval:
-  method: exact                            # exact | faiss (ANN study)
-  top_k_candidates: 500
+  engine: milvus_lite                      # milvus_lite | numpy (exact; the fallback). The collection
+                                           # (dense item_embeddings + sparse bm25_matrix) is built at
+                                           # start-up and flushed before the first query (D-008)
+  dense_candidates: 500                    # dense Top-500 ...
+  bm25_candidates: 100                     # ... union BM25 Top-100 -> LightGBM (D-006)
+  rrf_k: 60                                # hybrid toggle: reciprocal rank fusion
   top_k_shown: 10
-  mask_seen: true                          # seen items -> -inf BEFORE top-k (D-008)
+  mask_seen: true                          # the visitor's picks are excluded before the top-k cut
 
 llm_expansion:
   enabled: true

@@ -1,5 +1,7 @@
 # ShopSage Recommender — Technical Design
 
+> **Re-planned on 2026-10-23 (efficiency first).** This document records the Day-1 design. §4.1, §4.3, §5–§7, §9, §11, §16 and §17, and the protocol-specific parts of §4.4, §8, §10, §12 and §13, are superseded by [memory.md](memory.md) §6 (current decisions) and [plan.md](plan.md) (steps) until the S7 rewrite; where they disagree, those two win. Built since: the Liang split (`data/liang.py`), the evaluation code (`evaluation/`) and MostPop and EASE (`models/baselines.py`), calibrated in [experiment_log.md](experiment_log.md) E004.
+
 **Status:** Day 1, revised 2026-10-18 · **Owner:** Yi Zhao (USC) · **Companions:** [api_spec.md](api_spec.md) (artifacts, metric definitions, environment), [experiment_log.md](experiment_log.md) (protocol labels, runs, decisions)
 
 > **Numbers policy.** No model-quality result appears here. Every number is a dataset fact from the Day-1 run and its EDA, an engineering figure marked **measured**, a cited literature figure (§9.2), an arithmetic or roofline figure marked **estimate**, a vendor price or platform limit as the vendor publishes it (Modal, Streamlit Community Cloud, Anthropic), or a **TARGET** from the owner's brief. Result cells read `pending` until a logged run in experiment_log.md produces them.
@@ -336,7 +338,7 @@ The demo host has no GPU and 690 MB of guaranteed RAM (§16) and the demo never 
 | (addition) | `src/shopsage_rec/{retrieval,ranking,llm}/` | the two stages plus the query path: exact search, FAISS study, BM25, hybrid; LightGBM; query expansion |
 | `configs/` | `configs/{data,train,deploy}/*.yaml` | |
 | `data/` | `data/{raw,processed,samples}/` | raw and processed are git-ignored; `samples/` holds only a README (licence) |
-| `docs/`, `notebooks/` | `docs/{design.md,experiment_log.md,api_spec.md,figures/}`, `notebooks/01_eda.ipynb` | |
+| `docs/`, `notebooks/` | `docs/{design.md,experiment_log.md,api_spec.md,figures/}`, `notebooks/01_eda.ipynb` | additions: `docs/plan.md` (plan and status) and `docs/memory.md` (project memory), each with a `.zh-CN.md` Chinese version |
 | `tests/` | `tests/` | pytest + hypothesis, including the golden split test |
 | `scripts/` | `download_data.sh`, `prepare_data.sh`, `bootstrap_cloud.sh`; `train.sh` (Day 3), `eval.sh` (Day 4), `serve.sh` (Day 9) | |
 | (addition) | `artifacts/` | git-ignored: checkpoints, embeddings, indexes, LightGBM model, LLM cache |

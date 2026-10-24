@@ -14,14 +14,14 @@ Append-only record of ShopSage runs and decisions. The design rationale is in [d
 
 ## Protocols
 
-The evaluation code is PLANNED (Day 2, D-012); metric definitions are in api_spec.md §8.
+The evaluation code (`shopsage evaluate`, `src/shopsage_rec/evaluation/`) landed in S1; metric definitions are in api_spec.md §8. Since the 2026-10-23 re-plan only `Liang-SG-strict` is in use (D-001): the `LOO-*` labels describe the Day-1 split, which is kept but not evaluated, and `Liang-SG-fit` is cut.
 
 | Label | Split | Evaluated users | Ranked against | Headline metrics |
 |---|---|---|---|---|
 | `LOO-full` | Day-1 leave-one-out by (`timestamp`, `tie_key`), `splits/` | every user, at the val event (V_A or V_B) or at the test event | all items except the user's history positives (train; train + val at test) and anything the user rated before the cutoff | HR@{10, 50, 100, 500}, NDCG@10, MRR@10 |
 | `LOO-asof` | same | same | as `LOO-full`, and also without items whose first rating in `ratings.parquet` is later than the cutoff (the catalogue as of the event) | same |
-| `Liang-SG-strict` | strong generalisation (Liang et al. 2018, §4.3): held-out users are never trained on; models train on the training users' full histories; `min_item_interactions: 1`. PLANNED, only if D-001 adopts the Liang protocol | held-out users; a random 20% of each one's positives are the targets | all items except the user's fold-in positives | Recall@20 and Recall@50 (truncated), NDCG@100, NDCG@10; the Recall@20/50 and NDCG@100 anchors (design.md §9.2) are from this variant |
-| `Liang-SG-fit` | strong generalisation in the fold-in-in-training variant: the held-out users' fold-in 80% is part of the training data (Milogradskii et al., RecSys 2024); `min_item_interactions: 1`. PLANNED, only if D-001 adopts the Liang protocol | same as `Liang-SG-strict` | same | same; the NDCG@10 anchors (design.md §9.2) are from this variant |
+| `Liang-SG-strict` | strong generalisation (Liang et al. 2018, §4.3): held-out users are never trained on; models train on the training users' full histories; `min_item_interactions: 1`. Built in S1 (`configs/data/movielens_20m_liang.yaml`, E004) | held-out users; a random 20% of each one's positives are the targets | all items except the user's fold-in positives | Recall@20 and Recall@50 (truncated), NDCG@100, NDCG@10; the Recall@20/50 and NDCG@100 anchors (design.md §9.2) are from this variant |
+| `Liang-SG-fit` | strong generalisation in the fold-in-in-training variant: the held-out users' fold-in 80% is part of the training data (Milogradskii et al., RecSys 2024); `min_item_interactions: 1`. Cut on 2026-10-23 (D-014); kept as the source of the NDCG@10 anchors | same as `Liang-SG-strict` | same | same; the NDCG@10 anchors (design.md §9.2) are from this variant |
 
 - `LOO-asof` exists because a per-user split admits global look-ahead (Ji et al., TOIS 2023): averaged over test users, 53.7% of all train rows are newer than that user's own test event, and for the median test event 56.8% of the kept catalogue had no rating yet in `ratings.parquet` (Day-1 measurement). Both `LOO-*` variants are reported (D-001).
 - Accepted mild global leaks, documented rather than removed: the tag genome (computed over all time) and the global item filter (counted over all positives).
@@ -85,95 +85,84 @@ Notes:
 
 ## TARGETS (targets, not results)
 
-The owner's brief set Recall@50 0.42 → 0.58 and NDCG@10 0.32 before any model was trained. They were re-labelled on Day 1 against published ML-20M figures, each verified against the paper's table (full list in design.md §9). Nothing here is a result until a logged run measures it.
+The owner's updated scope (2026-10-23) set four targets, which replace the brief's Recall@50 0.42 → 0.58 and NDCG@10 0.32. Each is compared with published figures under `Liang-SG-strict` and, from E004 on, with in-repo measurements. Nothing here is a result of this project's models until a logged run measures it.
 
-| Metric | Label | Value | Under the Liang protocol (recommended headline `Liang-SG-strict`, D-001; Recall@50 anchors: `Liang-SG-strict`; NDCG@10 anchors: `Liang-SG-fit`) | Under `LOO-full` (the Day-1 split) |
+| Metric | Target | Published anchor (`Liang-SG-strict` unless noted) | In-repo reference | Assessment |
 |---|---|---|---|---|
-| Recall@50 | round-1 TARGET | ≥ 0.42 | plausible: WMF 0.498, EASE 0.521 and Mult-VAE 0.537 all clear it | 0.42 is above the only non-sequential anchor quoted (BPR-MF: HR@10 0.081, HR@100 0.337) in a non-comparable setup; in-repo EASE under `LOO-full` (P2-anchors) shows whether a non-sequential model reaches it |
-| Recall@50 | stretch TARGET | 0.50–0.52 | realistic stretch: the WMF–EASE band (0.498–0.521) | among the published anchors only sequential models reach it (SASRec, 2023 recipe: HR@50 0.550); no non-sequential ML-20M figure under this protocol is quoted |
-| Recall@50 | brief's upper endpoint, not adopted | 0.58 | exceeds every published Liang-protocol Recall@50 (highest verified: RecVAE 0.553) | reached only by HSTU (0.589) and HSTU-large (0.615) |
-| NDCG@10 | stretch TARGET | 0.32 | at EASE's level (0.329 in the fold-in-in-training variant) | out of reach: the best verified figure is 0.211 (HSTU-large) |
+| Recall@50 (truncated) | ≥ 0.55 | EASE 0.521, Mult-VAE 0.537, RecVAE 0.553 (the highest verified) | EASE 0.5210 [0.5156, 0.5264] (E004) | at the published frontier, 0.029 above EASE; the likeliest route is the system's Recall@50 after the ranker |
+| NDCG@10 after the ranker | ≥ 0.32 | EASE 0.329 (`Liang-SG-fit`, Milogradskii et al. 2024) | EASE 0.3280 [0.3231, 0.3331] (E004) | the EASE baseline already meets it, so the ranker counts only if it beats EASE |
+| Latency, retrieval and ranking to 10 | ≤ 200 ms p95 on the demo host | — | S1 probe on the laptop: Milvus Lite hybrid search p95 34 ms (E004) | likely; measured on the host in S6 |
+| Hard-negative ablation | Recall@50 +0.08 (A3 − A1) | — | — | ambitious, since A1 already has logQ and accidental-hit masking; reported as measured (S3) |
 
-Under `LOO-full` Recall@K equals HR@K, since each user has one relevant item. Sources: [Klenitskiy & Vasilev 2023](https://arxiv.org/abs/2309.07602) and [Petrov & Macdonald 2022](https://arxiv.org/abs/2207.07483) (BPR-MF under full-corpus leave-one-out); [Zhai et al. 2024](https://arxiv.org/abs/2402.17152) (SASRec 2023 recipe, HSTU); [Liang et al. 2018](https://arxiv.org/abs/1802.05814) (WMF, Mult-VAE); [Steck 2019](https://arxiv.org/abs/1905.03375), Table 1 (EASE 0.521); Shenbin et al., WSDM 2020 (RecVAE); Milogradskii et al., RecSys 2024 (NDCG@10, fold-in-in-training variant).
+Sources: [Liang et al. 2018](https://arxiv.org/abs/1802.05814) (Mult-VAE); [Steck 2019](https://arxiv.org/abs/1905.03375), Table 1 (popularity, EASE); Shenbin et al., WSDM 2020 (RecVAE); Milogradskii et al., RecSys 2024 (NDCG@10, fold-in-in-training variant).
 
 ## Decisions
 
+Revised on 2026-10-23 by the efficiency-first re-plan, which followed the owner's updated scope; the owner started S1 without vetoing its defaults. docs/memory.md §6 mirrors this table.
+
 | ID | Topic | Status | Due | Decision or recommendation |
 |---|---|---|---|---|
-| D-001 | Evaluation protocol | OPEN | Day 4 (owner) | Recommended: the Liang protocol with `Liang-SG-strict` as the headline, because that is where the Recall@50 anchors live and the inductive user tower (D-004) scores users it never trained on; Recall@20/50, NDCG@100, NDCG@10 and paired bootstrap CIs over users, with NDCG@10 compared with the `Liang-SG-fit` anchors and that caveat stated; the Day-1 split as a secondary table under both `LOO-full` and `LOO-asof`; MostPop and EASE run in-repo as calibration anchors, under both Liang variants in P4-liang (design.md §9). |
-| D-002 | Item filter: 5 vs Liang's 0 | DECIDED (Day 1) | — | `min_item_interactions: 5` for the leave-one-out split: a single-pass filter (not an iterated 5-core), so that every item ID embedding gets training signal; the ML-20M leave-one-out papers in design.md §9.2 keep all 26,744 items. It departs from Liang et al., whose released preprocessing has no item filter (136,677 users, 20,720 items, 9,990,682 positives); both Liang variants (`Liang-SG-strict`, `Liang-SG-fit`) run with `1`, which reproduces it (design.md §8). |
-| D-003 | Demo data licence | OPEN | before Day 9 | MovieLens may not be redistributed. Until GroupLens grants permission the public demo ships no per-user rating rows (visitors build a "pick 5 movies" profile) and downloads titles from GroupLens at startup. The delivery path is decided (a sha256-pinned GitHub Release asset, api_spec.md §9.5); what the asset may contain is not. |
-| D-004 | User tower (ML-20M has no demographics) | OPEN | Day 3 | Recommended: an inductive tower, an MLP over mean-pooled item-tower embeddings of the user's last ≤ 50 as-of positives plus behavioural features (log activity, mean rating, genre affinity, recency), with the `user_id` embedding optional under ID-dropout 0.3 and kept as an ablation arm. It works under leave-one-out, strong-generalisation and temporal protocols and is ~15 lines of numpy in the demo (13,681 × 128 item embeddings ≈ 7 MB plus MLP weights, no 70 MB user table); numpy vs torch forward on 1,000 users, max abs diff < 1e-5. It serves visitor profiles through the missing-feature path (design.md §7); their quality is not measured. |
-| D-005 | Negatives (the brief's "hard negatives" round) | DECIDED (Day 1; revised 2026-10-18) | — | Mixed negative sampling (MNS, Yang et al. 2020): in-batch negatives plus M = 2,048 uniformly sampled negatives per batch, logQ over the mixed proposal log(B·p_batch(j) + M·q(j)) with q(j) = 1/13,681 (`sampling: popularity_power` with `alpha: 0.0`). Every off-diagonal column that is a train positive of the row's user is masked; the row's own positive column never is (~660 masked in-batch columns per row at B = 4,096, row-weighted mean; median 571, p90 1,298; ~4 of them duplicates of the row's own positive). A 136,674 × 13,681 bitset is 234 MB; sorted int64 keys also work. Optional: true hard negatives mined from ranks 101–500 of the round-1 model. Popularity and masks come from train only; val/test items stay in the negative pool. Arms: ablation (a). Revised 2026-10-18 after review: the sampler changed from popularity^0.75 to uniform, because on the train split the bottom tercile's share of negative columns at M = 2,048 is 1.0% under f^0.75 and 11.5% under uniform (0.5% in-batch only). |
-| D-006 | Ranker training data | DECIDED (Day 1; revised 2026-10-18) | — | Val users split into V_A (retriever selection: best epoch, τ, hybrid α) and V_B (ranker labels, 10% of V_B held out for LightGBM early stopping), a disjoint split seeded by `val_partition.seed` = 42 (`frac_va: 0.5`), fixed across training seeds, so V_A and V_B are the same users in every run. Top-500 candidates with as-of seen items masked, label 1 = the val item; a group that misses it is dropped, never given an injected positive, and the drop rate (1 − V_B HR@500) is logged; all 500 candidates per group at a 20,000-user cap (10M rows ≈ 2 GB); fallback if RAM is tight: ranks 1–50 plus 50 random from 51–500 with row weight 9 on the random ones. Low ratings feed features only, never labels. The candidates come from one retriever run, referenced by its run id: the seed-42 run of B1 (the best arm of ablation (a), chosen by mean V_A HR@50 over seeds; the seed is pre-declared, not the best seed). The ranker's 3 seeds (Rule 5) are LightGBM seeds on that one retriever run; retriever-seed variance is measured in ablation (a). Test protocol: P6-rank. Revised 2026-10-18 after review: the default changed from the 50 + 50 subsample to all 500 candidates, because LambdaRank learns the positive-to-negative odds at each rank, and keeping 11% of the rank-51–500 negatives in training but all of them at test inflates those odds about 9× for ranks 51–500, which over-promotes deep candidates at test with `retrieval_rank` as a feature; the fallback's row weight of 9 (450/50) is an approximate inverse-sampling correction, because lambdarank applies row weights after the pairwise lambdas are accumulated. |
-| D-007 | Metrics and CIs | DECIDED (Day 1) | — | Under leave-one-out Recall@K = HR@K, so tables report HR@{10, 50, 100, 500} (HR@500 caps the ranker), NDCG@10 and MRR@10. Paired bootstrap over users on the difference between arms (same resample indices, 2,000 resamples, percentile CIs, seeded numpy Generator); ≥ 3 training seeds per arm, mean ± sd. At n = 136,674 the HR@50 CI half-width is ~±0.27 points, so seed variance matters more (api_spec.md §8); under the Liang protocol (10,000 test users) the half-width is ~±1.0 point, so user sampling also matters. |
-| D-008 | Retrieval | DECIDED (Day 1) | — | Exact scoring is the default: batched matmul → `masked_fill(M_u, −inf)` → `torch.topk` / `np.argpartition`, in chunks of ≤ 8,192 users (seconds on CPU at 13,681 × 128), with M_u the user's seen items. Seen items are set to −inf before top-k: 1,293 users have more than 500 train positives (max 3,148), so "top-500, then drop seen" is a bug. Where IndexFlatIP is used instead: one `search()` per user with `IDSelectorNot(IDSelectorBatch(M_u))`, or k = 500 + max_u \|M_u\| per chunk followed by dropping the masked ids, which is equivalent to masking first. FAISS IVF and HNSW are reported as an ANN study (P4-ann). Embeddings are L2-normalised at export, with a unit-norm test. |
-| D-009 | Baselines | DECIDED (Day 1) | — | MostPop (as-of popularity, design.md §10) and EASE (Steck 2019; minutes on the laptop) join every results table; ItemKNN if time permits. EASE memory: Gram 749 MB fp32 at 13,681 items; peak ~2.2 GB (G, its inverse and LAPACK's working copy), ~5 GB at 20,720 items; build XᵀX and invert in float32. BM25 is a content baseline, not a CF baseline. |
-| D-010 | BM25 and LLM evaluation | DECIDED (Day 1) | — | Item document = `title_clean` + genres + top-k genome tags + train-period user tags, excluding the evaluated user's own tags (the genome covers 74.4% of kept items and 99.2% of test events); query = the same fields over the user's last ≤ 20 as-of positives; scoring by a scipy.sparse BM25 matrix product; fusion by RRF (k = 60) and a per-user z-scored convex mix with α tuned on V_A. An offline "CTR delta" is not measurable, so ablation (c) is tag-as-query known-item retrieval. LLM responses are cached by sha256(model_id + prompt + params). |
-| D-011 | Timestamps | DECIDED (Day 1) | — | For 51.6% of users the whole positive history spans ≤ 1 hour (63.5% within a day), and 24.2% have a tie at some split boundary: "most recent" mostly means "last rated in a sign-up session". The task is never described as next-movie prediction; metrics are also split by tie / no-tie and by session span; recency features rank behind popularity, genre, genome and history-similarity features. |
-| D-012 | Schedule | DECIDED (Day 1) | — | Day 2 = features + as-of accessor + leakage canary + metrics/bootstrap + MostPop/EASE + BM25 documents + a hello-world Streamlit deploy. Days 7 and 8 swap: BM25 and hybrid (ablation (b)) on Day 7, LLM expansion (ablation (c)) on Day 8. Cut order if late: BGE-M3 (genome PCA-64 instead), mined hard negatives, hybrid tuning, the live LLM path, the cloud GPU (train on MPS). |
+| D-001 | Evaluation protocol | DECIDED (2026-10-23) | — | `Liang-SG-strict` is the only headline protocol: an exact replication of Liang et al.'s split (seed 98765; 10,000 validation and 10,000 test users; a random 20% of each held-out user's items as targets; items limited to the 20,108 in the training catalogue). Truncated Recall@20/50, NDCG@10/100 and HR@50 on the 10,000 test users with paired bootstrap CIs. In-repo MostPop and EASE reproduce their published Recall@50 (E004). The Day-1 leave-one-out split is kept but not evaluated; `Liang-SG-fit` is cut. Decided 2026-10-23: the targets only mean something under this protocol, and a random holdout needs no as-of machinery. |
+| D-002 | Item filter | DECIDED (Day 1; revised 2026-10-23) | — | No item filter (`min_item_interactions: 1`), Liang's preprocessing: 9,990,682 positives from 136,677 users over 20,720 movies, 20,108 of them in the training catalogue (E004). The single-pass ≥ 5 filter remains only in the unused Day-1 split. Revised 2026-10-23: follows D-001. |
+| D-003 | Demo data licence | OPEN | before S6 | MovieLens may not be redistributed. Until GroupLens grants permission the public demo ships no per-user rating rows (visitors build a "pick 5 movies" profile) and obtains titles from GroupLens at startup. The delivery path is decided (a sha256-pinned GitHub Release asset, api_spec.md §9.5); what the asset may contain is not. |
+| D-004 | User tower | DECIDED (2026-10-23) | — | Inductive: the mean of history-item embeddings over ≤ 50 fold-in items plus log history length → MLP → 128-d, L2-normalised; no user-ID table, since held-out users are never trained on. Visitor profiles in the demo go through the same path. Decided 2026-10-23: follows D-001. |
+| D-005 | Hard-negative ablation | DECIDED (Day 1; revised 2026-10-23) | — | Headline: A1 (in-batch + logQ, "without") vs A3 (A1 + per-row negatives mined from ranks 101–500 of A1's seed-42 model, "with"), 3 seeds each, paired bootstrap on Recall@50. Context arms with one seed each: A0 (no logQ), A2 (A1 + 2,048 uniform negatives, MNS), A4 (full softmax over 20,108 items). Accidental hits masked; popularity and masks from training users only. Revised 2026-10-23: the updated scope asks for a hard-negative mining ablation (target +0.08 Recall@50), so mined negatives become the headline and MNS a context arm. |
+| D-006 | Ranker data | DECIDED (Day 1; revised 2026-10-18 and 2026-10-23) | — | V_A / V_B = the 10,000 Liang validation users split 50/50 by seed 42 (V_A: model selection; V_B: ranker labels, 10% for early stopping). Candidates = dense Top-500 ∪ BM25 Top-100; labels = each user's held-out items; ~11 features including a sparse-EASE score (top-100 neighbours per item); LambdaRank on NDCG@10, 3 LightGBM seeds, reported with and without the EASE feature. Missed positives are never injected. Revised 2026-10-23: two recall paths (the updated scope) and the Liang protocol. |
+| D-007 | Metrics and CIs | DECIDED (Day 1; revised 2026-10-23) | — | Headline truncated Recall@50 and NDCG@10, plus Recall@20, NDCG@100 and HR@50, over the 10,000 test users (all have targets, E004). Percentile bootstrap over users, 2,000 resamples, seed 42, chunks of 100 (`evaluation/bootstrap.py`), paired between arms; the Recall@50 half-width is ~±0.005 at 10,000 users (E004). 3 seeds for each claimed comparison, 1 for context arms, labelled. Revised 2026-10-23: Liang protocol, efficiency first. |
+| D-008 | Retrieval engine | DECIDED (Day 1; revised 2026-10-23) | — | Offline: exact top-k with fold-in items set to −inf before the cut, ties to the lower item index (`evaluation/metrics.py`). Serving: Milvus Lite (FLAT index; dense vectors, sparse BM25 vectors and RRF hybrid search), flushed after loading, parity-tested against the exact path (S3). FAISS as a direct dependency and the ANN study are dropped: Milvus Lite 3.x is FLAT-only and runs faiss-cpu internally. Revised 2026-10-23: Milvus is in the updated scope; the S1 probe measured dense and hybrid p95 of 18 and 34 ms at 20,108 items on the laptop (E004). |
+| D-009 | Baselines | DECIDED (Day 1; revised 2026-10-23) | — | MostPop (popularity over training users) and EASE (λ chosen on V_A) in every table; ItemKNN cut. EASE at 20,108 items: Gram and weight matrices 1.6 GB each in float32; the λ grid ran at 3.5 GB peak RSS on the laptop (E004). Revised 2026-10-23: the Liang protocol replaces as-of popularity. |
+| D-010 | BM25 and LLM evaluation | DECIDED (Day 1; revised 2026-10-23) | — | BM25 item documents: title, genres, top genome tags and tags from training users only; the user query is the fold-in items' terms; scipy.sparse BM25 offline, the same weights as Milvus sparse vectors online; no Elasticsearch. Hybrid: RRF (k = 60). LLM: `claude-haiku-5-5`, structured output, effort `low`, no sampling parameters, responses cached by sha256(model id + prompt + params). Ablation (c): ~1,000 tag-as-query events, C0 BM25 on the raw tag vs C1 on the expansion (C2 hybrid if time). Cut: vLLM / Qwen, GPT-4o-mini, the convex-mix hybrid. Revised 2026-10-23: efficiency first. |
+| D-011 | Timestamps | NOT APPLICABLE (2026-10-23) | — | The session-timestamp findings (51.6% of users rated their whole positive history within an hour; 24.2% have a tie at a split boundary) concern the Day-1 leave-one-out split, which is no longer evaluated. The Liang split is a random holdout and ignores time, a stated limitation. |
+| D-012 | Schedule | REPLACED (2026-10-23) | — | Replaced by steps S1–S7 in docs/plan.md §4. |
+| D-013 | Latency target | DECIDED (2026-10-23) | — | ≤ 200 ms p95 for retrieval (dense + BM25) plus LightGBM re-ranking to 10, measured on the demo host; the LLM path is reported separately. |
+| D-014 | Efficiency-first scope | DECIDED (2026-10-23) | — | Cut: the as-of accessor for the leave-one-out split, the `LOO-*` and `Liang-SG-fit` tables, BGE-M3, the user-ID arm, subgroup diagnostics, ItemKNN, the ANN study, vLLM, MLflow, Elasticsearch, Amazon Reviews, building the Docker image. All training runs go through one Modal sweep (docs/plan.md §3). |
 
 ## Planned run matrix
 
-Nothing below has run. Every result cell is `pending` and will read `mean ± sd [lo, hi]`; "ref" marks the arm that paired Δs are computed against. Trained arms run 3 seeds; MostPop, EASE and BM25 are deterministic and run once. Until D-001 closes, the tables are planned under `LOO-full` and `LOO-asof` on test users, with selection on V_A; if D-001 adopts the Liang protocol, each table gains `Liang-SG-strict` rows with that protocol's metrics.
+Every result cell reads `pending` until its run is logged. All runs use `Liang-SG-strict` on the 10,000 test users, with selection on V_A. Arms in a claimed comparison run 3 seeds; context arms run 1 seed and are labelled. The MostPop and EASE rows come from E004.
 
-### Pipeline milestones
+### Milestones
 
-| Tag | Day | Run | Readout | Status |
+| Tag | Step | Run | Readout | Status |
 |---|---|---|---|---|
-| P2-anchors | 2 | MostPop (as-of popularity) and EASE, λ tuned on V_A (D-009) | HR@{10, 50, 100, 500}, NDCG@10 and MRR@10 under `LOO-full` and `LOO-asof`; EASE wall-clock and peak RSS | planned |
-| P3-smoke | 3 | Two-tower round 1 on the laptop (MPS), B = 4,096 | the training loop end to end; re-measure E002 with the real training loop (s/epoch and peak memory, design.md §13) | planned |
-| P3-base | 3 | Two-tower round 1: in-batch softmax + τ + logQ, B = 4,096, user tower per D-004 | V_A HR@50 with exact search; peak VRAM against design.md §13 | planned |
-| P3-b16k | 3 | Same at B = 16,384 with 4,096 sampled negatives (the VRAM worst case) | V_A HR@50; peak VRAM | optional, cloud GPU |
-| P4-liang | 4 | If D-001 adopts the Liang protocol: build that split (`min_item_interactions: 1`) and run MostPop and EASE under both `Liang-SG-strict` and `Liang-SG-fit` | Recall@20/50, NDCG@100 and NDCG@10 under each variant, each compared with its own variant's published Popularity and EASE figures (EASE Recall@50 0.521 under `Liang-SG-strict`, EASE NDCG@10 0.329 under `Liang-SG-fit`; design.md §9), as a check of the evaluation code that also measures the variant gap for two cheap models | conditional |
-| P4-ann | 4 | ANN study: FAISS IVF and HNSW against exact search (D-008) | overlap@500 with the exact top-500; HR@500 Δ; p50 / p95 latency; build time; index size | planned |
-| P6-rank | 6 | LightGBM LambdaRank over the Top-500 (D-006): same retriever run (the seed-42 run of B1), train + val masked, features as of the test cutoff, all 500 re-ranked | test NDCG@10 and HR@10 end to end over all test users (misses score 0), paired against NDCG@10 in retrieval order on the same candidates; V_B HR@500 and the group drop rate | planned |
+| P1-calib | S1 | MostPop and EASE (λ on V_A) | Recall@20/50, NDCG@10/100, HR@50 against the published figures | done (E004) |
+| P2-sweep | S2 | Two-Tower sweep on Modal: a τ/lr check on A1, then A0–A4 | test metrics per arm and seed; peak VRAM | planned |
+| P3-ablations | S3 | tables (a) and (b) | paired Δs with CIs | planned |
+| P4-rank | S4 | LightGBM over dense Top-500 ∪ BM25 Top-100 (D-006) | NDCG@10, system Recall@50 and HR@50; offline CPU latency | planned |
+| P5-llm | S5 | ablation (c) | HR@10, HR@50, grounding rate, latency, cost | planned |
+| P6-demo | S6 | the demo on Streamlit Community Cloud | p50 / p95 latency and memory on the host | planned |
 
-### Ablation (a): negatives (Day 5, D-005)
+### Ablation (a): hard-negative mining (S2–S3, D-005)
 
-Varied: the negatives and their logQ correction. Fixed: towers and features (D-004); B = 4,096; same 30-epoch budget per arm, best epoch selected on V_A HR@50; masking of every off-diagonal column that is a train positive of the row's user (~660 in-batch columns per row at B = 4,096, ~4 of them duplicates of the row's own positive; the row's own positive column is never masked); popularity counts from train only; users; protocol. τ is tuned on V_A for each arm. Three seeds per arm: 12 training runs, 15 with A3. The MostPop and EASE rows come from P2-anchors.
-
-| Arm | Negatives | logQ correction | HR@50 | HR@500 | NDCG@10 (retrieval order) | HR@50, tail tercile | Δ HR@50 vs A1 [95% CI] |
-|---|---|---|---|---|---|---|---|
-| MostPop | anchor | — | pending | pending | pending | pending | pending |
-| EASE | anchor | — | pending | pending | pending | pending | pending |
-| A0 | in-batch | none | pending | pending | pending | pending | pending |
-| A1 (ref) | in-batch | log p_batch(j) | pending | pending | pending | pending | — |
-| A2 | MNS: in-batch + M = 2,048 uniform | log(B·p_batch(j) + M/N), N = 13,681 items | pending | pending | pending | pending | pending |
-| A3 (optional) | A2 + negatives mined from ranks 101–500 of the round-1 model | as A2; the mined columns' correction is fixed on Day 5 | pending | pending | pending | pending | pending |
-| A4 | full softmax over all items (4,096 × 13,681 logits: 224 MB fp32, ~0.73 GB at the backward peak) | none (no sampling) | pending | pending | pending | pending | pending |
-
-Readings: A1 − A0 is the logQ correction, A2 − A1 the uniformly sampled negatives (the brief's question), A3 − A2 the mining, A4 − A1 the gap to the exact softmax. The tail tercile is the target item's train-popularity tercile (design.md §10).
-
-### Ablation (b): dense vs BM25 vs hybrid (Day 7, D-009, D-010)
-
-Varied: the candidate generator. Fixed: candidate depth 500, seen items masked before top-k, users, protocol. B1 and the hybrids carry the 3 seeds of the best arm of (a), chosen by mean V_A HR@50 over seeds.
-
-| Arm | Retriever | HR@50 | HR@500 | NDCG@10 (retrieval order) | Δ HR@50 vs B1 [95% CI] |
+| Arm | Negatives | Seeds | Recall@50 | NDCG@10 | Δ Recall@50 vs A1 [95% CI] |
 |---|---|---|---|---|---|
-| B-pop | MostPop, as-of popularity (anchor) | pending | pending | pending | pending |
-| B-ease | EASE (anchor) | pending | pending | pending | pending |
-| B0 | BM25, documents and queries per D-010 | pending | pending | pending | pending |
-| B1 (ref) | dense two-tower, best arm of (a), exact search | pending | pending | pending | — |
-| B2-rrf | hybrid: reciprocal rank fusion of B0 and B1, k = 60 | pending | pending | pending | pending |
-| B2-cvx | hybrid: per-user z-scored convex mix of B0 and B1, α tuned on V_A | pending | pending | pending | pending |
+| MostPop | anchor | — | 0.2352 | 0.1275 | — |
+| EASE | anchor | — | 0.5210 | 0.3280 | — |
+| A0 | in-batch, no logQ | 1 | pending | pending | pending |
+| A1 (ref, "without") | in-batch + logQ | 3 | pending | pending | — |
+| A2 | A1 + 2,048 uniform negatives (MNS) | 1 | pending | pending | pending |
+| A3 ("with") | A1 + negatives mined from ranks 101–500 of A1 seed 42 | 3 | pending | pending | pending |
+| A4 | full softmax over 20,108 items | 1 | pending | pending | pending |
 
-The ranker (P6-rank) trains on the candidates of B1's seed-42 run (pre-declared, not the best seed; D-006); whether it is re-trained on a hybrid's candidates is decided from this table.
+### Ablation (b): recall paths (S3, D-010)
 
-### Ablation (c): LLM query expansion on tag-as-query known-item retrieval (Day 8, D-010)
+| Arm | Retriever | Recall@50 | NDCG@10 | Δ Recall@50 vs B1 [95% CI] |
+|---|---|---|---|---|
+| MostPop | anchor | 0.2352 | 0.1275 | — |
+| EASE | anchor | 0.5210 | 0.3280 | — |
+| B0 | BM25 over item documents | pending | pending | pending |
+| B1 (ref) | dense, best arm of (a) | pending | pending | — |
+| B2 | hybrid: RRF of B0 and B1 (k = 60) | pending | pending | pending |
 
-Benchmark: ~2,000 (user, tag) query events from `tags.parquet` (final count `pending` until built). Query = the tag text; relevant = every movie that user tagged with it; history as of the tag event; the user's own tags are excluded from item documents. Candidate masking is fixed when the benchmark is built: the relevant movie is usually one the user has already rated, so the `LOO-*` seen-item mask cannot apply unchanged. The bootstrap is a cluster bootstrap: it resamples users together with all their (user, tag) query events, since one user contributes many events. Responses are cached under `artifacts/llm_cache/`; `claude-haiku-5-5` rejects non-default sampling parameters, so the cache, not a sampling setting, makes the LLM arms reproducible.
+### Ablation (c): LLM query expansion (S5, D-010)
+
+Tag-as-query known-item retrieval: ~1,000 (user, tag) events, relevant = the movies that user tagged with the tag; the user's own tags are excluded from item documents; cluster bootstrap over users.
 
 | Arm | Query path | HR@10 | HR@50 | Δ HR@50 vs C0 [95% CI] | Grounding rate | Latency p50 / p95 | Cost per 1K queries |
 |---|---|---|---|---|---|---|---|
-| C-pop | MostPop as of the event (anchor; ignores the query) | pending | pending | pending | — | pending | — |
-| C-ease | EASE over the as-of history (anchor; ignores the query) | pending | pending | pending | — | pending | — |
-| C0 (ref) | BM25 over the raw tag | pending | pending | — | — | pending | — |
-| C1 | BM25 over the `claude-haiku-5-5` expansion of the tag | pending | pending | pending | pending | pending | pending |
-| C2 | dense, query-conditioned (definition fixed on Day 8; design.md §12) | pending | pending | pending | pending | pending | pending |
-| C3 | hybrid of C1 and C2: RRF and convex, as in (b) | pending | pending | pending | pending | pending | pending |
-
-C1 − C0 isolates the expansion. The grounding rate is the share of expansions that resolve to catalogue items.
+| C0 (ref) | BM25 on the raw tag | pending | pending | — | — | pending | — |
+| C1 | BM25 on the `claude-haiku-5-5` expansion | pending | pending | pending | pending | pending | pending |
+| C2 (if time) | hybrid of C1 and the dense path | pending | pending | pending | pending | pending | pending |
 
 ## Entries
 
@@ -398,3 +387,57 @@ Status: **recorded**. Re-execution of `notebooks/01_eda.ipynb` after the final r
 **Results:** `meta.json` is identical to E001's except `created_at`: every count, both tie fractions, `cold_test_items` = 0 and `split_sha256` `5fa6cbe8f7027e8c4724d592857a0c4134821b33eef982e98d849aa88898c22e` reproduce. The notebook executed with 0 errors and 0 stderr outputs; the four figures in `docs/figures/` were regenerated with identical content. Regenerated take-aways now print "19,545 movies have at least one tag (19,011 of them rated: 71.1% of the 26,744 rated movies)" and "35,170 lower-cased + trimmed" tags, matching E001's corrected Observations.
 
 **Next:** nothing; E001 remains the entry of record for the Day-1 data facts, and the on-disk `data/processed/` now carries E003's `created_at`.
+
+### E004 — 2026-10-23 — S1: the Liang split and the MostPop / EASE calibration
+
+Status: **recorded**. The strong-generalisation split of Liang et al. (2018), rebuilt from the raw data, and the two calibration baselines under `Liang-SG-strict`. Both reproduce their published figures, which checks the split and the metric code end to end (D-001).
+
+| Field | Value |
+|---|---|
+| Run id / W&B | `local-20261023-1306` / n/a: no W&B for the baselines |
+| Code | working tree on top of `3e0f08f`, S1 changes not yet committed; `shopsage_rec` 0.1.0 |
+| Config | `configs/data/movielens_20m_liang.yaml` @ `2f24b2c594e1` |
+| Data | meta.json created_at 2026-10-23T20:06:05+00:00; split_sha256 `4f93a0e6f611`; 136,677 users (116,677 training, 10,000 validation, 10,000 test); 20,108 items |
+| Protocol / users | `Liang-SG-strict` / λ chosen on V_A (5,000 validation users); test metrics on all 10,000 test users |
+| Hardware / seeds | laptop (Apple M5, 16 GB) / deterministic models; split seed 98765; V_A / V_B seed 42; bootstrap seed 42 |
+| Commands | `uv run shopsage prepare --config configs/data/movielens_20m_liang.yaml`, then `uv run shopsage evaluate` (λ grid 250, 500, 1000) |
+| Artifacts | `data/processed/liang/` (split); `artifacts/eval/local-20261023-1306/` (`per_user.parquet`, `summary.json`) |
+| Cost / peak memory | prepare 5.1 s at 2.2 GB peak RSS; evaluate 211 s (EASE 204 s: three float32 inversions of the 20,108 × 20,108 Gram matrix plus scoring) at 3.5 GB peak RSS |
+
+**Split.** Counts from `meta.json`; published counts in parentheses (Liang et al. 2018, Table 1, and the authors' notebook).
+
+| Quantity | Value |
+|---|---|
+| Positives (rating ≥ 4.0, users with ≥ 5) | 9,990,682 (9,990,682) |
+| Users / movies before the split | 136,677 / 20,720 (136,677 / 20,720) |
+| Training users / training catalogue | 116,677 / 20,108 items (20,108) |
+| Training rows | 8,538,846 |
+| Validation fold-in / targets | 589,887 / 142,514 |
+| Test fold-in / targets | 579,008 / 139,775 |
+| Held-out users without targets | 0 validation, 0 test |
+
+**Results** (test, 10,000 users; mean [95% CI], percentile bootstrap over users, 2,000 resamples, seed 42). Published rows: Steck 2019, Table 1 (standard errors about 0.002), and Milogradskii et al. 2024 for NDCG@10 in the fold-in-in-training variant.
+
+| Model | Recall@20 | Recall@50 | NDCG@10 | NDCG@100 | HR@50 |
+|---|---|---|---|---|---|
+| MostPop | 0.1618 [0.1581, 0.1657] | 0.2352 [0.2310, 0.2396] | 0.1275 [0.1241, 0.1311] | 0.1906 [0.1873, 0.1938] | 0.7425 [0.7342, 0.7510] |
+| popularity, published | 0.162 | 0.235 | — | 0.191 | — |
+| EASE, λ = 1,000 | 0.3893 [0.3843, 0.3946] | 0.5210 [0.5156, 0.5264] | 0.3280 [0.3231, 0.3331] | 0.4201 [0.4159, 0.4243] | 0.9246 [0.9192, 0.9296] |
+| EASE, published (λ ≈ 500) | 0.391 | 0.521 | 0.329 (`Liang-SG-fit`) | 0.420 | — |
+
+EASE's λ on V_A (Recall@50): 250 → 0.5145, 500 → 0.5165, 1,000 → 0.5166, chosen; the three lie within 0.002. Paired Δ, EASE − MostPop: Recall@50 +0.2858 [0.2805, 0.2909], NDCG@10 +0.2005 [0.1960, 0.2051].
+
+**Calibration gate: passed.** On Recall@50, |MostPop − 0.235| = 0.0002 and |EASE − 0.521| < 0.0001, inside both the 0.01 gate and the paper's standard errors; Recall@20 and NDCG@100 agree within 0.002.
+
+**Deployment probe** (S1; laptop only, since the Community Cloud deploy needs the push). Synthetic catalogue of 20,108 items with a 128-d dense vector and a sparse vector of 20 terms over a 5,000-term vocabulary; 100 queries per path, top-50; Milvus Lite 3.2.2 with pymilvus 3.0.2.
+
+| Run | Dense p50 / p95 | Sparse p50 / p95 | Hybrid (RRF) p50 / p95 | Dense overlap with exact | Peak RSS |
+|---|---|---|---|---|---|
+| `run_probe()` in a Python process | 13.5 / 17.9 ms | 12.5 / 18.6 ms | 23.8 / 33.9 ms | 1.000 | 442 MB |
+| The Streamlit app through `AppTest` (Streamlit and the app in one process) | 17.2 / 24.3 ms | 15.3 / 21.9 ms | 30.0 / 43.8 ms | 1.000 | 451 MB |
+
+Without a `flush()` after inserting, every query scanned the unflushed rows in Python (dense p50 181 ms, hybrid 727 ms); the probe flushes before querying, and the demo will too. A second `AppTest` run after a tidy-up of `app.py` gave dense 9.4 / 20.7 ms, sparse 8.5 / 20.3 ms, hybrid 16.8 / 34.8 ms and 456 MB, within the run-to-run spread of a shared laptop.
+
+**Observations:** EASE alone already reaches the NDCG@10 target (0.32) under this protocol, so the ranker counts only if it beats EASE; the Recall@50 target (0.55) sits 0.029 above EASE. The bootstrap half-width on Recall@50 is about ±0.005 at 10,000 users. pymilvus 3.0.2 imports pandas, and milvus-lite 3.2.2 runs on faiss-cpu.
+
+**Next:** S2, the Two-Tower and the Modal sweep.

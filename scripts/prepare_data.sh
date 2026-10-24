@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Build the processed parquet artifacts (data/processed/) from raw MovieLens-20M,
+# Build the processed parquet artifacts (data/processed/liang/ by default) from raw MovieLens-20M,
 # downloading and verifying the raw data first when it is missing.
 #
-# Usage: scripts/prepare_data.sh [CONFIG]   (default: configs/data/movielens_20m.yaml)
+# Usage: scripts/prepare_data.sh [CONFIG]   (default: configs/data/movielens_20m_liang.yaml)
 #
 # Runs `uv run shopsage prepare --config CONFIG`, or `python -m shopsage_rec.cli` when uv
 # is absent. The split is seeded, so re-running rewrites the same artifacts. Relative paths
@@ -20,7 +20,7 @@ usage() {
   cat <<USAGE
 Usage: $(basename "$0") [CONFIG]
 
-Run 'shopsage prepare --config CONFIG' (default: configs/data/movielens_20m.yaml), calling
+Run 'shopsage prepare --config CONFIG' (default: configs/data/movielens_20m_liang.yaml), calling
 scripts/download_data.sh first when the raw CSVs under the config's raw_dir are missing.
 Uses 'uv run' when uv is installed, otherwise 'python -m shopsage_rec.cli' (\$PYTHON or python3).
 USAGE
@@ -48,7 +48,7 @@ if [[ $# -gt 1 ]]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CONFIG="${1:-configs/data/movielens_20m.yaml}"
+CONFIG="${1:-configs/data/movielens_20m_liang.yaml}"
 if [[ $# -eq 1 && -f "$1" ]]; then # an explicit path is taken relative to the caller's cwd
   CONFIG="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 fi
