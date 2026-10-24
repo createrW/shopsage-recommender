@@ -30,6 +30,13 @@ def test_dense_sparse_and_hybrid_match_the_offline_paths(tmp_path: Path) -> None
     store = MilvusStore.build(tmp_path / "items.db", items, weights)
     rng = np.random.default_rng(1)
     assert store.count() == 300
+    _check_parity(store, items, weights, rng)
+    store.close()
+
+
+def _check_parity(
+    store: MilvusStore, items: np.ndarray, weights: sp.csr_matrix, rng: np.random.Generator
+) -> None:
 
     for _ in range(10):
         seen = np.sort(rng.choice(300, size=12, replace=False))
@@ -62,10 +69,10 @@ def test_dense_sparse_and_hybrid_match_the_offline_paths(tmp_path: Path) -> None
 
 def test_an_item_without_terms_is_stored_but_never_matched(tmp_path: Path) -> None:
     items, weights = _catalogue()
-    store = MilvusStore.build(tmp_path / "items.db", items, weights)
-
-    query = {int(j): 1.0 for j in range(80)}
-    hits = store.search_sparse(query, np.array([], dtype=np.int64), 300)
+    with MilvusStore.build(tmp_path / "items.db", items, weights) as store:
+        query = {int(j): 1.0 for j in range(80)}
+        hits = store.search_sparse(query, np.array([], dtype=np.int64), 300)
+        nearest = store.search_dense(items[7], np.array([], dtype=np.int64), 1)
 
     assert 7 not in {i for i, _ in hits}
-    assert 7 in {i for i, _ in store.search_dense(items[7], np.array([], dtype=np.int64), 1)}
+    assert 7 in {i for i, _ in nearest}

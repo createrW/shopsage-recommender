@@ -2,15 +2,15 @@
 
 [English](memory.md) | **简体中文**
 
-**更新：** 2026-10-24，S3 完成后（E008）。先读这份，再读 [plan.zh-CN.md](plan.zh-CN.md)；两份合起来就是下一步的依据。这份文档记录事实、规则和决策；plan 里是步骤和勾选项。
+**更新：** 2026-10-24，S4 完成后（E009）。先读这份，再读 [plan.zh-CN.md](plan.zh-CN.md)；两份合起来就是下一步的依据。这份文档记录事实、规则和决策；plan 里是步骤和勾选项。
 
 ## 1. 项目概况
 
 - **是什么：** 基于 MovieLens-20M 的两阶段推荐系统：Two-Tower 稠密召回和 BM25 稀疏召回，外加二者的 RRF 混合；LightGBM 重排器；可选的 Claude Haiku 查询扩展；Milvus Lite 作为服务端检索引擎；只用 CPU 的 Streamlit demo。所有对外报告的数字都来自有记录的运行。
 - **为什么做：** 这是你 MLE 作品集的旗舰项目；README 是评审者看到的页面。
 - **负责人：** Yi Zhao（USC），所有 GitHub push 也由本人完成。
-- **位置：** `/Users/zy/Project/new_sys/projects/shopsage-recommender`，`main` 分支。提交 `3e0f08f`（Day 1）和 `05f74c4`（S1）已 push 到 `https://github.com/createrW/shopsage-recommender`（CI 通过）；S2 及其结果（`fefcf6c`、`c26417e`）也已 push；S3 尚未提交。
-- **状态：** S0–S3 已完成：批量训练（E007，消融 (a)）和召回路径及 Milvus Lite 服务索引（E008，消融 (b)）。下一步是 S4（LightGBM 排序器），需要先 `brew install libomp`。2026-10-23 按效率优先重新规划（plan.zh-CN.md §3）。
+- **位置：** `/Users/zy/Project/new_sys/projects/shopsage-recommender`，`main` 分支。提交 `3e0f08f`（Day 1）和 `05f74c4`（S1）已 push 到 `https://github.com/createrW/shopsage-recommender`（CI 通过）；S2 及其结果（`fefcf6c`、`c26417e`）和 S3（`a54bdbe`）也已 push；S4 尚未提交。
+- **状态：** S0–S4 已完成：批量训练（E007，消融 (a)）、召回路径及 Milvus Lite 服务索引（E008，消融 (b)）和 LightGBM 排序器（E009）。下一步是 S5（Claude Haiku 查询扩展，消融 (c)），需要负责人把 `ANTHROPIC_API_KEY` 加进 `~/.zshrc`。2026-10-23 按效率优先重新规划（plan.zh-CN.md §3）。
 
 ## 2. 仓库之外的输入
 
@@ -72,6 +72,7 @@
 - 笔记本上的部署探测（20,108 个物品，合成的稠密和稀疏向量）：混合检索 p95 34–44 ms，稠密检索 p95 18–24 ms；Streamlit 加应用的峰值内存约 450 MB。
 - **Streamlit Community Cloud 上（E005）：** import pymilvus 1.9 s，建库 7.9 s；稠密 p50/p95 76.3/135.2 ms，稀疏 63.0/94.6 ms，混合 118.0/176.3 ms；重合度 1.000；峰值 RSS 482 MB。内存在 690 MB 之内；但光混合检索的 p95 就占了 200 ms 预算中的 176 ms，所以 S6 要实测 numpy / scipy 服务路径，必要时改用它。
 - **Two-Tower 批量训练（E007，Modal A10，A1 和 A3 各 3 个种子）：** A1 Recall@50 0.5361 ± 0.0005、NDCG@10 0.3351 ± 0.0005、Recall@20 0.3997、HR@50 0.9371；A1 − EASE：Recall@50 +0.0151 [+0.0119, +0.0184]，NDCG@10 +0.0071。A3 − A1 = −0.0020 [−0.0033, −0.0007]（困难负样本 +0.08 的目标**没有达到**）；A0 0.3111（logQ 带来 +0.225）；A2 0.5342；A4 0.5333。τ 0.05，lr 3e-3；最佳 epoch 22–30。GPU 峰值 0.98 GB（A1）到 3.21 GB（A4）；A1 每 epoch 21.5 s；2.5 个 A10 小时，约 \$2.75。S3–S6 使用的代表运行：`A1-s42`（`artifacts/runs/A1-s42/`）。
+- **两阶段系统（E009，主结果）：** 在稠密 Top-500 ∪ BM25 Top-100 上做 LightGBM LambdaRank（12 个特征，稀疏 EASE 保留 100 个邻居，λ 1,000），在 V_B 上训练，3 个种子：Recall@50 **0.5420 ± 0.0006** [0.5365, 0.5474]、NDCG@10 **0.3428** [0.3378, 0.3478]、Recall@20 0.4079、HR@50 0.9358。比 EASE 高 +0.0209 [+0.0178, +0.0242] / +0.0148 [+0.0126, +0.0171]；比稠密高 +0.0057 / +0.0074。去掉 `ease_score` 后只是复现稠密排序。重要性：`dense_rank` 0.71、`dense_score` 0.10、`ease_score` 0.08。候选集覆盖 83.9% 的测试目标（按总数计）。服务路径在笔记本上每个用户 p50 / p95 7.2 / 8.6 ms。目标：NDCG@10 达到；Recall@50 0.55 未达到（差 0.008）；困难负样本 +0.08 未达到；延迟待在主机上测（S6）。
 - **召回路径（E008）：** BM25（k1 0.9、b 0.4、`log` 查询，在 V_A 上选定；17,283 个词项）Recall@50 0.2529、NDCG@10 0.1556；RRF 混合 0.4647 ± 0.0002，比稠密低 −0.0715 [−0.0748, −0.0685]。测试集候选覆盖率：稠密 top-500 0.8950，加 BM25 top-100 为 0.8971。在 1,000 个真实用户上 Milvus Lite 与离线路径完全一致；笔记本上 p95：稠密 6.9 ms、稀疏 41.8 ms、混合 48.7 ms，而 numpy / scipy 精确检索为 0.42、1.03、1.53 ms；numpy 用户塔 0.29 ms。
 - **Two-Tower 检查（E006，MPS，不算结果）：** A1 训练 3 个 epoch 后测试 Recall@50 0.5145 [0.5088, 0.5199]、NDCG@10 0.3163，仍在上升；M5 上每 epoch 129–146 s；峰值显存 A1 2.1 GB、A2 2.2 GB、A4 5.0 GB。
 
@@ -86,7 +87,7 @@
 | MPS（M5，B = 4,096，bf16） | 每步 37.25 ms → in-batch 每 epoch 88 s；带 4,096 个采样负样本时峰值 2.30 GB（in-batch 为 1.16 GB）；30 个 epoch 约 44 分钟（E002） |
 | 流行度 | 前 100 部电影占正样本的 23.5%；在 26,744 部有评分电影上的 Gini 为 0.90 |
 | 本地磁盘（2026-10-23） | `data/raw` 1.0 GB，`data/processed` 138 MB，`data/processed/liang` 146 MB，`.venv` 946 MB |
-| 测试 | 133 个通过（2026-10-24），含较慢的真实数据测试 |
+| 测试 | 141 个通过（2026-10-24），含较慢的真实数据测试 |
 
 ## 6. 决策
 
@@ -117,12 +118,14 @@
 - **S1 之后的 extra：** `train`、`llm`、`demo`、`eda`、`dev`；`cpu` / `gpu` 这两个 FAISS extra 及其冲突声明已删掉。`uv sync` 是精确同步：一条命令里要写全所有 extra。`uv run --extra demo ...` 会临时加上 Streamlit 跑一次（`make demo`），之后再执行 `uv sync --extra dev` 会把它删掉。
 - **Milvus Lite（3.2.2，配 pymilvus 3.0.2）：** 基于 faiss-cpu 的纯 Python 实现，运行在调用它的进程里。只支持 FLAT 索引；稀疏向量和混合检索可用。**插入数据后要调用 `client.flush(collection)`**：没 flush 的行每次查询都会在 Python 里逐行扫描（20,108 个物品时稠密检索 p50 181 ms，flush 后 9–17 ms）。pymilvus 会导入 pandas（热启动约 1 秒，第一次冷启动约 10 秒）。文档列出的系统是 Ubuntu ≥ 20.04 和 macOS ≥ 11，没有 Debian 11，所以主机上能否运行要靠部署探测确认。
 - **无界面运行 Streamlit：** `streamlit.testing.v1.AppTest.from_file("src/shopsage_rec/serving/app.py").run()` 会在当前进程里执行应用；本地测量探测时用的就是它。
-- **macOS 上的 LightGBM** 需要 `brew install libomp`（截至 2026-10-23 尚未安装）；Linux 和 Streamlit Cloud 用 `libgomp1`。
+- **macOS 上的 LightGBM** 需要 `brew install libomp`（2026-10-24 已安装）；Linux 和 Streamlit Cloud 用 `libgomp1`。
 - **Linux 上的 torch** 来自 cu126 索引（NVIDIA 驱动 ≥ 525）；Blackwell 架构的 GPU 需要 cu130 索引。
 - **AMP：** 只有 `torch.cuda.is_bf16_supported(including_emulation=False)` 为真（计算能力 ≥ 8.0）时才用 bf16；T4 用 fp16 加 `GradScaler`；MPS 上跑的是 bf16 autocast。
 - **MPS 不支持 float64：** 放到 MPS 上的张量必须是 float32（logQ 用的物品频率向量踩过这个坑）。
 - **Modal 1.6：** `Image.uv_sync` 只装依赖、不装项目本身，所以源码用 `add_local_dir` 加 `PYTHONPATH` 放进去；GPU 名称是 `"T4"`、`"L4"`、`"A10"`、`"L40S"`、`"A100"` 等（截至 2026-10-24 文档里没有 `"A10G"`）；Volume 写入后要 `commit()`，读之前要 `reload()`。
 - **Milvus Lite 检索细节（3.2.2）：** `filter="id not in [...]"` 在 `search` 和 `hybrid_search` 的每个 `AnnSearchRequest(expr=...)` 里都有效，所以已看过的物品在截断前就被去掉；`RRFRanker(k)` 的得分是 `1/(k + rank)`，名次从 1 开始；插入空的稀疏向量会被拒绝（因此用占位词项）；稀疏检索只返回有匹配的物品。真实的 BM25 查询（几百个词项）让稀疏检索比 scipy 慢约 40 倍。
+- **macOS 的 OpenMP 冲突：** faiss（Milvus Lite 底层）、torch 和 LightGBM（Homebrew 的 libomp）各自带一份 libomp；后加载的那份在线程池运行时会段错误：LightGBM 在 faiss 之后、torch 在 LightGBM 之后都会崩。分开的进程没问题（`shopsage rank` 只加载 LightGBM 的那份）；在共享的 pytest 进程里，排序器测试让 LightGBM 的训练和 `predict` 都用 `num_threads=1`。Linux 用的是 GNU libgomp。
+- **Milvus Lite 服务器** 会一直运行到进程退出；`MilvusStore.close()` 负责释放（`milvus_lite.server_manager.server_manager_instance.release_server`）。
 - **检查 `sys.modules` 的测试** 要放在子进程里跑：同一会话里的其他测试会 import torch。
 - **MPS 计时：** 计时步数少于 30 噪声太大（3 步的测试看起来比实际快了 30%）。
 - **Polars 的 `is_in`：** 用同类型的 Series 去测一列已被弃用；要写成 `.is_in(series.implode())`。
@@ -137,7 +140,7 @@
 | 路径 | 内容 |
 |---|---|
 | `README.md` | 首页：含实测基线的结果、架构、快速上手、云端训练与显存、数据集、实验、demo、设计理由、局限性、路线图 |
-| `docs/experiment_log.md` | 规则、评估协议、TARGETS、决策 D-001 到 D-014、实验矩阵、条目 E001–E008 |
+| `docs/experiment_log.md` | 规则、评估协议、TARGETS、决策 D-001 到 D-014、实验矩阵、条目 E001–E009 |
 | `docs/design.md`、`docs/api_spec.md` | Day 1 的设计，以及产物 / CLI 约定（v0.4），部分已被取代（§6） |
 | `docs/plan.md`、`docs/memory.md` | 步骤计划与进度；本记忆文档（各有一份 `.zh-CN.md` 对应版本） |
 | `src/shopsage_rec/cli.py`、`config.py` | Typer CLI（`prepare`、`stats`、`evaluate`；默认值跟随 Liang 划分）；`DataConfig`、`SplitConfig`（`leave_one_out` 或 `liang`） |
@@ -148,18 +151,19 @@
 | `src/shopsage_rec/features/items.py` | 物品塔输入：类型、年份分桶、genome PCA-64，缓存到 `<processed>/item_features.npz` |
 | `src/shopsage_rec/models/` | `baselines.py`；S2：`two_tower.py`（`TwoTower`、`sample_history`）、`losses.py`（`sampled_softmax`、`PositiveSet`）、`numpy_tower.py`（不依赖 torch 的用户塔）、`trainer.py`（`TrainConfig`、`ARMS`、`train_two_tower`）、`mining.py`、`sweep.py`（任务计划，纯 Python） |
 | `src/shopsage_rec/retrieval/` | S3：`bm25.py`（`build_item_documents`、`fit_bm25`、`BM25`）、`fusion.py`（`rrf`、`rrf_scores`、`positive_only`）、`milvus_store.py`（`MilvusStore`、`sparse_row`）、`evaluate.py`（`evaluate_recall_paths`、`shopsage recall`） |
-| `src/shopsage_rec/{ranking,llm}/` | 只有 docstring 的占位包（S4–S5） |
+| `src/shopsage_rec/ranking/` | S4：`candidates.py`（`union_candidates`）、`features.py`（`FEATURES`、`RankerContext`、`build_stage`、`labels_for`、`item_stats`、`prune_neighbours`）、`train.py`（`train_rankers`、`shopsage rank`） |
+| `src/shopsage_rec/llm/` | 只有 docstring 的占位包（S5） |
 | `configs/data/` | `movielens_20m_liang.yaml`（默认，哈希 `2f24b2c594e1`）和 `movielens_20m.yaml`（Day 1，哈希 `aec7ddd4dc98`） |
-| `configs/train/lgbm_ranker.yaml` | 排序器草稿（S4）；Two-Tower 没有 YAML：用 `TrainConfig` 和 CLI 选项，快照写进每个 `metrics.json` |
+| `configs/train/` | S4 中删除：Two-Tower（`TrainConfig`）和排序器（`DEFAULT_PARAMS`）都在代码和 CLI 选项里配置，快照写进每次运行的 `metrics.json` / `summary.json` |
 | `configs/deploy/streamlit.yaml` | demo 配置草稿：资源包、产物、Milvus Lite 检索、LLM 扩展 |
 | `scripts/` | `download_data.sh`、`prepare_data.sh`（默认用 Liang 配置）、`bootstrap_cloud.sh`（train + llm extras，Liang 划分）、`bench_two_tower_step.py`、`train.sh`（顺序批量训练）、`modal_train.py`（Modal 批量训练：Volume `shopsage-data`，GPU `A10`） |
-| `tests/` | 133 个测试，其中有 `test_bm25.py`、`test_fusion.py`、`test_milvus_store.py`、`test_recall_paths.py`、 `test_two_tower.py`、`test_trainer.py`、`test_sweep.py`、`test_item_features.py`、 `test_liang.py`（含真实数据计数测试）、`test_liang_pipeline.py`、`test_metrics.py`、`test_baselines.py`、`test_probe.py` |
+| `tests/` | 141 个测试，其中有 `test_ranking.py`、 `test_bm25.py`、`test_fusion.py`、`test_milvus_store.py`、`test_recall_paths.py`、 `test_two_tower.py`、`test_trainer.py`、`test_sweep.py`、`test_item_features.py`、 `test_liang.py`（含真实数据计数测试）、`test_liang_pipeline.py`、`test_metrics.py`、`test_baselines.py`、`test_probe.py` |
 | `notebooks/01_eda.ipynb` | 基于 Day 1 划分的 EDA，已执行；图在 `docs/figures/` |
 | `Makefile` | 22 个目标（`make help`），包括 `evaluate` 和 `demo-requirements` |
 | `.github/workflows/ci.yml` | ruff、ruff format、mypy、pytest；不装 torch 安装 demo 依赖；核对 `serving/requirements.txt` 与 `uv.lock`；在 Linux 上运行 Milvus Lite 探测 |
 | `Dockerfile`、`.dockerignore` | CPU 版 demo 镜像（还没构建过）；Hugging Face Spaces 的后备方案 |
 | `.streamlit/`、`packages.txt` | Community Cloud 设置、secrets 模板、`libgomp1` |
-| `data/`、`artifacts/`（被 git 忽略） | `data/raw/ml-20m/`、`data/processed/`（Day 1）、`data/processed/liang/`；`artifacts/eval/local-20261023-1306/`（E004）；`artifacts/eval/recall-e008/`（E008）；`artifacts/runs/`（E007：13 个批量训练运行和 `sweep_summary.json`，0.6 GB；E006 的检查：`smoke-A1-mps`、`check-A1-full3-mps`） |
+| `data/`、`artifacts/`（被 git 忽略） | `data/raw/ml-20m/`、`data/processed/`（Day 1）、`data/processed/liang/`；`artifacts/eval/local-20261023-1306/`（E004）；`artifacts/eval/recall-e008/`（E008）；`artifacts/rank/rank-e009/`（E009：6 个 LightGBM 模型、`per_user.parquet`、`summary.json`）；`artifacts/runs/`（E007：13 个批量训练运行和 `sweep_summary.json`，0.6 GB；E006 的检查：`smoke-A1-mps`、`check-A1-full3-mps`） |
 
 ## 9. 恢复工作
 
@@ -191,3 +195,4 @@ uv run shopsage stats | grep split_sha256        # Liang 划分：4f93a0e6f611..
 | 2026-10-24 | Modal 试跑（`--epochs 2 --tune-epochs 1`）：镜像构建和 Modal 上的数据准备都正常；A10 上 A1 每 epoch 21.5 s，峰值 0.98 GB；之后本地反序列化汇总里的 `torch.__version__`（`TorchVersion` 类型）失败；已改为返回纯 JSON |
 | 2026-10-24 | 负责人在 Modal 上跑完整套批量训练（13 次运行，2.5 个 A10 小时）；记为 E007：A1 超过 EASE（Recall@50 0.5361 对 0.5210），挖掘的困难负样本没有提升（A3 − A1 −0.0020），logQ 带来 +0.225；S2 完成 |
 | 2026-10-24 | S3 完成：BM25 文档和权重、RRF、Milvus Lite 服务索引；消融 (b) 记为 E008（BM25 0.2529，混合比稠密低 −0.0715；Milvus 与离线完全一致，笔记本上 numpy / scipy 精确检索快 16–40 倍）；133 个测试通过 |
+| 2026-10-24 | 负责人 push 了 S3（`a54bdbe`）并装好 libomp；S4 完成：LightGBM LambdaRank 排序器记为 E009（系统 Recall@50 0.5420、NDCG@10 0.3428；比 EASE 高 +0.021 / +0.015；p95 8.6 ms）；发现并控制住 macOS 上的 libomp 冲突；141 个测试通过 |

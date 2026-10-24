@@ -2,7 +2,7 @@
 
 [English](plan.md) | **简体中文**
 
-**更新：** 2026-10-24，S3 完成后 · **进度：** S0–S3 已完成（E007 批量训练，E008 召回路径）；下一步是 S4 · **代码：** `main` 上的 `c26417e`（S2 及其结果），已 push 到 [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender)；S3 尚未提交 · **配套文档：** [memory.zh-CN.md](memory.zh-CN.md)（事实、规则、决策）
+**更新：** 2026-10-24，S4 完成后 · **进度：** S0–S4 已完成（E007 批量训练，E008 召回路径，E009 排序器）；下一步是 S5 · **代码：** `main` 上的 `a54bdbe`（S3），已 push 到 [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender)；S4 尚未提交 · **配套文档：** [memory.zh-CN.md](memory.zh-CN.md)（事实、规则、决策）
 
 - **目标：** 在 MovieLens-20M 上做一个两阶段推荐系统（Two-Tower 稠密召回和 BM25 稀疏召回、LightGBM 重排、可选的 LLM 查询扩展、Milvus Lite 检索、Streamlit demo），所有对外报告的数字都来自实测。
 - **架构：** 离线部分，PyTorch 在云 GPU 上训练双塔，numpy 和 scipy 为评估计算精确候选，LightGBM 对两条召回路径的并集重排。在线部分，demo 只用 CPU：numpy 实现的用户塔、Milvus Lite（稠密、稀疏 BM25 和 RRF 混合检索）、LightGBM，以及用于查询扩展的 Claude Haiku。
@@ -22,12 +22,12 @@
 | 基线 | MostPop 和 EASE，已对照已发表数字完成校准（E004） | — |
 | 模型 | Two-Tower A0–A4 已在 Modal 上训练完（E007）：A1 Recall@50 0.5361、NDCG@10 0.3351，高于 EASE；消融 (a) 完成 | S4 对它的候选重排 |
 | 检索 | BM25 路径、RRF 融合、Milvus Lite 服务索引（真实数据上与离线结果完全一致）；消融 (b)（E008） | S6：在主机上选定在线检索引擎 |
-| 排序 | — | S4：基于两条召回路径的 LightGBM |
+| 排序 | 在稠密 Top-500 ∪ BM25 Top-100 上做 LightGBM LambdaRank，12 个特征（含稀疏 EASE）；3 个种子（E009） | S6 放进 demo |
 | LLM | 设计 | S5：Claude Haiku 扩展，消融 (c) |
 | Demo | 探测已部署到 Community Cloud：峰值 482 MB，混合检索 p95 176 ms（E005） | S6：完整 demo；已规划延迟兜底方案（§8） |
-| 仓库 | 122 个测试通过；lint、类型检查和 lock 都干净；S1 已上 GitHub，CI 通过 | 提交并 push S2（由你来做，§7） |
+| 仓库 | 141 个测试通过；lint、类型检查和 lock 都干净；S3 已上 GitHub | 提交并 push S4（由你来做，§7） |
 
-目前的实测结果（`Liang-SG-strict`，10,000 个测试用户）：MostPop Recall@50 0.2352、NDCG@10 0.1275；EASE Recall@50 0.5210、NDCG@10 0.3280（E004）。Two-Tower A1，3 个种子（E007）：Recall@50 0.5361 ± 0.0005、NDCG@10 0.3351 ± 0.0005，Recall@50 比 EASE 高 +0.0151 [+0.0119, +0.0184]。困难负样本：A3 − A1 = −0.0020 [−0.0033, −0.0007]，+0.08 的目标没有达到；logQ 校正带来 +0.225（A1 − A0）。BM25 Recall@50 0.2529；RRF 混合 0.4647，比稠密低 −0.0715 [−0.0748, −0.0685]（E008）。
+目前的实测结果（`Liang-SG-strict`，10,000 个测试用户）：MostPop Recall@50 0.2352、NDCG@10 0.1275；EASE Recall@50 0.5210、NDCG@10 0.3280（E004）。Two-Tower A1，3 个种子（E007）：Recall@50 0.5361 ± 0.0005、NDCG@10 0.3351 ± 0.0005，Recall@50 比 EASE 高 +0.0151 [+0.0119, +0.0184]。困难负样本：A3 − A1 = −0.0020 [−0.0033, −0.0007]，+0.08 的目标没有达到；logQ 校正带来 +0.225（A1 − A0）。BM25 Recall@50 0.2529；RRF 混合 0.4647，比稠密低 −0.0715 [−0.0748, −0.0685]（E008）。**两阶段系统（LightGBM 排序器，E009）：Recall@50 0.5420 ± 0.0006、NDCG@10 0.3428**，比 EASE 高 +0.0209 / +0.0148；笔记本 CPU 上每个用户 p95 8.6 ms。
 
 ## 2. 范围与目标（你 2026-10-23 的需求）
 
@@ -38,10 +38,10 @@
 
 | 目标 | 数值 | 测量方式 | 已发表的参考 | 评估 |
 |---|---|---|---|---|
-| Recall@50 | ≥ 0.55 | 10,000 个 Liang 测试用户上的截断 Recall@50 | EASE 0.521；RecVAE 0.553，已核实的最高值（`Liang-SG-strict`） | 仓库内 EASE：0.5210（E004），目标比它高 0.029；最可能的路线是排序器重排约 600 个候选之后的系统级 Recall@50 |
-| 排序后的 NDCG@10 | ≥ 0.32 | 同一批用户 | EASE 0.329（`Liang-SG-fit`） | 仓库内 EASE：0.3280（E004），已经高于目标，所以排序器只有超过 EASE 才算数 |
-| 延迟：召回加排序到 10 | p95 ≤ 200 ms | demo 主机，CPU，不含 LLM | — | 大概率能达到：S1 探测在笔记本上测得 Milvus Lite 混合检索 p95 为 34–44 ms（E004）；主机上的数字在 S6 测 |
-| 难负样本消融 | Recall@50 +0.08（A3 − A1） | 同一批用户，每组 3 个种子 | — | 偏乐观，因为 A1 已经有 logQ 和 accidental-hit 屏蔽；按实测汇报 |
+| Recall@50 | ≥ 0.55 | 10,000 个 Liang 测试用户上的截断 Recall@50 | EASE 0.521；RecVAE 0.553，已核实的最高值（`Liang-SG-strict`） | **未达到：** 系统达到 0.5420 ± 0.0006（E009），差 0.008；EASE 0.5210，稠密 0.5361 |
+| 排序后的 NDCG@10 | ≥ 0.32 | 同一批用户 | EASE 0.329（`Liang-SG-fit`） | **达到：** 0.3428（E009），比 EASE 高 +0.0148 [+0.0126, +0.0171]，比稠密排序高 +0.0074 |
+| 延迟：召回加排序到 10 | p95 ≤ 200 ms | demo 主机，CPU，不含 LLM | — | 进展顺利：走 numpy / scipy 精确检索，整条路径在笔记本上 p95 8.6 ms（E009）；主机（约慢 4–5 倍，E005）在 S6 测 |
+| 难负样本消融 | Recall@50 +0.08（A3 − A1） | 同一批用户，每组 3 个种子 | — | **未达到：** A3 − A1 = −0.0020 [−0.0033, −0.0007]（E007）；logQ 本身带来 +0.225 |
 
 ## 3. 效率优先的改动（2026-10-23）
 
@@ -100,14 +100,12 @@
 - [x] `retrieval/evaluate.py`、`shopsage recall`：表 (b) 及配对 Δ、给 S4 的候选覆盖率、Milvus 一致性和延迟（并列 numpy / scipy 精确检索）（E008）。
 - **结果：** Recall@50：BM25 0.2529，稠密 0.5361，混合 0.4647；1,000 个用户上 Milvus 与离线完全一致；笔记本上精确检索比 Milvus Lite 快 16–40 倍。稠密 Top-500 覆盖 89.5% 的目标，加上 BM25 Top-100 为 89.7%。
 
-### S4. LightGBM 排序器（约 4 小时；笔记本 CPU）
+### S4. LightGBM 排序器 ✅（2026-10-24，笔记本 CPU）
 
-- [ ] 先执行 `brew install libomp`。
-- [ ] `ranking/candidates.py`：为 V_B 和测试用户生成稠密 Top-500 ∪ BM25 Top-100（测试集上覆盖 0.897 的目标物品，E008：这是系统召回率的上限）。
-- [ ] `ranking/features.py`：稠密分数和名次、BM25 分数和名次、稀疏 EASE 分数（每个物品取 top-100 邻居）、训练用户上的物品流行度和平均评分、类型偏好、与历史中心的 genome 相似度、年份差、log 历史长度。金丝雀测试：改变一个用户的目标集，任何特征都不应改变。
-- [ ] `ranking/train.py`：以 NDCG@10 为目标的 LambdaRank；V_B 的 10% 用于早停；3 个种子；分别带和不带 EASE 特征。
-- [ ] 测试指标：NDCG@10、系统级 Recall@50 和 HR@50，分别与 EASE 和稠密路径做配对比较；离线测完整服务路径的 CPU 延迟 p50/p95。记为 E009。
-- **完成标准：** §2 目标表的每一行都能填上。
+- [x] `ranking/candidates.py`：每个用户取稠密 Top-500 ∪ 正分 BM25 Top-100，排除 fold-in 物品，并记下两条路径各自的名次。
+- [x] `ranking/features.py`：12 个特征（稠密分数和名次、BM25 分数和名次、每个物品保留 100 个邻居的稀疏 EASE、训练用户上的物品对数流行度和平均评分、类型亲和度、genome 相似度、年份和年份差、历史长度的对数）。canary 测试改动目标物品后检查没有任何特征变化；物品统计量经测试确认只来自训练用户。
+- [x] `ranking/train.py`、`shopsage rank`：在 V_B 上训练 LambdaRank（4,500 个用户拟合，500 个用于按 NDCG@10 早停），3 个种子，分别带和不带 `ease_score`；重新计算 EASE 和稠密作参照；配对 Δ；特征重要性；逐用户的服务延迟（E009）。
+- **结果：** 系统 Recall@50 0.5420 ± 0.0006、NDCG@10 0.3428 ± 0.0000；比 EASE 高 +0.0209 [+0.0178, +0.0242] 和 +0.0148 [+0.0126, +0.0171]；比稠密排序高 +0.0057 和 +0.0074。去掉 EASE 后排序器只是复现稠密排序。服务路径在笔记本上 p95 8.6 ms。整次运行 134 s。
 
 ### S5. LLM 查询扩展，消融 (c)（约 3 小时；笔记本和 Anthropic API）
 
@@ -244,13 +242,17 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 - [x] 在 Community Cloud 上部署探测（2026-10-24；E005：482 MB，混合检索 p95 176 ms）。
 - [x] 提交并 push S2 及其结果（`fefcf6c`、`c26417e`，2026-10-24）。
 - [x] 在 Modal 上运行 S2 批量训练（2026-10-24；E007）。注意：入口程序会先在本地写 `artifacts/runs/sweep_summary.json`，`modal volume get` 不肯覆盖它；改为下载到一个空目录。
-- [ ] 提交并 push S3：
+- [x] 提交并 push S3（`a54bdbe`，2026-10-24）。
+- [x] `brew install libomp`（2026-10-24）。
+- [ ] 提交并 push S4：
 
   ```bash
   git add -A
-  git commit -m "S3: BM25, RRF, Milvus Lite serving index, ablation (b) (E008)"
+  git commit -m "S4: LightGBM LambdaRank re-ranker over dense + BM25 candidates (E009)"
   git push
   ```
+
+- [ ] S5 需要：一个设置了月度消费上限的 Anthropic API key（console.anthropic.com → Settings → Limits，例如 \$5），以 `export ANTHROPIC_API_KEY=sk-ant-...` 的形式加进 `~/.zshrc`（我的 shell 读取你的 profile；只在你自己终端里 export 的变量传不到我这边；不要提交 key）。预计花费约 \$1。
 
 - [ ] 就 D-003 给 GroupLens 发邮件（回复可能要等一段时间）。邮件是写给 GroupLens 的，所以保留英文：
 
@@ -282,8 +284,7 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 
 **之后**
 
-- [ ] S4 之前：在笔记本上执行 `brew install libomp`。
-- [ ] S5 之前：准备一个设置了月度消费上限的 Anthropic API key（`ANTHROPIC_API_KEY`）。
+- [ ] S6 之前：GroupLens 关于 D-003 的答复（见上）。
 
 ## 8. 风险与砍需求顺序
 
@@ -294,6 +295,7 @@ S1 的探测和 S6 的 demo 用同样的方式部署：
 | Liang 划分复现有偏差（数量对不上） | S1 的 golden 测试和真实数据计数测试，在 S2 之前修好 |
 | EASE 达不到校准数字 | 在报告任何模型数字之前修好指标和划分的 bug |
 | 目标达不到 | 对照已发表的参考数字汇报；绝不为了凑目标而改协议或指标 |
+| 仅 macOS：faiss（Milvus Lite 底层）、torch 和 LightGBM 各自带一份 libomp；第二个 OpenMP 运行时起自己的线程池时会段错误 | `shopsage rank` 进程只加载 LightGBM 的那份；测试里 LightGBM 用单线程；demo 进程先加载 LightGBM 再加载 pymilvus，或不用 Milvus 服务（S6）。Linux 用的是 GNU libgomp |
 | 批量训练在 Modal 上失败或卡住 | 重跑时跳过已完成的运行；先做 2 个 epoch 的试跑；RunPod（方案 B）作为备选 |
 | Milvus Lite 在 Community Cloud 上偏慢：探测的混合检索在主机上 p95 176 ms（E005）；真实查询更重（笔记本上 48.7 ms，numpy / scipy 精确检索只要 1.5 ms，E008） | S6 在主机上实测 numpy 精确稠密 top-k 和 scipy BM25（结果相同；FLAT 重合度 1.000）；如果 Milvus 加排序器达不到 D-013，demo 改走 numpy / scipy，Milvus 作为备选引擎展示并附上其延迟 |
 | demo 超过 690 MB | 探测峰值 482 MB（E005）；精简资源包；Hugging Face Spaces |

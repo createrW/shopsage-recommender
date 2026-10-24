@@ -89,8 +89,8 @@ The owner's updated scope (2026-10-23) set four targets, which replace the brief
 
 | Metric | Target | Published anchor (`Liang-SG-strict` unless noted) | In-repo reference | Assessment |
 |---|---|---|---|---|
-| Recall@50 (truncated) | ≥ 0.55 | EASE 0.521, Mult-VAE 0.537, RecVAE 0.553 (the highest verified) | EASE 0.5210 [0.5156, 0.5264] (E004) | at the published frontier, 0.029 above EASE; the likeliest route is the system's Recall@50 after the ranker |
-| NDCG@10 after the ranker | ≥ 0.32 | EASE 0.329 (`Liang-SG-fit`, Milogradskii et al. 2024) | EASE 0.3280 [0.3231, 0.3331] (E004) | the EASE baseline already meets it, so the ranker counts only if it beats EASE |
+| Recall@50 (truncated) | ≥ 0.55 | EASE 0.521, Mult-VAE 0.537, RecVAE 0.553 (the highest verified) | EASE 0.5210 [0.5156, 0.5264] (E004) | **not met:** system (ranker) 0.5420 ± 0.0006 (E009), dense A1 0.5361 (E007); 0.008 short |
+| NDCG@10 after the ranker | ≥ 0.32 | EASE 0.329 (`Liang-SG-fit`, Milogradskii et al. 2024) | EASE 0.3280 [0.3231, 0.3331] (E004) | **met:** 0.3428 (E009), +0.0148 [+0.0126, +0.0171] over EASE and +0.0074 over the dense order |
 | Latency, retrieval and ranking to 10 | ≤ 200 ms p95 on the demo host | — | S1 probe: Milvus Lite hybrid p95 34 ms on the laptop (E004), 176 ms on the host (E005); real queries: Milvus hybrid p95 48.7 ms vs exact numpy / scipy 1.5 ms on the laptop (E008) | at risk with Milvus as the online path; comfortable with the exact path; decided on the host in S6 |
 | Hard-negative ablation | Recall@50 +0.08 (A3 − A1) | — | — | ambitious, since A1 already has logQ and accidental-hit masking; **measured −0.0020 [−0.0033, −0.0007]: not met** (E007) |
 
@@ -584,3 +584,55 @@ The numpy user tower takes 0.19 / 0.29 ms per user.
 - Milvus Lite returns exactly the offline answers on all three paths.
 - On the laptop, exact search in numpy / scipy is 16–40× faster than Milvus Lite for the same results. The real BM25 queries (hundreds of terms) make the sparse path the slow one; the S1 probe's 5-term queries hid that.
 - Projected to the demo host with E005's slowdown of about 4–5×, Milvus hybrid search would take roughly 150–250 ms p95 before re-ranking, against the 200 ms budget (D-013). S6 decides the serving path from host measurements (plan.md §8).
+
+### E009 — 2026-10-24 — S4: the LightGBM LambdaRank re-ranker and the two-stage system
+
+Status: **recorded.** `uv run shopsage rank --run-id rank-e009` (defaults below; settings fixed before the run, not tuned on test).
+
+| Field | Value |
+|---|---|
+| Run id / W&B | `rank-e009` / n/a |
+| Code | working tree on top of `a54bdbe` (S4 not yet committed); `shopsage_rec` 0.1.0; LightGBM 4.7.0 |
+| Data | split_sha256 `4f93a0e6f611`; 20,108 items |
+| Protocol / users | `Liang-SG-strict`. Training: V_B (5,000 validation users not used for any model selection), 4,500 for fitting and 500 (seed 0) for early stopping on NDCG@10. Test: all 10,000 test users |
+| Hardware / seeds | laptop (Apple M5, 16 GB), CPU / LightGBM seeds 42, 43, 44, `deterministic`; bootstrap seed 42 |
+| Settings | candidates: dense `A1-s42` top-500 ∪ BM25 top-100 (E008 settings), fold-in excluded; 12 features (`ranking/features.py`); sparse EASE from λ = 1,000 (E004), pruned to 100 neighbours per item; LambdaRank, `lambdarank_truncation_level` 50, 63 leaves, learning rate 0.05, `min_data_in_leaf` 50, feature and bagging fraction 0.8, ≤ 1,000 rounds, early stopping 50 |
+| Artifacts | `artifacts/rank/rank-e009/` (`models/*.txt`, `per_user.parquet`, `summary.json`) |
+| Cost / peak memory | 133 s wall-clock for everything (EASE fit, features, 6 LightGBM fits, test, latency); 4.0 GB peak RSS |
+
+**Training data.** 2,416,372 candidate rows for the 4,500 fitting users, 2.2% positive; 33 V_B groups had no target among their candidates and were dropped. The candidates hold 84.2% of V_B's targets and 83.9% of the test targets (total hits / total targets). E008's 0.897 is the mean of per-user shares, the same sets weighted per user. Test users have 502 to ~600 candidates, 536.7 on average.
+
+**Results** (test, 10,000 users; rankers: mean ± sd over 3 LightGBM seeds, then the 95% CI of the per-user seed mean; references: mean [95% CI]).
+
+| Arm | Recall@20 | Recall@50 | NDCG@10 | NDCG@100 | HR@50 | Rounds |
+|---|---|---|---|---|---|---|
+| EASE (recomputed here; = E004) | 0.3893 | 0.5210 [0.5156, 0.5264] | 0.3280 [0.3231, 0.3331] | 0.4201 | 0.9246 | — |
+| dense A1-s42 (= E007) | 0.4016 | 0.5363 [0.5306, 0.5417] | 0.3354 [0.3304, 0.3405] | 0.4323 | 0.9381 | — |
+| **ranker** (all 12 features) | 0.4079 ± 0.0011 | **0.5420 ± 0.0006** [0.5365, 0.5474] | **0.3428 ± 0.0000** [0.3378, 0.3478] | 0.4391 ± 0.0001 | 0.9358 ± 0.0009 | 89, 86, 102 |
+| ranker-no-ease (without `ease_score`) | 0.3996 ± 0.0003 | 0.5356 ± 0.0008 [0.5300, 0.5410] | 0.3307 ± 0.0010 [0.3259, 0.3358] | 0.4282 ± 0.0006 | 0.9362 ± 0.0010 | 14, 21, 43 |
+
+Per seed, ranker: Recall@50 0.5413 / 0.5420 / 0.5426, NDCG@10 0.34284 / 0.34281 / 0.34288.
+
+**Paired Δ** (per-user seed means):
+
+| Comparison | Δ Recall@50 [95% CI] | Δ NDCG@10 [95% CI] |
+|---|---|---|
+| ranker − EASE | +0.0209 [+0.0178, +0.0242] | +0.0148 [+0.0126, +0.0171] |
+| ranker − dense | +0.0057 [+0.0040, +0.0074] | +0.0074 [+0.0057, +0.0091] |
+| ranker − ranker-no-ease | +0.0064 [+0.0049, +0.0079] | +0.0121 [+0.0105, +0.0136] |
+| ranker-no-ease − dense | −0.0007 [−0.0019, +0.0005] | −0.0047 [−0.0062, −0.0032] |
+| ranker-no-ease − EASE | +0.0145 [+0.0112, +0.0180] | +0.0027 [−0.0000, +0.0055] |
+
+**Feature importance** (share of total gain at the best iteration, mean over seeds): `dense_rank` 0.709, `dense_score` 0.103, `ease_score` 0.081, `log_hist_len` 0.020, `bm25_score` 0.015, `item_log_pop` 0.013, `genome_sim` 0.013, `year_gap` 0.011, `genre_affinity` 0.010, `item_year` 0.009, `item_mean_rating` 0.009, `bm25_rank` 0.007.
+
+**Serving latency on the laptop** (500 random test users, one at a time; exact numpy / scipy retrieval, the same feature code, LightGBM on one thread, top 10): retrieval plus features 5.87 / 7.21 ms p50 / p95; LightGBM 1.27 / 1.65 ms; **total 7.21 / 8.56 ms**.
+
+**Against the targets.**
+- **NDCG@10 after the ranker ≥ 0.32: met.** The system scores 0.3428, above EASE (+0.0148, CI above zero) and above the dense order (+0.0074).
+- **Recall@50 ≥ 0.55: not met.** The system reaches 0.5420, 0.008 short of the target. It is still the best of every model here, and the highest published figure under this protocol is RecVAE's 0.553.
+- **Latency ≤ 200 ms:** 8.6 ms p95 offline on the laptop through the exact path. The demo host is measured in S6; E005 showed it running about 4–5× slower than the laptop.
+
+**Observations:**
+- The ranker's gain comes from adding EASE's item-item signal to the dense order. Without `ease_score`, LightGBM stops within 14–43 rounds and only reproduces the dense ranking (Recall@50 Δ −0.0007), so the content features (BM25, genome, genres, year) add nothing measurable on their own.
+- The candidate set caps the system: 16% of test targets are never retrieved, which bounds what any re-ranker can recover.
+- The sparse EASE (100 neighbours per item, about 2M weights) is small enough for the demo bundle, unlike the dense 20,108² matrix.

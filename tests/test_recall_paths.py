@@ -5,27 +5,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import numpy as np
 import polars as pl
 
 from shopsage_rec.data.liang import load_liang
 from shopsage_rec.retrieval.evaluate import evaluate_recall_paths
-
-
-def _fake_run(runs: Path, run_id: str, n_items: int, seed: int) -> None:
-    rng = np.random.default_rng(seed)
-    out = runs / run_id
-    out.mkdir(parents=True)
-    emb = rng.standard_normal((n_items, 8)).astype(np.float32)
-    np.save(out / "item_embeddings.npy", emb / np.linalg.norm(emb, axis=1, keepdims=True))
-    np.savez(
-        out / "user_tower.npz",
-        hist_emb=rng.standard_normal((n_items, 4)).astype(np.float32),
-        w1=rng.standard_normal((6, 5)).astype(np.float32),
-        b1=np.zeros(6, np.float32),
-        w2=rng.standard_normal((8, 6)).astype(np.float32),
-        b2=np.zeros(8, np.float32),
-    )
+from tests.conftest import write_fake_run
 
 
 def test_recall_paths_writes_tables_deltas_and_milvus_parity(
@@ -34,7 +18,7 @@ def test_recall_paths_writes_tables_deltas_and_milvus_parity(
     n_items = load_liang(liang_dir).n_items
     runs = tmp_path / "runs"
     for seed, run_id in enumerate(("fake-s1", "fake-s2")):
-        _fake_run(runs, run_id, n_items, seed)
+        write_fake_run(runs, run_id, n_items, seed)
     grid = ((1.2, 0.75, "log"), (1.2, 0.75, "binary"))
 
     result = evaluate_recall_paths(

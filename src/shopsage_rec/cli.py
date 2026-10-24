@@ -3,7 +3,8 @@
 Today: ``prepare``, ``stats``, ``evaluate`` (MostPop and EASE on the Liang split), the
 Two-Tower commands ``train``, ``mine`` and ``sweep`` (they need the ``train`` extra; torch is
 imported only inside them), and ``recall`` (BM25, dense and hybrid recall paths, with the Milvus
-Lite parity check). Planned, by step of docs/plan.md: ``rank`` (S4), ``expand`` (S5).
+Lite parity check), and ``rank`` (the LightGBM re-ranker; needs the ``train`` extra for LightGBM).
+Planned, by step of docs/plan.md: ``expand`` (S5).
 
 Default paths (``--config``, ``--processed-dir``) are resolved against the repository root,
 found by walking up from the working directory to the nearest ``pyproject.toml``, so the
@@ -316,6 +317,37 @@ def recall(
         run_id=run_id,
     )  # fmt: skip
     typer.echo(format_recall_summary(result.summary))
+    typer.echo(f"wrote {result.out_dir}")
+
+
+@app.command()
+def rank(
+    dense_run: str = typer.Option("A1-s42", "--dense-run", help="Run id of the dense retriever."),
+    seeds: str = typer.Option("42,43,44", "--seeds", help="Comma-separated LightGBM seeds."),
+    latency_users: int = typer.Option(500, "--latency-users", help="Test users timed end to end."),
+    run_id: str | None = typer.Option(None, "--run-id", help="Default: rank-YYYYMMDD-HHMM."),
+    processed_dir: Path | None = typer.Option(None, "--processed-dir", "-p"),
+    runs_dir: Path | None = typer.Option(None, "--runs-dir"),
+    out_dir: Path | None = typer.Option(None, "--out-dir", "-o"),
+) -> None:
+    """Train the LambdaRank re-ranker on V_B and test the two-stage system against EASE."""
+    from shopsage_rec.ranking.train import format_rank_summary, train_rankers
+
+    processed, runs = _dirs(processed_dir, runs_dir)
+    if not (runs / dense_run / "item_embeddings.npy").is_file():
+        raise typer.BadParameter(
+            f"no exported run {dense_run} under {runs}", param_hint="--dense-run"
+        )
+    try:
+        seed_list = tuple(int(s) for s in seeds.split(",") if s.strip())
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--seeds") from exc
+    out = out_dir if out_dir is not None else _repo_root() / "artifacts" / "rank"
+    result = train_rankers(
+        processed, runs, out, dense_run=dense_run, seeds=seed_list, latency_users=latency_users,
+        run_id=run_id,
+    )  # fmt: skip
+    typer.echo(format_rank_summary(result.summary))
     typer.echo(f"wrote {result.out_dir}")
 
 

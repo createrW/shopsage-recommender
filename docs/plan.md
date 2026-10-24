@@ -2,7 +2,7 @@
 
 **English** | [简体中文](plan.zh-CN.md)
 
-**Updated:** 2026-10-24, after S3 · **Progress:** S0–S3 done (E007 sweep, E008 recall paths); S4 is next · **Code:** `c26417e` (S2 with its results) on `main`, pushed to [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender); S3 is uncommitted · **Companion:** [memory.md](memory.md) (facts, rules, decisions)
+**Updated:** 2026-10-24, after S4 · **Progress:** S0–S4 done (E007 sweep, E008 recall paths, E009 ranker); S5 is next · **Code:** `a54bdbe` (S3) on `main`, pushed to [createrW/shopsage-recommender](https://github.com/createrW/shopsage-recommender); S4 is uncommitted · **Companion:** [memory.md](memory.md) (facts, rules, decisions)
 
 - **Goal:** a two-stage recommender on MovieLens-20M (Two-Tower dense recall and BM25 sparse recall, a LightGBM re-ranker, optional LLM query expansion, Milvus Lite retrieval, a Streamlit demo) with every reported number measured.
 - **Architecture:** offline, PyTorch trains the towers on a cloud GPU, numpy and scipy compute exact candidates for evaluation, and LightGBM re-ranks the union of both recall paths. Online, the demo runs on CPU: a numpy user tower, Milvus Lite (dense, sparse BM25 and RRF hybrid search), LightGBM, and Claude Haiku for query expansion.
@@ -22,12 +22,12 @@ Cloud deployment follows the owner's hosting plan, `cloud_hosting_plan_2026-10-1
 | Baselines | MostPop and EASE, calibrated against their published figures (E004) | — |
 | Models | Two-Tower A0–A4 trained on Modal (E007): A1 Recall@50 0.5361, NDCG@10 0.3351, above EASE; ablation (a) done | S4 re-ranks its candidates |
 | Retrieval | BM25 path, RRF fusion, Milvus Lite serving index with exact parity on real data; ablation (b) (E008) | S6: choose the online engine on the host |
-| Ranking | — | S4: LightGBM over both recall paths |
+| Ranking | LightGBM LambdaRank over dense top-500 ∪ BM25 top-100, 12 features with sparse EASE; 3 seeds (E009) | S6 ships it in the demo |
 | LLM | design | S5: Claude Haiku expansion, ablation (c) |
 | Demo | the probe deployed on Community Cloud: 482 MB peak, hybrid p95 176 ms (E005) | S6: full demo; latency fallback planned (§8) |
-| Repository | 122 tests green; lint, types and lock clean; S1 on GitHub, CI green | commit and push S2 (you, §7) |
+| Repository | 141 tests green; lint, types and lock clean; S3 on GitHub | commit and push S4 (you, §7) |
 
-Measured so far, `Liang-SG-strict`, 10,000 test users: MostPop Recall@50 0.2352, NDCG@10 0.1275; EASE Recall@50 0.5210, NDCG@10 0.3280 (E004). Two-Tower A1, 3 seeds (E007): Recall@50 0.5361 ± 0.0005, NDCG@10 0.3351 ± 0.0005, +0.0151 [+0.0119, +0.0184] Recall@50 over EASE. Hard negatives: A3 − A1 = −0.0020 [−0.0033, −0.0007], so the +0.08 target is not met; the logQ correction is worth +0.225 (A1 − A0). BM25 Recall@50 0.2529; RRF hybrid 0.4647, −0.0715 [−0.0748, −0.0685] against dense (E008).
+Measured so far, `Liang-SG-strict`, 10,000 test users: MostPop Recall@50 0.2352, NDCG@10 0.1275; EASE Recall@50 0.5210, NDCG@10 0.3280 (E004). Two-Tower A1, 3 seeds (E007): Recall@50 0.5361 ± 0.0005, NDCG@10 0.3351 ± 0.0005, +0.0151 [+0.0119, +0.0184] Recall@50 over EASE. Hard negatives: A3 − A1 = −0.0020 [−0.0033, −0.0007], so the +0.08 target is not met; the logQ correction is worth +0.225 (A1 − A0). BM25 Recall@50 0.2529; RRF hybrid 0.4647, −0.0715 [−0.0748, −0.0685] against dense (E008). **Two-stage system (LightGBM ranker, E009): Recall@50 0.5420 ± 0.0006, NDCG@10 0.3428**, +0.0209 / +0.0148 over EASE; 8.6 ms p95 per user on the laptop CPU.
 
 ## 2. Scope and targets (owner's spec, 2026-10-23)
 
@@ -38,10 +38,10 @@ Targets, not results; each is reported against its published anchor:
 
 | Target | Value | Measured as | Published anchor | Assessment |
 |---|---|---|---|---|
-| Recall@50 | ≥ 0.55 | truncated Recall@50 on the 10,000 Liang test users | EASE 0.521; RecVAE 0.553, the highest verified (`Liang-SG-strict`) | in-repo EASE: 0.5210 (E004), so the target is 0.029 above it; the likeliest route is the system's Recall@50 after the ranker re-orders the ~600-candidate pool |
-| NDCG@10 after the ranker | ≥ 0.32 | same users | EASE 0.329 (`Liang-SG-fit`) | in-repo EASE: 0.3280 (E004), already above the target, so the ranker counts only if it beats EASE |
-| Latency, retrieve and rank to 10 | ≤ 200 ms p95 | demo host, CPU, LLM excluded | — | likely: the S1 probe measured Milvus Lite hybrid search at p95 34–44 ms on the laptop (E004); the host is measured in S6 |
-| Hard-negative ablation | Recall@50 +0.08 (A3 − A1) | same users, 3 seeds per arm | — | ambitious, since A1 already has logQ and accidental-hit masking; reported as measured |
+| Recall@50 | ≥ 0.55 | truncated Recall@50 on the 10,000 Liang test users | EASE 0.521; RecVAE 0.553, the highest verified (`Liang-SG-strict`) | **not met:** the system reaches 0.5420 ± 0.0006 (E009), 0.008 short; EASE 0.5210, dense 0.5361 |
+| NDCG@10 after the ranker | ≥ 0.32 | same users | EASE 0.329 (`Liang-SG-fit`) | **met:** 0.3428 (E009), +0.0148 [+0.0126, +0.0171] over EASE, +0.0074 over the dense order |
+| Latency, retrieve and rank to 10 | ≤ 200 ms p95 | demo host, CPU, LLM excluded | — | on track: the whole path takes 8.6 ms p95 on the laptop through exact numpy / scipy (E009); the host (≈ 4–5× slower, E005) is measured in S6 |
+| Hard-negative ablation | Recall@50 +0.08 (A3 − A1) | same users, 3 seeds per arm | — | **not met:** A3 − A1 = −0.0020 [−0.0033, −0.0007] (E007); logQ itself is worth +0.225 |
 
 ## 3. Efficiency-first changes (2026-10-23)
 
@@ -100,14 +100,12 @@ Scaffold, Polars pipeline, md5-checked download, leave-one-out split, EDA notebo
 - [x] `retrieval/evaluate.py`, `shopsage recall`: table (b) with paired deltas, candidate coverage for S4, Milvus parity and latency next to exact numpy / scipy (E008).
 - **Results:** BM25 0.2529, dense 0.5361, hybrid 0.4647 Recall@50; Milvus identical to offline on 1,000 users; exact search 16–40× faster than Milvus Lite on the laptop. Dense top-500 covers 89.5% of the targets, + BM25 top-100 89.7%.
 
-### S4. LightGBM ranker (~4 h; laptop CPU)
+### S4. LightGBM ranker ✅ (2026-10-24, laptop CPU)
 
-- [ ] `brew install libomp` first.
-- [ ] `ranking/candidates.py`: dense Top-500 ∪ BM25 Top-100 for V_B and test users (coverage 0.897 of the targets on test, E008: the ceiling for the system's recall).
-- [ ] `ranking/features.py`: dense score and rank, BM25 score and rank, a sparse-EASE score (top-100 neighbours per item), item popularity and mean rating over training users, genre affinity, genome similarity to the history centroid, year gap, log history length. Canary test: changing a user's targets changes no feature.
-- [ ] `ranking/train.py`: LambdaRank on NDCG@10; 10% of V_B for early stopping; 3 seeds; with and without the EASE feature.
-- [ ] Test metrics: NDCG@10, system Recall@50 and HR@50, each paired against EASE and against the dense path; offline CPU latency p50/p95 of the full serving path. Log E009.
-- **Exit:** every row of the targets table in §2 can be filled.
+- [x] `ranking/candidates.py`: dense top-500 ∪ positive-score BM25 top-100 per user, fold-in excluded, with each path's rank.
+- [x] `ranking/features.py`: 12 features (dense score and rank, BM25 score and rank, sparse EASE with 100 neighbours per item, item log-popularity and mean rating over training users, genre affinity, genome similarity, year and year gap, log history length). The canary test changes the targets and checks that no feature moves; item statistics are tested to use training users only.
+- [x] `ranking/train.py`, `shopsage rank`: LambdaRank on V_B (4,500 users to fit, 500 for early stopping on NDCG@10), 3 seeds, with and without `ease_score`; EASE and dense recomputed as references; paired deltas; feature importance; serving latency per user (E009).
+- **Results:** system Recall@50 0.5420 ± 0.0006, NDCG@10 0.3428 ± 0.0000; +0.0209 [+0.0178, +0.0242] and +0.0148 [+0.0126, +0.0171] over EASE; +0.0057 and +0.0074 over the dense order. Without EASE the ranker only reproduces the dense order. Serving path 8.6 ms p95 on the laptop. 134 s for the whole run.
 
 ### S5. LLM query expansion, ablation (c) (~3 h; laptop and the Anthropic API)
 
@@ -244,13 +242,17 @@ Vendor figures were re-checked on the dates shown; the platform choices are the 
 - [x] Deploy the probe on Community Cloud (2026-10-24; E005: 482 MB, hybrid p95 176 ms).
 - [x] Commit and push S2 and its results (`fefcf6c`, `c26417e`, 2026-10-24).
 - [x] Run the S2 sweep on Modal (2026-10-24; E007). Note: `modal volume get` refuses to overwrite `artifacts/runs/sweep_summary.json`, which the entrypoint already writes locally; download into an empty directory instead.
-- [ ] Commit and push S3:
+- [x] Commit and push S3 (`a54bdbe`, 2026-10-24).
+- [x] `brew install libomp` (2026-10-24).
+- [ ] Commit and push S4:
 
   ```bash
   git add -A
-  git commit -m "S3: BM25, RRF, Milvus Lite serving index, ablation (b) (E008)"
+  git commit -m "S4: LightGBM LambdaRank re-ranker over dense + BM25 candidates (E009)"
   git push
   ```
+
+- [ ] For S5: an Anthropic API key with a monthly spend limit (console.anthropic.com → Settings → Limits, e.g. \$5), added to `~/.zshrc` as `export ANTHROPIC_API_KEY=sk-ant-...` (my shell reads your profile; a variable exported only in your own terminal does not reach it; never commit the key). Expected cost ≈ \$1.
 
 - [ ] Email GroupLens about D-003 (an answer can take time):
 
@@ -282,8 +284,7 @@ Vendor figures were re-checked on the dates shown; the platform choices are the 
 
 **Later**
 
-- [ ] Before S4: `brew install libomp` on the laptop.
-- [ ] Before S5: an Anthropic API key (`ANTHROPIC_API_KEY`) with a monthly spend limit.
+- [ ] Before S6: the GroupLens answer on D-003 (above).
 
 ## 8. Risks and cut order
 
@@ -294,6 +295,7 @@ Cut order if late: C2 in ablation (c), then the A0 / A2 / A4 context arms, the r
 | The Liang replication is off (counts differ) | golden and real-data count tests in S1, fixed before S2 |
 | EASE misses its calibration figure | metric and split bugs are fixed before any model number is reported |
 | The targets are not reached | report against the published anchors; never change the protocol or the metric to chase them |
+| macOS only: faiss (under Milvus Lite), torch and LightGBM each bundle libomp; a second OpenMP runtime with its own thread pool segfaults | `shopsage rank` loads only LightGBM's; the tests run LightGBM on one thread; the demo process loads LightGBM before pymilvus or serves without Milvus (S6). Linux uses GNU libgomp |
 | The sweep fails or stalls on Modal | finished runs are skipped on a re-run; a 2-epoch trial first; RunPod (Option B) as the fallback |
 | Milvus Lite is slow on Community Cloud: probe hybrid p95 176 ms on the host (E005); real queries are heavier (laptop: 48.7 ms vs 1.5 ms for exact numpy / scipy, E008) | S6 measures numpy exact dense top-k and scipy BM25 on the host (same results; FLAT overlap 1.000); if Milvus plus the ranker misses D-013, the demo serves through numpy / scipy and shows Milvus as the alternative engine with its latency |
 | The demo exceeds 690 MB | probe peak 482 MB (E005); trim the bundle; Hugging Face Spaces |

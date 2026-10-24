@@ -179,6 +179,7 @@ def _milvus_parity(
                 ids, scores = expected[path]
                 shared = len({i for i, _ in got} & set(ids.tolist())) / max(ids.size, 1)
                 checks[path].append((_same_scores(got, scores), shared))
+        store.close()
     report["tower_ms"] = _ms(timings["tower"])
     for path, results in checks.items():
         report[path] = {

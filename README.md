@@ -2,7 +2,7 @@
 
 Two-stage recommender on MovieLens-20M, built as a production-style offline pipeline. A PyTorch Two-Tower retriever and a BM25 retriever generate candidates, a LightGBM LambdaRank model re-ranks them, Milvus Lite serves both recall paths (dense, sparse and RRF hybrid search) in a CPU-only Streamlit demo, and Claude Haiku optionally expands free-text queries. Everything is measured under the strong-generalisation protocol of [Liang et al. (2018)](https://arxiv.org/abs/1802.05814) against MostPop and EASE, with bootstrap confidence intervals. MovieLens-20M stands in for implicit-feedback e-commerce logs, with a rating ≥ 4.0 as the positive event.
 
-**Status:** S1 done (2026-10-23): the Liang split, the evaluation code and the MostPop and EASE baselines, which reproduce their published numbers. S2 and S3 done (2026-10-24): the Two-Tower, trained in one Modal sweep, beats EASE; BM25 and the RRF hybrid are measured, and the Milvus Lite serving index returns exactly the offline results. Next: the LightGBM ranker (S4). Plan and progress: [docs/plan.md](docs/plan.md) ([中文](docs/plan.zh-CN.md)).
+**Status:** S1 done (2026-10-23): the Liang split, the evaluation code and the MostPop and EASE baselines, which reproduce their published numbers. S2–S4 done (2026-10-24): the Two-Tower, trained in one Modal sweep, beats EASE; BM25 and the RRF hybrid are measured; the Milvus Lite serving index returns exactly the offline results; the LightGBM re-ranker lifts the system to Recall@50 0.542 and NDCG@10 0.343 (+0.021 and +0.015 over EASE) at 8.6 ms p95 on a laptop CPU. Next: LLM query expansion (S5) and the demo (S6). Plan and progress: [docs/plan.md](docs/plan.md) ([中文](docs/plan.zh-CN.md)).
 
 [![CI](https://img.shields.io/github/actions/workflow/status/createrW/shopsage-recommender/ci.yml?branch=main&label=CI)](https://github.com/createrW/shopsage-recommender/actions/workflows/ci.yml)
 [![Python 3.11 | 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](pyproject.toml)
@@ -21,16 +21,16 @@ Protocol `Liang-SG-strict`: 10,000 test users who are never seen in training. Fo
 | Two-Tower, in-batch + logQ (A1), 3 seeds | 0.5361 ± 0.0005 (seed 42: [0.5306, 0.5417]) | 0.3351 ± 0.0005 (seed 42: [0.3304, 0.3405]) | E007 |
 | Two-Tower + mined hard negatives (A3), 3 seeds | 0.5341 ± 0.0008 | 0.3351 ± 0.0011 | E007 |
 | Hybrid: Two-Tower + BM25, RRF, 3 seeds | 0.4647 ± 0.0002 | 0.2789 ± 0.0007 | E008 |
-| + LightGBM re-ranker | pending | pending | S4 |
+| **+ LightGBM re-ranker** (dense top-500 ∪ BM25 top-100), 3 seeds | **0.5420 ± 0.0006** [0.5365, 0.5474] | **0.3428 ± 0.0000** [0.3378, 0.3478] | E009 |
 
 **Calibration.** Both baselines reproduce their published figures under the same protocol (Steck 2019, Table 1): popularity Recall@50 0.235 and EASE 0.521, with Recall@20 and NDCG@100 also within 0.002. The split and the metric code therefore agree with the literature ([experiment log](docs/experiment_log.md), E004).
 
-**Targets, not results.** The targets are:
+**Targets, and where they stand:**
 
-- Recall@50 ≥ 0.55. The highest published figure under this protocol is RecVAE's 0.553, and EASE scores 0.521.
-- NDCG@10 ≥ 0.32 after the ranker. EASE already scores 0.328 here, so the ranker has to beat EASE.
-- ≤ 200 ms p95 for retrieval plus ranking on the demo host.
-- A hard-negative mining gain of +0.08 Recall@50.
+- **Recall@50 ≥ 0.55: not met.** The system reaches 0.542 (E009). The highest published figure under this protocol is RecVAE's 0.553, and EASE scores 0.521.
+- **NDCG@10 ≥ 0.32 after the ranker: met.** The system scores 0.343 and beats EASE (0.328) by +0.015 [+0.013, +0.017] (E009).
+- **≤ 200 ms p95 for retrieval plus ranking on the demo host:** 8.6 ms p95 on a laptop CPU through exact numpy / scipy retrieval (E009); the host is measured in S6.
+- **A hard-negative mining gain of +0.08 Recall@50: not met.** Mined negatives change Recall@50 by −0.002 [−0.003, −0.001] against in-batch + logQ; the logQ correction itself is worth +0.225 (E007).
 
 Each is reported as measured, met or not.
 
@@ -251,7 +251,7 @@ The decision log (D-001 to D-014) is in [docs/experiment_log.md](docs/experiment
 - [x] S1: Liang split, evaluation code, MostPop and EASE calibrated (E004), Milvus Lite deployment probe
 - [x] S2: Two-Tower with in-batch, uniform and mined negatives; one Modal training sweep (E007)
 - [x] S3: BM25 path, Milvus Lite serving index, ablations (a) and (b) (E007, E008)
-- [ ] S4: LightGBM re-ranker over both recall paths
+- [x] S4: LightGBM re-ranker over both recall paths (E009)
 - [ ] S5: Claude Haiku query expansion, ablation (c)
 - [ ] S6: the Streamlit demo on Community Cloud
 - [ ] S7: write-up and publish

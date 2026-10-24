@@ -157,6 +157,9 @@ def run_probe(
             client.hybrid_search(COLLECTION, reqs=requests, ranker=RRFRanker(RRF_K), limit=k)
             hybrid_t.append(time.perf_counter() - t)
         client.close()
+        from milvus_lite.server_manager import server_manager_instance
+
+        server_manager_instance.release_server(str(Path(tmp) / "probe.db"))  # stop its server
 
     return ProbeReport(
         n_items=n_items,

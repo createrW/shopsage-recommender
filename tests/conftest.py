@@ -139,3 +139,21 @@ def liang_dir(tmp_path: Path) -> Path:
         )
     )
     return processed
+
+
+def write_fake_run(runs: Path, run_id: str, n_items: int, seed: int) -> Path:
+    """A dense run directory (``item_embeddings.npy``, ``user_tower.npz``) of random weights."""
+    rng = np.random.default_rng(seed)
+    out = runs / run_id
+    out.mkdir(parents=True)
+    emb = rng.standard_normal((n_items, 8)).astype(np.float32)
+    np.save(out / "item_embeddings.npy", emb / np.linalg.norm(emb, axis=1, keepdims=True))
+    np.savez(
+        out / "user_tower.npz",
+        hist_emb=rng.standard_normal((n_items, 4)).astype(np.float32),
+        w1=rng.standard_normal((6, 5)).astype(np.float32),
+        b1=np.zeros(6, np.float32),
+        w2=rng.standard_normal((8, 6)).astype(np.float32),
+        b2=np.zeros(8, np.float32),
+    )
+    return out

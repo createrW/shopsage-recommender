@@ -8,6 +8,10 @@ items (Milvus returns matching items only), and RRF over both with the same per-
 Python on every query (E004). Milvus rejects an empty sparse vector, so an item without terms gets
 a placeholder term (index ``n_terms``) that no query contains.
 
+Milvus Lite runs its server inside this process until it is released; ``close()`` (or a ``with``
+block) stops it. On macOS, faiss (under Milvus Lite) and LightGBM bundle different libomp builds:
+when faiss's loads first, LightGBM segfaults, so a process that needs both imports LightGBM first.
+
 pymilvus is imported inside the methods: it pulls in pandas, and the offline code never needs it.
 """
 
@@ -47,9 +51,23 @@ def _hits(result: Any) -> Hits:
 
 
 class MilvusStore:
-    def __init__(self, client: Any, collection: str = COLLECTION) -> None:
+    def __init__(self, client: Any, uri: str, collection: str = COLLECTION) -> None:
         self.client = client
+        self.uri = uri
         self.collection = collection
+
+    def close(self) -> None:
+        """Close the client and stop this database's in-process Milvus Lite server."""
+        from milvus_lite.server_manager import server_manager_instance
+
+        self.client.close()
+        server_manager_instance.release_server(self.uri)
+
+    def __enter__(self) -> MilvusStore:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.close()
 
     @classmethod
     def build(
@@ -91,7 +109,7 @@ class MilvusStore:
                 ],
             )
         client.flush(COLLECTION)
-        return cls(client)
+        return cls(client, str(uri))
 
     def count(self) -> int:
         return int(self.client.get_collection_stats(self.collection)["row_count"])
